@@ -1,0 +1,15 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/generate-itinerary-real/route": "/api/generate-itinerary-real",
+  "/api/destinations-search/route": "/api/destinations-search",
+  "/api/generate-itinerary-agentic/route": "/api/generate-itinerary-agentic",
+  "/api/generate-itinerary/route": "/api/generate-itinerary",
+  "/api/places/route": "/api/places",
+  "/api/weather/route": "/api/weather",
+  "/favicon.ico/route": "/favicon.ico",
+  "/api/pois/route": "/api/pois",
+  "/page": "/",
+  "/dashboard/page": "/dashboard",
+  "/dashboard/onboarding/page": "/dashboard/onboarding",
+  "/trip/[id]/page": "/trip/[id]"
+}
