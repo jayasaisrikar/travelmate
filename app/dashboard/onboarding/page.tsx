@@ -116,10 +116,8 @@ export default function OnboardingPage() {
           duration: Math.ceil((new Date(formData.departureDate).getTime() - new Date(formData.arrivalDate).getTime()) / (1000 * 60 * 60 * 24)),
           budget: formData.budget.toString(),
           interests: formData.interests,
-          itinerary: result.itinerary,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as any);
+          itinerary: result.itinerary
+        });
 
         router.push(`/trip/${trip.id}`);
       } catch (err) {
