@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { saveTrip } from '@/lib/supabase-trips';
 
@@ -48,383 +47,285 @@ export default function OnboardingPage() {
     activityIntensity: 'Balanced',
     sleepHours: 8,
     dietaryRestrictions: [],
-    budget: 2000,
-    interests: ['Culture', 'Food', 'Adventure']
+    budget: 1000,
+    interests: []
   });
 
-  const [destinationSearch, setDestinationSearch] = useState('');
-  const [destinationResults, setDestinationResults] = useState<DestinationResult[]>([]);
-  const [searchingDestination, setSearchingDestination] = useState(false);
+  const [searchResults, setSearchResults] = useState<DestinationResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
-  // Search for destination using Nominatim (ANY city on Earth)
-  const searchDestination = useCallback(async (query: string) => {
+  const handleDestinationSearch = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
-      setDestinationResults([]);
+      setSearchResults([]);
       return;
     }
 
-    setSearchingDestination(true);
+    setSearchLoading(true);
     try {
       const response = await fetch(`/api/destinations-search?query=${encodeURIComponent(query)}`);
       const data = await response.json();
-
-      if (data.results) {
-        setDestinationResults(data.results);
-      } else {
-        setDestinationResults([]);
-      }
+      setSearchResults(data.results || []);
     } catch (err) {
       console.error('Search error:', err);
-      setDestinationResults([]);
     } finally {
-      setSearchingDestination(false);
+      setSearchLoading(false);
     }
   }, []);
 
-  // Select a destination
-  const selectDestination = (dest: DestinationResult) => {
+  const handleSelectDestination = (result: DestinationResult) => {
     setFormData(prev => ({
       ...prev,
-      destination: dest.name,
-      latitude: dest.latitude,
-      longitude: dest.longitude
+      destination: result.name,
+      latitude: result.latitude,
+      longitude: result.longitude
     }));
-    setDestinationSearch(dest.name);
-    setDestinationResults([]);
+    setSearchResults([]);
   };
 
-  // Generate itinerary
-  const handleGenerateItinerary = async () => {
-    // Validate required fields
-    if (!formData.destination || !formData.arrivalDate || !formData.departureDate) {
-      setError('Please fill in all required fields');
-      return;
-    }
+  const handleNext = async () => {
+    if (currentStep === steps.length - 1) {
+      // Generate itinerary
+      setLoading(true);
+      try {
+        const response = await fetch('/api/generate-itinerary-real', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            destination: formData.destination,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            arrivalDate: formData.arrivalDate,
+            arrivalTime: formData.arrivalTime,
+            arrivalMethod: formData.arrivalMethod,
+            departureDate: formData.departureDate,
+            departureTime: formData.departureTime,
+            activityIntensity: formData.activityIntensity,
+            sleepHours: formData.sleepHours,
+            dietaryRestrictions: formData.dietaryRestrictions,
+            budget: formData.budget,
+            interests: formData.interests,
+            duration: Math.ceil((new Date(formData.departureDate).getTime() - new Date(formData.arrivalDate).getTime()) / (1000 * 60 * 60 * 24))
+          })
+        });
 
-    if (new Date(formData.departureDate) <= new Date(formData.arrivalDate)) {
-      setError('Departure date must be after arrival date');
-      return;
-    }
+        const result = await response.json();
+        
+        // Save trip
+        const trip = await saveTrip({
+          destination: formData.destination,
+          duration: Math.ceil((new Date(formData.departureDate).getTime() - new Date(formData.arrivalDate).getTime()) / (1000 * 60 * 60 * 24)),
+          budget: formData.budget.toString(),
+          interests: formData.interests,
+          itinerary: result.itinerary,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as any);
 
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/generate-itinerary-real', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          duration: Math.ceil(
-            (new Date(formData.departureDate).getTime() - new Date(formData.arrivalDate).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate itinerary');
+        router.push(`/trip/${trip.id}`);
+      } catch (err) {
+        console.error('Error:', err);
+        setError('Failed to generate itinerary');
+      } finally {
+        setLoading(false);
       }
-
-      // Save trip to Supabase and navigate
-      const tripData = await saveTrip({
-        destination: formData.destination,
-        duration: Math.ceil(
-          (new Date(formData.departureDate).getTime() - new Date(formData.arrivalDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        ),
-        budget: String(formData.budget),
-        interests: formData.interests,
-        itinerary: result.itinerary
-      });
-
-      router.push(`/trip/${tripData.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate itinerary');
-    } finally {
-      setLoading(false);
+    } else {
+      setCurrentStep(currentStep + 1);
     }
   };
 
-  const interests = ['Beach', 'Mountain', 'Culture', 'Food', 'History', 'Art', 'Adventure', 'Nature', 'Shopping', 'Nightlife'];
+  const handleBack = () => {
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  const isStepValid = () => {
+    switch (currentStep) {
+      case 0:
+        return formData.destination.length > 0;
+      case 1:
+        return formData.arrivalDate && formData.departureDate && new Date(formData.departureDate) > new Date(formData.arrivalDate);
+      case 2:
+        return formData.interests.length > 0;
+      case 3:
+        return true;
+      default:
+        return false;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
+    <main className="min-h-screen bg-white text-slate-900 pt-24 pb-12">
+      <div className="max-w-2xl mx-auto px-6">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Plan Your Journey</h1>
-          <p className="text-slate-400">Answer a few questions and we'll create your perfect itinerary</p>
+          <p className="text-slate-600">Answer a few questions and we'll create your perfect itinerary</p>
         </div>
 
-        {/* Progress */}
+        {/* Progress bar */}
         <div className="mb-8 flex gap-2">
-          {steps.map((step, idx) => (
-            <motion.div
-              key={idx}
-              className={`h-2 flex-1 rounded-full ${
-                idx <= currentStep ? 'bg-blue-500' : 'bg-slate-700'
-              }`}
-              initial={{ width: 0 }}
-              animate={{ width: '100%' }}
-              transition={{ delay: idx * 0.1 }}
+          {steps.map((_, i) => (
+            <div
+              key={i}
+              className={`h-2 flex-1 rounded-full ${i <= currentStep ? 'bg-blue-600' : 'bg-slate-200'}`}
             />
           ))}
         </div>
 
-        {/* Content */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="space-y-6"
-        >
-          {/* Step 1: Destination */}
-          {currentStep === 0 && (
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Step 0: Destination */}
+        {currentStep === 0 && (
+          <div className="space-y-6">
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Where do you want to go?</h2>
-              <p className="text-slate-400">Search any city, town, or village on Earth</p>
-
+              <p className="text-slate-600">Search any city, town, or village on Earth</p>
               <div className="relative">
                 <input
                   type="text"
                   placeholder="e.g., Gokarna, Paris, Tokyo, Rishikesh..."
-                  value={destinationSearch}
-                  onChange={e => {
-                    setDestinationSearch(e.target.value);
-                    searchDestination(e.target.value);
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, destination: e.target.value }));
+                    handleDestinationSearch(e.target.value);
                   }}
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
+                  value={formData.destination}
                 />
-
-                {searchingDestination && (
-                  <div className="absolute right-4 top-3 text-blue-400">
-                    <div className="animate-spin">⟳</div>
-                  </div>
-                )}
-
-                {/* Search Results */}
-                {destinationResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
-                    {destinationResults.map((dest, idx) => (
-                      <motion.button
-                        key={idx}
-                        onClick={() => selectDestination(dest)}
-                        className="w-full text-left px-4 py-3 hover:bg-slate-700 border-b border-slate-700 last:border-0"
-                        whileHover={{ x: 4 }}
+                {searchResults.length > 0 && (
+                  <div className="absolute top-full mt-2 w-full bg-white border border-slate-300 rounded-lg shadow-lg z-10">
+                    {searchResults.map((result, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSelectDestination(result)}
+                        className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-slate-200 last:border-b-0"
                       >
-                        <div className="font-semibold">{dest.name}</div>
-                        <div className="text-sm text-slate-400">{dest.address}</div>
-                      </motion.button>
+                        <div className="font-semibold">{result.name}</div>
+                        <div className="text-sm text-slate-500">{result.address}</div>
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
-
-              {formData.destination && (
-                <div className="p-3 bg-slate-800 border border-blue-500 rounded-lg">
-                  ✓ Selected: <strong>{formData.destination}</strong>
-                </div>
-              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step 2: Travel Dates */}
-          {currentStep === 1 && (
+        {/* Step 1: Travel Dates */}
+        {currentStep === 1 && (
+          <div className="space-y-6">
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">When are you traveling?</h2>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">Arrival Date & Time</label>
-                <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Arrival Date</label>
                   <input
                     type="date"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={formData.arrivalDate}
-                    onChange={e => setFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
-                    className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
+                    onChange={(e) => setFormData(prev => ({ ...prev, arrivalDate: e.target.value }))}
                   />
-                  <input
-                    type="time"
-                    value={formData.arrivalTime}
-                    onChange={e => setFormData(prev => ({ ...prev, arrivalTime: e.target.value }))}
-                    className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                  <select
-                    value={formData.arrivalMethod}
-                    onChange={e => setFormData(prev => ({ ...prev, arrivalMethod: e.target.value as any }))}
-                    className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
-                  >
-                    <option>Flight</option>
-                    <option>Train</option>
-                    <option>Drive</option>
-                  </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">Departure Date & Time</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Departure Date</label>
                   <input
                     type="date"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500"
                     value={formData.departureDate}
-                    onChange={e => setFormData(prev => ({ ...prev, departureDate: e.target.value }))}
-                    className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                  <input
-                    type="time"
-                    value={formData.departureTime}
-                    onChange={e => setFormData(prev => ({ ...prev, departureTime: e.target.value }))}
-                    className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
+                    onChange={(e) => setFormData(prev => ({ ...prev, departureDate: e.target.value }))}
                   />
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">Budget (USD)</label>
-                <input
-                  type="number"
-                  value={formData.budget}
-                  onChange={e => setFormData(prev => ({ ...prev, budget: parseInt(e.target.value) }))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:border-blue-500"
-                />
-              </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step 3: Preferences */}
-          {currentStep === 2 && (
+        {/* Step 2: Preferences */}
+        {currentStep === 2 && (
+          <div className="space-y-6">
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Your Preferences</h2>
-
-              <div>
-                <label className="block text-sm font-semibold mb-3">Activity Intensity</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['Relaxed', 'Balanced', 'Packed'].map(intensity => (
-                    <button
-                      key={intensity}
-                      onClick={() => setFormData(prev => ({ ...prev, activityIntensity: intensity as any }))}
-                      className={`p-3 rounded-lg border transition ${
-                        formData.activityIntensity === intensity
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-slate-700 hover:border-slate-600'
-                      }`}
-                    >
-                      {intensity}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Sleep Hours: <strong>{formData.sleepHours}h</strong>
-                </label>
-                <input
-                  type="range"
-                  min="6"
-                  max="10"
-                  value={formData.sleepHours}
-                  onChange={e => setFormData(prev => ({ ...prev, sleepHours: parseInt(e.target.value) }))}
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-3">Interests (select at least 1)</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {interests.map(interest => (
-                    <button
-                      key={interest}
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          interests: prev.interests.includes(interest)
-                            ? prev.interests.filter(i => i !== interest)
-                            : [...prev.interests, interest]
-                        }));
-                      }}
-                      className={`p-2 rounded-lg border text-sm transition ${
-                        formData.interests.includes(interest)
-                          ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-slate-700 hover:border-slate-600'
-                      }`}
-                    >
-                      {interest}
-                    </button>
-                  ))}
-                </div>
+              <h2 className="text-2xl font-bold">What are your interests?</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {['Culture', 'Food', 'Adventure', 'Beach', 'History', 'Nature', 'Art', 'Shopping'].map(interest => (
+                  <button
+                    key={interest}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      interests: prev.interests.includes(interest)
+                        ? prev.interests.filter(i => i !== interest)
+                        : [...prev.interests, interest]
+                    }))}
+                    className={`px-4 py-2 rounded-lg border font-semibold transition ${
+                      formData.interests.includes(interest)
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-slate-900 border-slate-300 hover:border-slate-400'
+                    }`}
+                  >
+                    {interest}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
-
-          {/* Step 4: Review */}
-          {currentStep === 3 && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Review Your Plan</h2>
+              <label className="block text-sm font-semibold">Budget ($)</label>
+              <input
+                type="number"
+                min="100"
+                step="100"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500"
+                value={formData.budget}
+                onChange={(e) => setFormData(prev => ({ ...prev, budget: parseInt(e.target.value) || 0 }))}
+              />
+            </div>
+          </div>
+        )}
 
-              <div className="space-y-3 p-4 bg-slate-800 rounded-lg">
-                <div>
-                  <strong>Destination:</strong> {formData.destination}
+        {/* Step 3: Review */}
+        {currentStep === 3 && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Review Your Trip</h2>
+              <div className="bg-slate-50 p-6 rounded-lg space-y-3">
+                <div className="flex justify-between">
+                  <span className="font-semibold">Destination:</span>
+                  <span>{formData.destination}</span>
                 </div>
-                <div>
-                  <strong>Travel:</strong> {formData.arrivalDate} → {formData.departureDate}
+                <div className="flex justify-between">
+                  <span className="font-semibold">Dates:</span>
+                  <span>{formData.arrivalDate} to {formData.departureDate}</span>
                 </div>
-                <div>
-                  <strong>Budget:</strong> ${formData.budget}
+                <div className="flex justify-between">
+                  <span className="font-semibold">Interests:</span>
+                  <span>{formData.interests.join(', ')}</span>
                 </div>
-                <div>
-                  <strong>Interests:</strong> {formData.interests.join(', ')}
-                </div>
-                <div>
-                  <strong>Intensity:</strong> {formData.activityIntensity}
+                <div className="flex justify-between">
+                  <span className="font-semibold">Budget:</span>
+                  <span>${formData.budget}</span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Error */}
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500 text-red-400 rounded-lg">
-              ⚠️ {error}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Navigation Buttons */}
+        {/* Buttons */}
         <div className="mt-8 flex gap-4">
           <button
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            className="px-6 py-2 border border-slate-700 rounded-lg hover:border-slate-600 transition"
+            onClick={handleBack}
             disabled={currentStep === 0}
+            className="px-6 py-2 border border-slate-300 rounded-lg hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             Back
           </button>
-
-          {currentStep < steps.length - 1 ? (
-            <button
-              onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
-              className="flex-1 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition"
-              disabled={
-                (currentStep === 0 && !formData.destination) ||
-                (currentStep === 1 && (!formData.arrivalDate || !formData.departureDate))
-              }
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              onClick={handleGenerateItinerary}
-              disabled={loading}
-              className="flex-1 px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50"
-            >
-              {loading ? 'Generating...' : 'Generate Itinerary'}
-            </button>
-          )}
+          <button
+            onClick={handleNext}
+            disabled={!isStepValid() || loading}
+            className="flex-1 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {loading ? 'Generating...' : currentStep === steps.length - 1 ? 'Create Trip' : 'Next'}
+          </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
