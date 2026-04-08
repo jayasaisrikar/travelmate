@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Bangkok",
+    "tips": ["November-February best", "BTS Skytrain ฿40", "Tuk-tuks everywhere", "Budget ฿300-500/day"]
+  },
+  {
+    "name": "London",
+    "tips": ["May-September best", "Oyster card £5", "Budget £50-80/day", "Tea culture"]
+  },
+  {
+    "name": "Dubai",
+    "tips": ["October-April best", "Uber everywhere", "Budget AED200-300/day", "Very hot summer"]
+  },
+  {
+    "name": "Barcelona",
+    "tips": ["May-June best", "T10 ticket €11", "Budget €50-80/day", "Paella great"]
+  },
+  {
+    "name": "Amsterdam",
+    "tips": ["April-May best", "Bikes €2/day", "Budget €60-80/day", "Canals romantic"]
+  },
+  {
+    "name": "Rome",
+    "tips": ["April-May best", "Metro €1.50", "Budget €50-80/day", "Watch pickpockets"]
+  },
+  {
+    "name": "Singapore",
+    "tips": ["Feb-April best", "EZ-Link SGD5", "Budget SGD 50-80/day", "Very clean"]
+  },
+  {
+    "name": "Istanbul",
+    "tips": ["April-May best", "Metro 4 TL", "Budget cheap", "Tea everywhere"]
+  },
+  {
+    "name": "Prague",
+    "tips": ["April-May best", "Metro cheap", "Budget CZK 1500/day", "Cheapest Europe"]
+  },
+  {
+    "name": "Vienna",
+    "tips": ["April-May best", "Card €25", "Budget €60-90/day", "Music capital"]
+  },
+  {
+    "name": "Seoul",
+    "tips": ["April-May best", "T-money card", "Budget ₩50000/day", "K-BBQ amazing"]
+  },
+  {
+    "name": "Phuket",
+    "tips": ["Nov-Feb best", "Songthaew cheap", "Budget ฿300/day", "Beach paradise"]
+  },
+  {
+    "name": "Marrakech",
+    "tips": ["Oct-April best", "Very cheap", "Budget MAD 300/day", "Check Ramadan"]
+  },
+  {
+    "name": "Las Vegas",
+    "tips": ["Nov-Feb best", "Monorail $5", "Budget varies", " 24/7 action"]
+  },
+  {
+    "name": "Miami",
+    "tips": ["Nov-April best", "Uber everywhere", "Budget $50-80/day", "Art Deco"]
+  },
+  {
+    "name": "Los Angeles",
+    "tips": ["April-June best", "Car needed", "Budget $60-100/day", "Sprawling"]
+  },
+  {
+    "name": "Sydney",
+    "tips": ["Sept-Nov best", "Opal card", "Budget AUD 60-100/day", "Expensive"]
+  },
+  {
+    "name": "Berlin",
+    "tips": ["May-Sept best", "Metro €9", "Budget €50-80/day", "Affordable"]
+  },
+  {
+    "name": "Venice",
+    "tips": ["April-May best", "Vaporetto €20", "Budget €100+/day", "No cars"]
+  },
+  {
+    "name": "Madrid",
+    "tips": ["April-June best", "Metro €2.50", "Budget €50-80/day", "Siesta time"]
+  }
+]
