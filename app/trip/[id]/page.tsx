@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { loadTrip } from '@/lib/supabase-trips';
+import ItineraryChat from '@/components/ItineraryChat';
 
 export const dynamicParams = true;
 
@@ -79,15 +80,30 @@ export default function TripDetailsPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
+      {/* Itinerary Chat Agent */}
+      {trip && trip.itinerary && (
+        <ItineraryChat
+          itinerary={trip.itinerary}
+          tripId={tripId}
+          onSave={async (updatedItinerary) => {
+            setTrip(prev => prev ? { ...prev, itinerary: updatedItinerary } : null);
+          }}
+        />
+      )}
       <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
             <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded" />
             <span className="font-semibold">TravelMate</span>
           </Link>
-          <Link href="/dashboard" className="text-slate-400 hover:text-slate-200 transition text-sm">
-            ← Back to Trips
-          </Link>
+          <div className="flex gap-4 items-center">
+            <button className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm rounded hover:shadow-lg transition-shadow">
+              💬 Chat
+            </button>
+            <Link href="/dashboard" className="text-slate-400 hover:text-slate-200 transition text-sm">
+              ← Back to Trips
+            </Link>
+          </div>
         </div>
       </nav>
 
