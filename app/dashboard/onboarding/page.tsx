@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { saveTrip } from '@/lib/supabase-trips';
 
 const STEPS = ['Destination', 'Dates', 'Preferences', 'Review'];
 const INTERESTS = ['Culture', 'Food', 'Adventure', 'Beach', 'History', 'Nature', 'Art', 'Shopping'];
@@ -59,20 +60,17 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
 
-      // Save to localStorage directly — no Supabase dependency
-      const tripId = Date.now().toString();
-      const trip = {
-        id: tripId,
+      // Save using Supabase with localStorage fallback
+      const savedTrip = await saveTrip({
         destination: form.destination,
         duration,
         budget: form.budget.toString(),
         interests: form.interests,
         itinerary: data.itinerary,
-        created_at: new Date().toISOString(),
-      };
-      localStorage.setItem(`trip-${tripId}`, JSON.stringify(trip));
-      router.push(`/trip/${tripId}`);
+      });
+      router.push(`/trip/${savedTrip.id}`);
     } catch (e: any) {
+      console.error('Trip creation error:', e);
       setError(e.message || 'Something went wrong. Try again.');
       setLoading(false);
     }

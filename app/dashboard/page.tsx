@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { deleteTrip } from '@/lib/supabase-trips';
+import { deleteTrip, listTrips } from '@/lib/supabase-trips';
 
 interface Trip {
   id: string;
@@ -22,26 +22,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load trips from localStorage only on client
-    if (typeof window !== 'undefined') {
+    const loadTrips = async () => {
       try {
-        const trips: Trip[] = []
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key?.startsWith('trip-')) {
-            const stored = localStorage.getItem(key)
-            if (stored) {
-              trips.push(JSON.parse(stored))
-            }
-          }
-        }
-        setTrips(trips.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
+        const loadedTrips = await listTrips();
+        setTrips(loadedTrips);
       } catch (err) {
-        console.error('Error loading trips:', err)
+        console.error('Error loading trips:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
+    loadTrips();
   }, []);
 
   const handleDeleteTrip = async (id: string) => {
