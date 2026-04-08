@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, MessageCircle } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -18,12 +18,12 @@ export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryCh
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: `Hi! 👋 I'm your travel planning assistant for your ${itinerary.destination} trip. I can help you modify your itinerary, answer questions, or suggest improvements. Are you happy with your current plan, or would you like to make some changes?`
+      content: `Hi! 👋 I'm your travel planning assistant for your ${itinerary.destination} trip. Are you happy with your current plan, or would you like to make some changes?`
     }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -37,7 +37,6 @@ export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryCh
   const handleSendMessage = async () => {
     if (!input.trim() || loading) return;
 
-    // Add user message
     const userMessage = input.trim();
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
@@ -58,7 +57,6 @@ export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryCh
 
       const data = await response.json();
 
-      // Add assistant response
       setMessages(prev => [
         ...prev,
         {
@@ -66,11 +64,6 @@ export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryCh
           content: data.message
         }
       ]);
-
-      // Handle modifications if suggested
-      if (data.modifications) {
-        console.log('Suggested modification:', data.modifications);
-      }
     } catch (error) {
       console.error('Chat error:', error);
       setMessages(prev => [
@@ -85,107 +78,92 @@ export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryCh
     }
   };
 
+  if (!showChat) return null;
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 font-sans">
-      {/* Chat Button */}
-      {!showChat && (
-        <button
-          onClick={() => setShowChat(true)}
-          className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all flex items-center justify-center"
-        >
-          <MessageCircle size={24} />
-        </button>
-      )}
+    <div className="fixed bottom-4 right-4 z-50 font-sans w-96 max-h-screen">
+      <div className="w-full h-[550px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center flex-shrink-0">
+          <h3 className="font-bold text-lg">✈️ {itinerary.destination} Assistant</h3>
+          <button
+            onClick={() => setShowChat(false)}
+            className="text-white hover:text-gray-200 text-2xl font-bold transition hover:scale-110"
+          >
+            ×
+          </button>
+        </div>
 
-      {/* Chat Window */}
-      {showChat && (
-        <div className="w-96 h-96 bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden border border-gray-200">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center">
-            <h3 className="font-bold text-lg">
-              ✈️ {itinerary.destination} Travel Assistant
-            </h3>
-            <button
-              onClick={() => setShowChat(false)}
-              className="text-white hover:text-gray-200 text-xl"
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-            {messages.map((msg, idx) => (
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`max-w-xs px-4 py-3 rounded-xl text-sm break-words ${
+                  msg.role === 'user'
+                    ? 'bg-blue-500 text-white rounded-br-none font-medium shadow-md'
+                    : 'bg-white border-2 border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                }`}
               >
-                <div
-                  className={`max-w-xs px-4 py-2 rounded-lg text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-blue-500 text-white rounded-br-none'
-                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
-                  }`}
-                >
-                  {msg.content}
-                </div>
+                {msg.content}
               </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-500">
-                  Thinking...
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="border-t border-gray-200 p-4 bg-white">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ask or suggest changes..."
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={loading || !input.trim()}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-3 py-2 transition-colors disabled:opacity-50"
-              >
-                <Send size={18} />
-              </button>
             </div>
-          </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-white border-2 border-gray-200 px-4 py-2 rounded-xl text-sm text-gray-500 shadow-sm">
+                <span className="inline-block animate-bounce">⏳</span> Thinking...
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-          {/* Quick Actions */}
-          <div className="border-t border-gray-200 bg-gray-50 p-3 grid grid-cols-3 gap-2 text-xs">
+        {/* Quick Actions */}
+        <div className="border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 p-3 grid grid-cols-3 gap-2 text-xs flex-shrink-0">
+          <button
+            onClick={() => setInput('I love this itinerary!')}
+            className="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-2 rounded-lg font-bold transition-all hover:scale-105"
+          >
+            👍 Love It
+          </button>
+          <button
+            onClick={() => setInput('Can you suggest changes?')}
+            className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-2 rounded-lg font-bold transition-all hover:scale-105"
+          >
+            ✏️ Modify
+          </button>
+          <button
+            onClick={() => setInput('What are travel tips?')}
+            className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-2 rounded-lg font-bold transition-all hover:scale-105"
+          >
+            💡 Tips
+          </button>
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-gray-200 p-3 bg-white flex-shrink-0">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
+              placeholder="Ask a question..."
+              className="flex-1 border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+              autoFocus
+            />
             <button
-              onClick={() => setInput("I'm satisfied with this itinerary")}
-              className="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded transition-colors"
+              onClick={handleSendMessage}
+              disabled={loading || !input.trim()}
+              className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold hover:shadow-md"
             >
-              Satisfied ✓
-            </button>
-            <button
-              onClick={() => setInput('Can you suggest changes?')}
-              className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded transition-colors"
-            >
-              Suggest Changes
-            </button>
-            <button
-              onClick={() => setInput('Any tips for this trip?')}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 rounded transition-colors"
-            >
-              Travel Tips
+              <Send size={18} />
             </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
