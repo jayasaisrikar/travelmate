@@ -1,0 +1,8 @@
+{
+  "/api/destinations-search/route": "app/api/destinations-search/route.js",
+  "/api/generate-itinerary-gemini/route": "app/api/generate-itinerary-gemini/route.js",
+  "/page": "app/page.js",
+  "/trip/[id]/page": "app/trip/[id]/page.js",
+  "/dashboard/onboarding/page": "app/dashboard/onboarding/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
+}

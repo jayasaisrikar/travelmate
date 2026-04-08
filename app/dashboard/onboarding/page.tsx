@@ -52,7 +52,7 @@ export default function OnboardingPage() {
         (new Date(form.departureDate).getTime() - new Date(form.arrivalDate).getTime()) / 86400000
       ));
 
-      const res = await fetch('/api/generate-itinerary-real', {
+      const res = await fetch('/api/generate-itinerary-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, duration }),
