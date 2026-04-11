@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "TravelMate",
   description: "AI-powered travel itinerary planner",
   icons: {
-    icon: "/images/logo.png",
+    icon: "/favicon.svg",
     apple: "/images/logo.png",
   },
 };
