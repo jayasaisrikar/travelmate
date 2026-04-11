@@ -1,6 +1,9 @@
 import { INTEREST_TO_POI_TYPES, NOMINATIM_HEADERS, POI_TYPE_ALIASES } from '@/lib/constants';
 import type { DestinationSearchResult, PointOfInterest } from '@/lib/travel-types';
 
+const DESTINATION_SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const destinationSearchCache = new Map<string, { expiresAt: number; results: DestinationSearchResult[] }>();
+
 function toNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) {
     return null;
@@ -24,54 +27,74 @@ function buildOverpassClause(type: string, latitude: number, longitude: number, 
 }
 
 export async function searchDestinations(query: string): Promise<DestinationSearchResult[]> {
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&q=${encodeURIComponent(query)}`,
-    {
-      headers: NOMINATIM_HEADERS,
-      next: { revalidate: 300 },
-    }
-  );
+  const cacheKey = query.trim().toLowerCase();
+  const cached = destinationSearchCache.get(cacheKey);
 
-  if (!response.ok) {
-    throw new Error(`Destination search failed with status ${response.status}`);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.results;
   }
 
-  const results = (await response.json()) as Array<Record<string, unknown>>;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
 
-  const normalizedResults: DestinationSearchResult[] = [];
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&q=${encodeURIComponent(query)}`,
+      {
+        headers: NOMINATIM_HEADERS,
+        signal: controller.signal,
+        next: { revalidate: 300 },
+      }
+    );
 
-  for (const result of results) {
-    const latitude = toNumber(result.lat as string | number | null | undefined);
-    const longitude = toNumber(result.lon as string | number | null | undefined);
-
-    if (latitude === null || longitude === null) {
-      continue;
+    if (!response.ok) {
+      throw new Error(`Destination search failed with status ${response.status}`);
     }
 
-    const normalizedResult: DestinationSearchResult = {
-      name:
-        String(
-          result.name ??
-            (typeof result.display_name === 'string'
-              ? result.display_name.split(',')[0]
-              : result.display_name ?? '')
-        ).trim(),
-      latitude,
-      longitude,
-      type: String(result.type ?? 'destination'),
-      address: typeof result.display_name === 'string' ? result.display_name : undefined,
-      boundingBox: Array.isArray(result.boundingbox)
-        ? result.boundingbox.map((item) => String(item))
-        : undefined,
-      importance: toNumber(result.importance as string | number | null | undefined) ?? undefined,
-    };
+    const results = (await response.json()) as Array<Record<string, unknown>>;
 
-    if (normalizedResult.name) {
-      normalizedResults.push(normalizedResult);
+    const normalizedResults: DestinationSearchResult[] = [];
+
+    for (const result of results) {
+      const latitude = toNumber(result.lat as string | number | null | undefined);
+      const longitude = toNumber(result.lon as string | number | null | undefined);
+
+      if (latitude === null || longitude === null) {
+        continue;
+      }
+
+      const normalizedResult: DestinationSearchResult = {
+        name:
+          String(
+            result.name ??
+              (typeof result.display_name === 'string'
+                ? result.display_name.split(',')[0]
+                : result.display_name ?? '')
+          ).trim(),
+        latitude,
+        longitude,
+        type: String(result.type ?? 'destination'),
+        address: typeof result.display_name === 'string' ? result.display_name : undefined,
+        boundingBox: Array.isArray(result.boundingbox)
+          ? result.boundingbox.map((item) => String(item))
+          : undefined,
+        importance: toNumber(result.importance as string | number | null | undefined) ?? undefined,
+      };
+
+      if (normalizedResult.name) {
+        normalizedResults.push(normalizedResult);
+      }
     }
+
+    destinationSearchCache.set(cacheKey, {
+      expiresAt: Date.now() + DESTINATION_SEARCH_CACHE_TTL_MS,
+      results: normalizedResults,
+    });
+
+    return normalizedResults;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return normalizedResults;
 }
 
 function destinationToPoi(result: DestinationSearchResult): PointOfInterest {

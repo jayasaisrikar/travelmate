@@ -15,7 +15,8 @@ export const INTERESTS = [
 
 export const NOMINATIM_HEADERS = {
   'Accept-Language': 'en',
-  'User-Agent': 'TravelMate/1.0',
+  'From': 'support@travelmate.app',
+  'User-Agent': 'TravelMate/1.0 (support@travelmate.app)',
 } as const;
 
 export const OPEN_METEO_WEATHER_CODES: Record<number, { description: string; icon: string }> = {
