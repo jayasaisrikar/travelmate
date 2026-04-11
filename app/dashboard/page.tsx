@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { deleteTrip, listTrips, Trip } from '@/lib/supabase-trips';
-import { supabaseBrowser } from '@/services/supabase-browser';
+import { getSupabaseBrowser } from '@/services/supabase-browser';
 
 function getEstimatedCost(itinerary: any): string | null {
   const rawValue = itinerary?.totalEstimatedCost ?? itinerary?.total_estimated_cost;
@@ -50,7 +50,7 @@ export default function DashboardPage() {
   };
 
   const handleSignOut = async () => {
-    await supabaseBrowser.auth.signOut();
+    await getSupabaseBrowser().auth.signOut();
     router.replace('/login');
   };
 

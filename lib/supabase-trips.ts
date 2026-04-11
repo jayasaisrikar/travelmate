@@ -1,4 +1,4 @@
-import { supabaseBrowser } from '@/services/supabase-browser'
+import { getSupabaseBrowser } from '@/services/supabase-browser'
 
 function createTripId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
@@ -17,7 +17,7 @@ export interface Trip {
 }
 
 async function fetchTripApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const { data: sessionData } = await supabaseBrowser.auth.getSession()
+  const { data: sessionData } = await getSupabaseBrowser().auth.getSession()
   const accessToken = sessionData.session?.access_token
 
   const response = await fetch(path, {

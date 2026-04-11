@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabaseBrowser } from '@/services/supabase-browser';
+import { getSupabaseBrowser } from '@/services/supabase-browser';
 
 type AuthMode = 'login' | 'signup';
 
@@ -39,7 +39,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'login') {
-        const { error: signInError } = await supabaseBrowser.auth.signInWithPassword({
+        const { error: signInError } = await getSupabaseBrowser().auth.signInWithPassword({
           email,
           password,
         });
@@ -53,7 +53,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         return;
       }
 
-      const { data, error: signUpError } = await supabaseBrowser.auth.signUp({
+      const { data, error: signUpError } = await getSupabaseBrowser().auth.signUp({
         email,
         password,
       });
@@ -84,7 +84,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       const redirectTo = `${window.location.origin}${safeNextPath}`;
 
-      const { error: oauthError } = await supabaseBrowser.auth.signInWithOAuth({
+      const { error: oauthError } = await getSupabaseBrowser().auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,

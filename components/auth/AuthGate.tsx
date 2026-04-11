@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/services/supabase-browser';
+import { getSupabaseBrowser } from '@/services/supabase-browser';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -11,9 +11,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const supabase = getSupabaseBrowser();
 
     const ensureSession = async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
+      const { data } = await supabase.auth.getSession();
 
       if (!mounted) {
         return;
@@ -24,7 +25,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { data: userData } = await supabaseBrowser.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
 
       if (!mounted) {
         return;
@@ -36,7 +37,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       }
 
       if (!userData.user.email_confirmed_at) {
-        await supabaseBrowser.auth.signOut();
+        await supabase.auth.signOut();
         router.replace(`/login?next=${encodeURIComponent(pathname)}&message=verify-email`);
         return;
       }
@@ -48,7 +49,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) {
         return;
       }
@@ -58,7 +59,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      supabaseBrowser.auth.getUser().then(({ data: userData }) => {
+      supabase.auth.getUser().then(({ data: userData }) => {
         if (!mounted) {
           return;
         }
@@ -69,7 +70,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         }
 
         if (!userData.user.email_confirmed_at) {
-          void supabaseBrowser.auth.signOut();
+          void supabase.auth.signOut();
           router.replace(`/login?next=${encodeURIComponent(pathname)}&message=verify-email`);
           return;
         }

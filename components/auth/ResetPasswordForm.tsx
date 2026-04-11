@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/services/supabase-browser';
+import { getSupabaseBrowser } from '@/services/supabase-browser';
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export function ResetPasswordForm() {
     let mounted = true;
 
     const checkSession = async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
+      const { data } = await getSupabaseBrowser().auth.getSession();
 
       if (!mounted) {
         return;
@@ -57,7 +57,7 @@ export function ResetPasswordForm() {
         throw new Error('Passwords do not match.');
       }
 
-      const { error: updateError } = await supabaseBrowser.auth.updateUser({
+      const { error: updateError } = await getSupabaseBrowser().auth.updateUser({
         password,
       });
 
@@ -65,7 +65,7 @@ export function ResetPasswordForm() {
         throw updateError;
       }
 
-      await supabaseBrowser.auth.signOut();
+      await getSupabaseBrowser().auth.signOut();
       router.replace('/login?message=password-updated');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update password');
