@@ -108,6 +108,286 @@ function TravelGlobe() {
   );
 }
 
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image();
+    image.decoding = 'async';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Failed to load ${src}`));
+    image.src = src;
+  });
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(nextLine).width <= maxWidth) {
+      currentLine = nextLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+function formatBadgeUrl(shareUrl: string) {
+  if (shareUrl.length <= 78) {
+    return shareUrl;
+  }
+
+  const parsed = new URL(shareUrl);
+  const token = parsed.pathname.split('/').filter(Boolean).pop() || '';
+  return `${parsed.origin}/share/${token}`;
+}
+
+async function createBadgeFile({
+  destination,
+  shareText,
+  shareUrl,
+}: {
+  destination: string;
+  shareText: string;
+  shareUrl: string;
+}) {
+  const width = 1200;
+  const height = 630;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    throw new Error('Canvas is unavailable in this browser.');
+  }
+
+  const [logo, title] = await Promise.all([loadImage('/images/logo.png'), loadImage('/images/title.png')]);
+  const badgeUrl = formatBadgeUrl(shareUrl);
+
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, '#d9e7ef');
+  bg.addColorStop(0.46, '#bfd2dd');
+  bg.addColorStop(1, '#96adbc');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  const topGlow = ctx.createRadialGradient(610, 140, 20, 610, 140, 540);
+  topGlow.addColorStop(0, 'rgba(255,255,255,0.55)');
+  topGlow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = topGlow;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = '#f6d23c';
+  ctx.fillRect(0, 0, 96, 96);
+  ctx.fillStyle = '#fff1fb';
+  ctx.fillRect(0, 96, 76, 84);
+  ctx.fillStyle = '#f8e7f1';
+  ctx.fillRect(76, 96, 112, 84);
+
+  ctx.fillStyle = '#8da7b8';
+  ctx.fillRect(0, 540, width, 90);
+
+  // Globe
+  const globeX = 870;
+  const globeY = 340;
+  const globeRadius = 210;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(globeX, globeY, globeRadius, 0, Math.PI * 2);
+  ctx.clip();
+
+  const globe = ctx.createRadialGradient(globeX - 55, globeY - 65, 16, globeX, globeY, globeRadius + 8);
+  globe.addColorStop(0, '#d9eef8');
+  globe.addColorStop(0.18, '#8ec3dd');
+  globe.addColorStop(0.52, '#2f6f96');
+  globe.addColorStop(1, '#18324a');
+  ctx.fillStyle = globe;
+  ctx.fillRect(globeX - globeRadius - 10, globeY - globeRadius - 10, globeRadius * 2 + 20, globeRadius * 2 + 20);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+  ctx.lineWidth = 1.25;
+  for (let i = -3; i <= 3; i += 1) {
+    const y = globeY + i * 38;
+    ctx.beginPath();
+    ctx.ellipse(globeX, y, globeRadius * (1 - Math.abs(i) * 0.09), 12, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  for (let i = -3; i <= 3; i += 1) {
+    const x = globeX + i * 42;
+    ctx.beginPath();
+    ctx.ellipse(x, globeY, 16, globeRadius, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(62,165,93,0.94)';
+  ctx.beginPath();
+  ctx.moveTo(globeX - 105, globeY - 70);
+  ctx.bezierCurveTo(globeX - 168, globeY - 103, globeX - 142, globeY - 152, globeX - 55, globeY - 138);
+  ctx.bezierCurveTo(globeX - 30, globeY - 136, globeX - 25, globeY - 105, globeX - 55, globeY - 84);
+  ctx.bezierCurveTo(globeX - 82, globeY - 67, globeX - 95, globeY - 56, globeX - 105, globeY - 70);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(63,178,95,0.92)';
+  ctx.beginPath();
+  ctx.moveTo(globeX - 18, globeY - 130);
+  ctx.bezierCurveTo(globeX + 24, globeY - 165, globeX + 84, globeY - 156, globeX + 110, globeY - 114);
+  ctx.bezierCurveTo(globeX + 135, globeY - 74, globeX + 109, globeY - 40, globeX + 68, globeY - 32);
+  ctx.bezierCurveTo(globeX + 18, globeY - 22, globeX - 12, globeY - 84, globeX - 18, globeY - 130);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(66,171,97,0.88)';
+  ctx.beginPath();
+  ctx.moveTo(globeX + 28, globeY + 10);
+  ctx.bezierCurveTo(globeX + 64, globeY - 10, globeX + 117, globeY + 6, globeX + 129, globeY + 56);
+  ctx.bezierCurveTo(globeX + 138, globeY + 96, globeX + 109, globeY + 125, globeX + 73, globeY + 132);
+  ctx.bezierCurveTo(globeX + 38, globeY + 139, globeX + 6, globeY + 109, globeX + 15, globeY + 74);
+  ctx.bezierCurveTo(globeX + 20, globeY + 51, globeX + 18, globeY + 24, globeX + 28, globeY + 10);
+  ctx.closePath();
+  ctx.fill();
+
+  const shine = ctx.createRadialGradient(globeX - 72, globeY - 72, 14, globeX - 72, globeY - 72, globeRadius);
+  shine.addColorStop(0, 'rgba(255,255,255,0.48)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+  shine.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shine;
+  ctx.fillRect(globeX - globeRadius, globeY - globeRadius, globeRadius * 2, globeRadius * 2);
+
+  ctx.restore();
+
+  // Soft left overlay for text contrast
+  const textFade = ctx.createLinearGradient(0, 0, 760, 0);
+  textFade.addColorStop(0, 'rgba(255,255,255,0.92)');
+  textFade.addColorStop(0.72, 'rgba(255,255,255,0.72)');
+  textFade.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = textFade;
+  ctx.fillRect(0, 0, 760, height);
+
+  // Top brand pill
+  ctx.fillStyle = '#ffffff';
+  drawRoundedRect(ctx, 56, 48, 360, 82, 12);
+  ctx.fill();
+  ctx.strokeStyle = '#2e2833';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.drawImage(logo, 78, 66, 36, 36);
+  ctx.drawImage(title, 126, 69, 214, 38);
+
+  // Share preview tag
+  ctx.fillStyle = '#ffffff';
+  drawRoundedRect(ctx, 838, 48, 260, 82, 12);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = '700 18px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#a79aaa';
+  ctx.fillText('SHARE PREVIEW', 878, 96);
+
+  // Badge tag and headline
+  ctx.fillStyle = '#2e2833';
+  drawRoundedRect(ctx, 90, 194, 188, 34, 6);
+  ctx.fill();
+  ctx.font = '800 16px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('SHARE BADGE', 116, 217);
+
+  if (destination) {
+    ctx.font = '800 17px Inter, Arial, sans-serif';
+    ctx.fillStyle = '#3fa55d';
+    ctx.fillText(destination.toUpperCase(), 90, 182);
+  }
+
+  ctx.font = '900 53px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#111111';
+  const headlineLines = wrapText(ctx, shareText, 560);
+  let textY = 258;
+  for (const line of headlineLines.slice(0, 3)) {
+    ctx.fillText(line, 90, textY);
+    textY += 58;
+  }
+
+  ctx.font = '500 22px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#111111';
+  const helperLines = wrapText(ctx, 'Tap the link to view the itinerary and drop suggestions.', 520);
+  helperLines.forEach((line, index) => {
+    ctx.fillText(line, 90, 360 + index * 28);
+  });
+
+  // URL panel
+  ctx.fillStyle = '#ffffff';
+  drawRoundedRect(ctx, 90, 410, 1014, 122, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = '700 14px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#a79aaa';
+  ctx.fillText('PUBLIC LINK', 110, 440);
+  ctx.font = '700 22px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#111111';
+  const urlLines = wrapText(ctx, badgeUrl, 920);
+  ctx.fillText(urlLines[0] || badgeUrl, 110, 476);
+  ctx.font = '700 14px Inter, Arial, sans-serif';
+  ctx.fillStyle = '#a79aaa';
+  ctx.fillText('LINK READY', 110, 518);
+
+  return new Promise<File>((resolve, reject) => {
+    canvas.toBlob(
+      blob => {
+        if (!blob) {
+          reject(new Error('Failed to render share image.'));
+          return;
+        }
+
+        resolve(new File([blob], `travelmate-${destination ? destination.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'trip'}.png`, { type: 'image/png' }));
+      },
+      'image/png',
+      1
+    );
+  });
+}
+
+function downloadFile(file: File) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = file.name;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function ShareModal({
   tripId,
   destination,
@@ -121,6 +401,8 @@ export function ShareModal({
   const [shareToken, setShareToken] = useState(initialShareToken);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
 
   const shareText = useMemo(
@@ -166,17 +448,44 @@ export function ShareModal({
     setTimeout(() => setCopied(false), 2200);
   };
 
-  const shareNative = async () => {
-    if (!shareUrl) return;
-    if (navigator.share) {
-      await navigator.share({ title: `TravelMate trip: ${destination}`, text: shareText, url: shareUrl });
-      return;
+  const shareBadgeImage = async () => {
+    if (!shareUrl || imageLoading) return;
+
+    setImageLoading(true);
+    setStatusMessage('');
+    setError('');
+
+    try {
+      const file = await createBadgeFile({
+        destination,
+        shareText,
+        shareUrl,
+      });
+
+      const canShareFiles =
+        typeof navigator !== 'undefined' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] });
+
+      if (navigator.share && canShareFiles) {
+        await navigator.share({
+          title: `TravelMate trip: ${destination}`,
+          text: shareText,
+          url: shareUrl,
+          files: [file],
+        });
+        setStatusMessage('Badge image ready to share.');
+        return;
+      }
+
+      downloadFile(file);
+      setStatusMessage('Badge image downloaded.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create share image');
+    } finally {
+      setImageLoading(false);
+      window.setTimeout(() => setStatusMessage(''), 2400);
     }
-    window.open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-      '_blank',
-      'noopener,noreferrer'
-    );
   };
 
   const shareWhatsApp = () => {
@@ -298,6 +607,12 @@ export function ShareModal({
             )}
 
             {/* ── Action buttons ── */}
+            {statusMessage && (
+              <div className="border border-[#5aa7e8] bg-[#eef7ff] px-4 py-2.5 text-xs font-medium text-[#2e2833]">
+                {statusMessage}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
@@ -313,12 +628,12 @@ export function ShareModal({
 
               <button
                 type="button"
-                onClick={shareNative}
+                onClick={shareBadgeImage}
                 disabled={!shareUrl}
                 className="flex items-center justify-center gap-2 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageSquareShare size={15} />
-                Share
+                {imageLoading ? 'Preparing image...' : 'Share image'}
               </button>
 
               <button
