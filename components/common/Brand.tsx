@@ -19,17 +19,18 @@ export function Brand({
   compact = false,
   asLink = true,
 }: BrandProps) {
-  const logoSize = compact ? 28 : 36;
-  const wordmarkHeight = compact ? 18 : 24;
+  const logoHeight = compact ? 'clamp(20px, 3vw, 28px)' : 'clamp(24px, 4vw, 36px)';
+  const wordmarkHeight = compact ? 'clamp(14px, 2.2vw, 18px)' : 'clamp(16px, 3vw, 24px)';
 
   const content = (
     <>
       <Image
         src="/images/logo.png"
         alt="TravelMate logo"
-        width={logoSize}
-        height={logoSize}
+        width={36}
+        height={36}
         className="h-auto w-auto object-contain"
+        style={{ height: logoHeight }}
         priority
       />
       {showWordmark && (
@@ -39,7 +40,7 @@ export function Brand({
           width={440}
           height={61}
           className="h-auto w-auto object-contain"
-          style={{ height: `${wordmarkHeight}px` }}
+          style={{ height: wordmarkHeight }}
           priority
         />
       )}
@@ -47,11 +48,11 @@ export function Brand({
   );
 
   if (!asLink) {
-    return <div className={clsx('inline-flex items-center gap-3', className)}>{content}</div>;
+    return <div className={clsx('inline-flex items-center gap-2 sm:gap-3', className)}>{content}</div>;
   }
 
   return (
-    <Link href={href} className={clsx('inline-flex items-center gap-3', className)}>
+    <Link href={href} className={clsx('inline-flex items-center gap-2 sm:gap-3', className)}>
       {content}
     </Link>
   );
