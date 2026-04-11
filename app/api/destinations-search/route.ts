@@ -29,9 +29,23 @@ export async function GET(request: NextRequest) {
       count: results.length,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to search destinations';
+    const temporaryFailure =
+      message.includes('status 429') ||
+      message.includes('status 500') ||
+      message.includes('status 502') ||
+      message.includes('status 503') ||
+      message.includes('aborted') ||
+      message.includes('fetch failed');
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to search destinations' },
-      { status: 500 }
+      {
+        error: temporaryFailure
+          ? 'Destination search is temporarily unavailable. Please try again in a moment.'
+          : message,
+        results: [],
+      },
+      { status: temporaryFailure ? 503 : 500 }
     );
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { saveTrip } from '@/lib/supabase-trips';
@@ -67,6 +67,7 @@ export default function OnboardingPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [form, setForm] = useState<TripFormState>(INITIAL_FORM);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const parsedBudget = useMemo(() => {
     const value = Number.parseInt(form.budget, 10);
@@ -81,30 +82,6 @@ export default function OnboardingPage() {
 
     return hours * 60 + minutes;
   };
-
-  const search = useCallback(async (query: string) => {
-    const trimmedQuery = query.trim();
-
-    setHasSearched(trimmedQuery.length >= 2);
-
-    if (trimmedQuery.length < 2) {
-      setResults([]);
-      setSearching(false);
-      return;
-    }
-
-    setSearching(true);
-
-    try {
-      const response = await fetch(`/api/destinations-search?query=${encodeURIComponent(trimmedQuery)}`);
-      const data = await response.json();
-      setResults(Array.isArray(data.results) ? data.results : []);
-    } catch {
-      setResults([]);
-    } finally {
-      setSearching(false);
-    }
-  }, []);
 
   const isValid = () => {
     if (step === 0) {
@@ -148,7 +125,8 @@ export default function OnboardingPage() {
       latitude: null,
       longitude: null,
     }));
-    search(value);
+    setResults([]);
+    setHasSearched(false);
   };
 
   const handleSelectDestination = (result: SearchResult) => {
@@ -169,6 +147,51 @@ export default function OnboardingPage() {
       .map(interest => interest.trim())
       .filter(Boolean);
   }, [form.interestsText]);
+
+  const searchDestinations = async (query: string) => {
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery.length < 2) {
+      setResults([]);
+      setHasSearched(false);
+      setError('Please enter at least 2 characters to search.');
+      return;
+    }
+
+    searchAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+
+    setSearching(true);
+    setHasSearched(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/destinations-search?query=${encodeURIComponent(trimmedQuery)}`, {
+        signal: controller.signal,
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Destination search temporarily unavailable');
+      }
+
+      setResults(Array.isArray(data.results) ? data.results : []);
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+
+      setResults([]);
+      setError(err instanceof Error ? err.message : 'Destination search temporarily unavailable');
+    } finally {
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null;
+        setSearching(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!loading) {
@@ -307,18 +330,45 @@ export default function OnboardingPage() {
 
         {step === 0 && (
           <div>
-            <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'stretch', flexWrap: 'wrap' }}>
               <input
                 autoFocus
                 type="text"
                 placeholder="Search for a city, region, or landmark"
                 value={form.destination}
                 onChange={event => handleDestinationChange(event.target.value)}
-                style={{ width: '100%', padding: '16px 20px', fontSize: 18, background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, color: '#2e2833', outline: 'none', boxSizing: 'border-box', boxShadow: '0 14px 36px rgba(67,32,79,0.06)' }}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void searchDestinations(form.destination);
+                  }
+                }}
+                style={{ flex: '1 1 280px', minWidth: 0, padding: '16px 20px', fontSize: 18, background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, color: '#2e2833', outline: 'none', boxSizing: 'border-box', boxShadow: '0 14px 36px rgba(67,32,79,0.06)' }}
               />
+              <button
+                type="button"
+                onClick={() => void searchDestinations(form.destination)}
+                disabled={searching || form.destination.trim().length < 2}
+                style={{
+                  flex: '0 0 auto',
+                  padding: '16px 22px',
+                  minWidth: 124,
+                  borderRadius: 18,
+                  border: 'none',
+                  background: searching || form.destination.trim().length < 2 ? '#eadde5' : '#2e2833',
+                  color: searching || form.destination.trim().length < 2 ? '#a79aaa' : '#ffffff',
+                  fontWeight: 800,
+                  fontSize: 15,
+                  cursor: searching || form.destination.trim().length < 2 ? 'not-allowed' : 'pointer',
+                  boxShadow: searching || form.destination.trim().length < 2 ? 'none' : '0 14px 34px rgba(84,166,232,0.18)',
+                }}
+              >
+                {searching ? 'Searching...' : 'Search'}
+              </button>
+            </div>
 
-              {(searching || results.length > 0) && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 10, background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, overflow: 'hidden', zIndex: 50, boxShadow: '0 16px 42px rgba(46,40,51,0.12)' }}>
+            {(searching || results.length > 0) && (
+              <div style={{ marginTop: 10, background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, overflow: 'hidden', zIndex: 50, boxShadow: '0 16px 42px rgba(46,40,51,0.12)', maxHeight: 320, overflowY: 'auto' }}>
                   {searching ? (
                     <div style={{ padding: '14px 20px', color: '#756978', fontSize: 14 }}>
                       Searching destinations...
@@ -339,7 +389,6 @@ export default function OnboardingPage() {
                   )}
                 </div>
               )}
-            </div>
 
             <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 18, border: '1px solid #eadde5', background: '#ffffff', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}>
               {typeof form.latitude === 'number' && typeof form.longitude === 'number' ? (
@@ -352,7 +401,7 @@ export default function OnboardingPage() {
                 </p>
               ) : (
                 <p style={{ margin: 0, color: '#756978', fontSize: 14 }}>
-                  Continue after picking one of the live search results. We do not prefill destinations anymore.
+                  Search and then pick one of the live results. We do not prefill destinations anymore.
                 </p>
               )}
             </div>
