@@ -1,175 +1,455 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { saveTrip } from '@/lib/supabase-trips';
 
-const STEPS = ['Destination', 'Dates', 'Preferences', 'Review'];
-const INTERESTS = ['Culture', 'Food', 'Adventure', 'Beach', 'History', 'Nature', 'Art', 'Shopping'];
+const STEPS = ['Destination', 'Trip window', 'Preferences', 'Review'];
+const ARRIVAL_METHODS = ['flight', 'train', 'drive'] as const;
+const ACTIVITY_LEVELS = ['Relaxed', 'Balanced', 'Packed'] as const;
+const GENERATION_PHASES = [
+  'Resolving your destination',
+  'Fetching live places and weather',
+  'Building a concise day plan',
+  'Saving your itinerary',
+];
 
-interface SearchResult { name: string; latitude: number; longitude: number; address: string; }
+interface SearchResult {
+  name: string;
+  latitude: number;
+  longitude: number;
+  address: string;
+}
+
+interface TripFormState {
+  destination: string;
+  latitude: number | null;
+  longitude: number | null;
+  arrivalDate: string;
+  departureDate: string;
+  arrivalTime: string;
+  departureTime: string;
+  arrivalTransferContext: string;
+  departureTransferContext: string;
+  arrivalMethod: (typeof ARRIVAL_METHODS)[number] | null;
+  activityIntensity: (typeof ACTIVITY_LEVELS)[number] | null;
+  budget: string;
+  interests: string[];
+  interestsText: string;
+}
+
+const INITIAL_FORM: TripFormState = {
+  destination: '',
+  latitude: null,
+  longitude: null,
+  arrivalDate: '',
+  departureDate: '',
+  arrivalTime: '',
+  departureTime: '',
+  arrivalTransferContext: '',
+  departureTransferContext: '',
+  arrivalMethod: null,
+  activityIntensity: null,
+  budget: '',
+  interests: [],
+  interestsText: '',
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState(0);
   const [error, setError] = useState('');
-
-  const [form, setForm] = useState({
-    destination: '', latitude: 0, longitude: 0,
-    arrivalDate: '', departureDate: '',
-    arrivalMethod: 'flight' as 'flight' | 'train' | 'drive',
-    activityIntensity: 'Balanced' as 'Relaxed' | 'Balanced' | 'Packed',
-    budget: 1000,
-    interests: [] as string[],
-  });
-
+  const [searching, setSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [form, setForm] = useState<TripFormState>(INITIAL_FORM);
 
-  const search = useCallback(async (q: string) => {
-    if (q.length < 2) { setResults([]); return; }
+  const parsedBudget = useMemo(() => {
+    const value = Number.parseInt(form.budget, 10);
+    return Number.isFinite(value) ? value : 0;
+  }, [form.budget]);
+
+  const timeToMinutes = (value: string) => {
+    const [hours, minutes] = value.split(':').map(part => Number.parseInt(part, 10));
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+      return Number.NaN;
+    }
+
+    return hours * 60 + minutes;
+  };
+
+  const search = useCallback(async (query: string) => {
+    const trimmedQuery = query.trim();
+
+    setHasSearched(trimmedQuery.length >= 2);
+
+    if (trimmedQuery.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+
     try {
-      const r = await fetch(`/api/destinations-search?query=${encodeURIComponent(q)}`);
-      const d = await r.json();
-      setResults(d.results || []);
-    } catch { setResults([]); }
+      const response = await fetch(`/api/destinations-search?query=${encodeURIComponent(trimmedQuery)}`);
+      const data = await response.json();
+      setResults(Array.isArray(data.results) ? data.results : []);
+    } catch {
+      setResults([]);
+    } finally {
+      setSearching(false);
+    }
   }, []);
 
   const isValid = () => {
-    if (step === 0) return form.destination.length > 0;
-    if (step === 1) return !!form.arrivalDate && !!form.departureDate && form.departureDate >= form.arrivalDate;
-    if (step === 2) return form.interests.length > 0 && form.budget > 0;
+    if (step === 0) {
+      return Boolean(
+        form.destination.trim() &&
+          typeof form.latitude === 'number' &&
+          typeof form.longitude === 'number'
+      );
+    }
+
+    if (step === 1) {
+      const arrivalMinutes = timeToMinutes(form.arrivalTime);
+      const departureMinutes = timeToMinutes(form.departureTime);
+      const sameDayTrip = form.arrivalDate === form.departureDate;
+
+      return Boolean(
+        form.arrivalDate &&
+          form.departureDate &&
+          form.arrivalTime &&
+          form.departureTime &&
+          form.arrivalTransferContext.trim() &&
+          form.departureTransferContext.trim() &&
+          form.departureDate >= form.arrivalDate &&
+          form.arrivalMethod &&
+          (!sameDayTrip || departureMinutes > arrivalMinutes)
+      );
+    }
+
+    if (step === 2) {
+      return Boolean(form.interestsText.trim() && parsedBudget > 0 && form.activityIntensity);
+    }
+
     return true;
   };
 
+  const handleDestinationChange = (value: string) => {
+    setError('');
+    setForm(previous => ({
+      ...previous,
+      destination: value,
+      latitude: null,
+      longitude: null,
+    }));
+    search(value);
+  };
+
+  const handleSelectDestination = (result: SearchResult) => {
+    setForm(previous => ({
+      ...previous,
+      destination: result.name,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    }));
+    setResults([]);
+    setHasSearched(true);
+    setError('');
+  };
+
+  const parsedInterests = useMemo(() => {
+    return form.interestsText
+      .split(',')
+      .map(interest => interest.trim())
+      .filter(Boolean);
+  }, [form.interestsText]);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingPhase(0);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setLoadingPhase(current => (current + 1) % GENERATION_PHASES.length);
+    }, 1400);
+
+    return () => window.clearInterval(interval);
+  }, [loading]);
+
   const handleNext = async () => {
-    if (step < STEPS.length - 1) { setStep(s => s + 1); return; }
+    if (step < STEPS.length - 1) {
+      setStep(currentStep => currentStep + 1);
+      return;
+    }
+
+    if (!form.activityIntensity || !form.arrivalMethod) {
+      setError('Complete every required field before generating your itinerary.');
+      return;
+    }
 
     setLoading(true);
     setError('');
-    try {
-      const duration = Math.max(1, Math.ceil(
-        (new Date(form.departureDate).getTime() - new Date(form.arrivalDate).getTime()) / 86400000
-      ));
 
-      const res = await fetch('/api/generate-itinerary-gemini', {
+    try {
+      const duration = Math.max(
+        1,
+        Math.floor(
+          (new Date(form.departureDate).getTime() - new Date(form.arrivalDate).getTime()) / 86400000
+        ) + 1
+      );
+
+      const response = await fetch('/api/generate-itinerary-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, duration }),
+        body: JSON.stringify({
+          ...form,
+          budget: parsedBudget,
+          interests: parsedInterests,
+          duration,
+          arrivalTransferContext: form.arrivalTransferContext.trim(),
+          departureTransferContext: form.departureTransferContext.trim(),
+        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Generation failed');
 
-      // Save using Supabase with localStorage fallback
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Generation failed');
+      }
+
       const savedTrip = await saveTrip({
         destination: form.destination,
         duration,
-        budget: form.budget.toString(),
-        interests: form.interests,
+        budget: form.budget,
+        interests: parsedInterests,
         itinerary: data.itinerary,
       });
+
       router.push(`/trip/${savedTrip.id}`);
-    } catch (e: any) {
-      console.error('Trip creation error:', e);
-      setError(e.message || 'Something went wrong. Try again.');
+    } catch (err: unknown) {
+      console.error('Trip creation error:', err);
+      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#020617', color: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
-      {/* Nav */}
-      <div style={{ borderBottom: '1px solid #1e293b', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 28, height: 28, background: 'linear-gradient(135deg,#3b82f6,#06b6d4)', borderRadius: 8 }} />
-        <span style={{ fontWeight: 700, fontSize: 18 }}>TravelMate</span>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#fbfaf7',
+        color: '#2e2833',
+        fontFamily: 'system-ui, sans-serif',
+      }}
+    >
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          borderBottom: '1px solid #eadde5',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          background: 'rgba(251,248,241,0.84)',
+          backdropFilter: 'blur(18px)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 30, height: 30, background: '#5aa7e8', borderRadius: 10, boxShadow: '0 10px 24px rgba(90,167,232,0.2)' }} />
+          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: -0.3 }}>TravelMate</span>
+        </div>
       </div>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '48px 24px 120px' }}>
-        {/* Step indicator */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 48 }}>
-          {STEPS.map((s, i) => (
-            <div key={s} style={{ flex: 1 }}>
-              <div style={{ height: 4, borderRadius: 4, background: i <= step ? '#3b82f6' : '#1e293b', transition: 'background .3s' }} />
-              <div style={{ marginTop: 6, fontSize: 11, color: i === step ? '#93c5fd' : '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>{s}</div>
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 16px 120px' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 40, flexWrap: 'wrap' }}>
+          {STEPS.map((label, index) => (
+            <div key={label} style={{ flex: '1 1 140px', minWidth: 120 }}>
+              <div
+                style={{
+                  height: 5,
+                  borderRadius: 999,
+                  background: index <= step ? '#5aa7e8' : '#eadde5',
+                  transition: 'background .3s',
+                }}
+              />
+              <div style={{ marginTop: 8, fontSize: 11, color: index === step ? '#2e2833' : '#a79aaa', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2 }}>
+                {label}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Title */}
-        <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 8, letterSpacing: -1 }}>
-          {['Where to next?', 'When are you going?', 'What do you love?', 'Ready to go?'][step]}
+        <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.75rem)', fontWeight: 900, marginBottom: 10, letterSpacing: -1.5, lineHeight: 1 }}>
+          {['Search for your destination', 'Choose your trip window', 'Set your preferences', 'Review before generating'][step]}
         </h1>
-        <p style={{ color: '#64748b', marginBottom: 40, fontSize: 16 }}>
-          {['Search any city, village, or hidden gem.', 'Set your travel dates and transport.', 'Pick interests and set your budget.', 'Review your trip and generate the itinerary.'][step]}
+        <p style={{ color: '#756978', marginBottom: 32, fontSize: 'clamp(0.98rem, 2.5vw, 1.08rem)', lineHeight: 1.7, maxWidth: 720 }}>
+          {[
+            'Select a real destination from live search results so we can generate your trip with verified place data.',
+            'Tell us when you arrive, where the first ride should drop you, and where the last ride should take you.',
+            'Choose your interests, budget, and pace with no preset selections.',
+            'Confirm the trip details pulled from your choices before we call the itinerary API.',
+          ][step]}
         </p>
 
-        {/* Error */}
         {error && (
-          <div style={{ marginBottom: 24, padding: '12px 16px', background: '#450a0a', border: '1px solid #7f1d1d', borderRadius: 12, color: '#fca5a5', fontSize: 14 }}>
+          <div style={{ marginBottom: 24, padding: '14px 16px', background: '#fff3f7', border: '1px solid #f0d7de', borderRadius: 18, color: '#a65372', fontSize: 14, boxShadow: '0 10px 30px rgba(165,58,83,0.08)' }}>
             {error}
           </div>
         )}
 
-        {/* STEP 0 – Destination */}
         {step === 0 && (
           <div>
             <div style={{ position: 'relative' }}>
               <input
                 autoFocus
                 type="text"
-                placeholder="e.g. Paris, Gokarna, Tokyo..."
+                placeholder="Search for a city, region, or landmark"
                 value={form.destination}
-                onChange={e => { setForm(p => ({ ...p, destination: e.target.value })); search(e.target.value); }}
-                style={{ width: '100%', padding: '16px 20px', fontSize: 18, background: '#0f172a', border: '1px solid #1e293b', borderRadius: 16, color: '#f8fafc', outline: 'none', boxSizing: 'border-box' }}
+                onChange={event => handleDestinationChange(event.target.value)}
+                style={{ width: '100%', padding: '16px 20px', fontSize: 18, background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, color: '#2e2833', outline: 'none', boxSizing: 'border-box', boxShadow: '0 14px 36px rgba(67,32,79,0.06)' }}
               />
-              {results.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8, background: '#0f172a', border: '1px solid #1e293b', borderRadius: 16, overflow: 'hidden', zIndex: 50 }}>
-                  {results.map((r, i) => (
-                    <button key={i} onClick={() => { setForm(p => ({ ...p, destination: r.name, latitude: r.latitude, longitude: r.longitude })); setResults([]); }}
-                      style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid #1e293b', cursor: 'pointer', color: '#f8fafc' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#1e293b')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                    >
-                      <div style={{ fontWeight: 600 }}>{r.name}</div>
-                      <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{r.address}</div>
-                    </button>
-                  ))}
+
+              {(searching || results.length > 0) && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 10, background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, overflow: 'hidden', zIndex: 50, boxShadow: '0 16px 42px rgba(46,40,51,0.12)' }}>
+                  {searching ? (
+                    <div style={{ padding: '14px 20px', color: '#756978', fontSize: 14 }}>
+                      Searching destinations...
+                    </div>
+                  ) : (
+                    results.map(result => (
+                      <button
+                        key={`${result.name}-${result.latitude}-${result.longitude}`}
+                        onClick={() => handleSelectDestination(result)}
+                        style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid #f4e5ee', cursor: 'pointer', color: '#2e2833' }}
+                        onMouseEnter={event => (event.currentTarget.style.background = '#fffdf9')}
+                        onMouseLeave={event => (event.currentTarget.style.background = 'none')}
+                      >
+                        <div style={{ fontWeight: 600 }}>{result.name}</div>
+                        <div style={{ fontSize: 13, color: '#a79aaa', marginTop: 2 }}>{result.address}</div>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-              {['Paris', 'Tokyo', 'Gokarna', 'Bali', 'London', 'Rome'].map(c => (
-                <button key={c} onClick={() => { setForm(p => ({ ...p, destination: c })); search(c); }}
-                  style={{ padding: '8px 16px', borderRadius: 20, border: '1px solid #1e293b', background: '#0f172a', color: '#94a3b8', cursor: 'pointer', fontSize: 14 }}>
-                  {c}
-                </button>
-              ))}
+
+            <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 18, border: '1px solid #eadde5', background: '#ffffff', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}>
+              {typeof form.latitude === 'number' && typeof form.longitude === 'number' ? (
+                <p style={{ margin: 0, color: '#4ea0e8', fontSize: 14, fontWeight: 600 }}>
+                  Destination selected from live results. Coordinates saved for itinerary generation.
+                </p>
+              ) : hasSearched && !searching && results.length === 0 ? (
+                <p style={{ margin: 0, color: '#a65372', fontSize: 14, fontWeight: 600 }}>
+                  No matching destination found. Refine your search to continue.
+                </p>
+              ) : (
+                <p style={{ margin: 0, color: '#756978', fontSize: 14 }}>
+                  Continue after picking one of the live search results. We do not prefill destinations anymore.
+                </p>
+              )}
             </div>
           </div>
         )}
 
-        {/* STEP 1 – Dates */}
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
               {[
-                { label: 'Arrival Date', key: 'arrivalDate' as const },
-                { label: 'Departure Date', key: 'departureDate' as const },
-              ].map(({ label, key }) => (
+                { label: 'Arrival Date', key: 'arrivalDate' as const, type: 'date' as const },
+                { label: 'Departure Date', key: 'departureDate' as const, type: 'date' as const },
+                { label: 'Arrival Time', key: 'arrivalTime' as const, type: 'time' as const },
+                { label: 'Departure Time', key: 'departureTime' as const, type: 'time' as const },
+              ].map(({ label, key, type }) => (
                 <div key={key}>
-                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</label>
-                  <input type="date" value={form[key]} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
-                    style={{ width: '100%', padding: '14px 16px', background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, color: '#f8fafc', colorScheme: 'dark', fontSize: 16, boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                    {label}
+                  </label>
+                  <input
+                    type={type}
+                    value={form[key]}
+                    onChange={event => setForm(previous => ({ ...previous, [key]: event.target.value }))}
+                    style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', colorScheme: 'light', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+                  />
                 </div>
               ))}
             </div>
+
+            <div style={{ padding: '14px 16px', borderRadius: 18, border: '1px solid #eadde5', background: '#fffdf9', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}>
+              <p style={{ margin: 0, color: '#756978', fontSize: 14, lineHeight: 1.6 }}>
+                We use your arrival and departure times as hard boundaries. The planner should not assume the day starts at 9:00.
+              </p>
+            </div>
+
+            <div style={{ borderRadius: 22, border: '1px solid #eadde5', background: '#ffffff', boxShadow: '0 14px 32px rgba(67,32,79,0.06)', padding: 18 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 12, background: '#5aa7e8', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#a79aaa' }}>
+                    Trip Assistant
+                  </div>
+                  <p style={{ margin: '6px 0 0', color: '#2e2833', fontSize: 15, lineHeight: 1.6 }}>
+                    Where should the first ride drop you off after you arrive, and where should the last ride take you when you leave?
+                  </p>
+                  <p style={{ margin: '10px 0 0', color: '#756978', fontSize: 13, lineHeight: 1.6 }}>
+                    Your stay is chosen automatically from live lodging options. These fields are only for the transfer legs.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gap: 14, marginTop: 16 }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                    Arrival drop-off
+                  </label>
+                  <textarea
+                    value={form.arrivalTransferContext}
+                    onChange={event =>
+                    setForm(previous => ({ ...previous, arrivalTransferContext: event.target.value }))
+                  }
+                    placeholder="Example: a station, airport, ferry terminal, or neighborhood"
+                    rows={2}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffdf9', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.04)' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                    Departure pick-up
+                  </label>
+                  <textarea
+                    value={form.departureTransferContext}
+                    onChange={event =>
+                      setForm(previous => ({ ...previous, departureTransferContext: event.target.value }))
+                    }
+                    placeholder="Example: train station, railway station, airport, or ferry terminal"
+                    rows={2}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffdf9', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.04)' }}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div>
-              <label style={{ display: 'block', marginBottom: 12, fontSize: 13, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>Arriving by</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                {(['flight', 'train', 'drive'] as const).map(m => (
-                  <button key={m} onClick={() => setForm(p => ({ ...p, arrivalMethod: m }))}
-                    style={{ padding: '16px 12px', borderRadius: 12, border: `2px solid ${form.arrivalMethod === m ? '#3b82f6' : '#1e293b'}`, background: form.arrivalMethod === m ? '#1d4ed8' : '#0f172a', color: form.arrivalMethod === m ? '#fff' : '#64748b', cursor: 'pointer', fontWeight: 700, textTransform: 'capitalize', fontSize: 14 }}>
-                    {m}
+              <label style={{ display: 'block', marginBottom: 12, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                Arriving by
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+                {ARRIVAL_METHODS.map(method => (
+                  <button
+                    key={method}
+                    onClick={() => setForm(previous => ({ ...previous, arrivalMethod: method }))}
+                    style={{ padding: '16px 12px', borderRadius: 16, border: `2px solid ${form.arrivalMethod === method ? '#5aa7e8' : '#eadde5'}`, background: form.arrivalMethod === method ? '#5aa7e8' : '#ffffff', color: form.arrivalMethod === method ? '#ffffff' : '#756978', cursor: 'pointer', fontWeight: 800, textTransform: 'capitalize', fontSize: 14, boxShadow: '0 10px 26px rgba(67,32,79,0.06)' }}
+                  >
+                    {method}
                   </button>
                 ))}
               </div>
@@ -177,33 +457,51 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 2 – Preferences */}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
             <div>
-              <label style={{ display: 'block', marginBottom: 16, fontSize: 13, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>Interests</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-                {INTERESTS.map(i => (
-                  <button key={i} onClick={() => setForm(p => ({ ...p, interests: p.interests.includes(i) ? p.interests.filter(x => x !== i) : [...p.interests, i] }))}
-                    style={{ padding: '12px 8px', borderRadius: 12, border: `2px solid ${form.interests.includes(i) ? '#3b82f6' : '#1e293b'}`, background: form.interests.includes(i) ? '#1d4ed8' : '#0f172a', color: form.interests.includes(i) ? '#fff' : '#64748b', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                    {i}
-                  </button>
-                ))}
-              </div>
+              <label style={{ display: 'block', marginBottom: 16, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                Interests
+              </label>
+              <input
+                type="text"
+                value={form.interestsText}
+                onChange={event => setForm(previous => ({ ...previous, interestsText: event.target.value }))}
+                placeholder="Enter interests separated by commas"
+                style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+              />
+              <p style={{ marginTop: 8, fontSize: 13, color: '#a79aaa' }}>
+                Example format: food, museums, beaches, hiking
+              </p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>Budget (USD)</label>
-                <input type="number" min={100} value={form.budget} onChange={e => setForm(p => ({ ...p, budget: parseInt(e.target.value) || 0 }))}
-                  style={{ width: '100%', padding: '14px 16px', background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, color: '#f8fafc', fontSize: 16, boxSizing: 'border-box' }} />
+                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                  Budget
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.budget}
+                  onChange={event => setForm(previous => ({ ...previous, budget: event.target.value }))}
+                  placeholder="Enter your total trip budget"
+                  style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+                />
               </div>
+
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 }}>Intensity</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                  {(['Relaxed', 'Balanced', 'Packed'] as const).map(l => (
-                    <button key={l} onClick={() => setForm(p => ({ ...p, activityIntensity: l }))}
-                      style={{ padding: '12px 4px', borderRadius: 10, border: `2px solid ${form.activityIntensity === l ? '#06b6d4' : '#1e293b'}`, background: form.activityIntensity === l ? '#0e7490' : '#0f172a', color: form.activityIntensity === l ? '#fff' : '#64748b', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
-                      {l}
+                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                  Intensity
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
+                  {ACTIVITY_LEVELS.map(level => (
+                    <button
+                      key={level}
+                      onClick={() => setForm(previous => ({ ...previous, activityIntensity: level }))}
+                      style={{ padding: '12px 4px', borderRadius: 14, border: `2px solid ${form.activityIntensity === level ? '#ff9a45' : '#eadde5'}`, background: form.activityIntensity === level ? '#ff9a45' : '#ffffff', color: form.activityIntensity === level ? '#fff' : '#756978', cursor: 'pointer', fontWeight: 800, fontSize: 12, boxShadow: '0 10px 26px rgba(67,32,79,0.06)' }}
+                    >
+                      {level}
                     </button>
                   ))}
                 </div>
@@ -212,46 +510,188 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 3 – Review */}
         {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
               { label: 'Destination', value: form.destination },
               { label: 'Dates', value: `${form.arrivalDate} → ${form.departureDate}` },
-              { label: 'Arriving by', value: form.arrivalMethod },
-              { label: 'Intensity', value: form.activityIntensity },
-              { label: 'Budget', value: `$${form.budget}` },
-              { label: 'Interests', value: form.interests.join(', ') || 'None selected' },
+              { label: 'Times', value: `${form.arrivalTime || 'Not set'} → ${form.departureTime || 'Not set'}` },
+              { label: 'Arrival drop-off', value: form.arrivalTransferContext },
+              { label: 'Departure pick-up', value: form.departureTransferContext },
+              { label: 'Arriving by', value: form.arrivalMethod || '' },
+              { label: 'Intensity', value: form.activityIntensity || '' },
+              { label: 'Budget', value: form.budget ? `$${form.budget}` : '' },
+              { label: 'Interests', value: parsedInterests.join(', ') },
             ].map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12 }}>
-                <span style={{ color: '#64748b', fontWeight: 600, fontSize: 14 }}>{label}</span>
-                <span style={{ color: '#f8fafc', fontWeight: 600, fontSize: 14, textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '16px 18px', background: '#ffffff', border: '1px solid #eadde5', borderRadius: 18, boxShadow: '0 10px 28px rgba(67,32,79,0.06)', flexWrap: 'wrap' }}>
+                <span style={{ color: '#a79aaa', fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</span>
+                <span style={{ color: '#2e2833', fontWeight: 700, fontSize: 14, textAlign: 'right', maxWidth: '100%' }}>{value || 'Not set'}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Navigation buttons — always rendered, no conditions */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 48 }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 40, flexWrap: 'wrap' }}>
           {step > 0 && (
-            <button onClick={() => setStep(s => s - 1)}
-              style={{ padding: '16px 28px', borderRadius: 14, border: '1px solid #1e293b', background: '#0f172a', color: '#94a3b8', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
-              ← Back
+            <button
+              onClick={() => setStep(currentStep => currentStep - 1)}
+              disabled={loading}
+              style={{ padding: '16px 28px', borderRadius: 16, border: '1px solid #eadde5', background: '#ffffff', color: '#2e2833', cursor: 'pointer', fontWeight: 800, fontSize: 16, flex: '1 1 160px', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+            >
+              Back
             </button>
           )}
           <button
             onClick={handleNext}
             disabled={!isValid() || loading}
             style={{
-              flex: 1, padding: '16px 28px', borderRadius: 14, border: 'none', cursor: isValid() && !loading ? 'pointer' : 'not-allowed',
-              background: isValid() && !loading ? 'linear-gradient(135deg,#3b82f6,#06b6d4)' : '#1e293b',
-              color: isValid() && !loading ? '#fff' : '#475569', fontWeight: 800, fontSize: 16,
-              opacity: loading ? 0.7 : 1, transition: 'background .2s'
-            }}>
-            {loading ? 'Building your itinerary...' : step === STEPS.length - 1 ? 'Generate Itinerary →' : 'Continue →'}
+              flex: '1 1 220px',
+              padding: '16px 28px',
+              borderRadius: 16,
+              border: 'none',
+              cursor: isValid() && !loading ? 'pointer' : 'not-allowed',
+              background: isValid() && !loading ? '#2e2833' : '#eadde5',
+              color: isValid() && !loading ? '#fff' : '#a79aaa',
+              fontWeight: 800,
+              fontSize: 16,
+              opacity: loading ? 0.85 : 1,
+              transition: 'transform .2s, background .2s',
+              boxShadow: isValid() && !loading ? '0 14px 34px rgba(84,166,232,0.22)' : 'none',
+            }}
+          >
+            {loading ? 'Building your itinerary...' : step === STEPS.length - 1 ? 'Generate Itinerary' : 'Continue'}
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 80,
+                display: 'grid',
+                placeItems: 'center',
+                background: 'rgba(251,250,247,0.92)',
+                backdropFilter: 'blur(18px)',
+                padding: 24,
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 160, damping: 18 }}
+                style={{
+                  width: 'min(100%, 520px)',
+                  borderRadius: 24,
+                  border: '1px solid rgba(222,211,196,0.9)',
+                  background: 'rgba(255,255,255,0.92)',
+                  boxShadow: '0 40px 120px rgba(46,40,51,0.16)',
+                  padding: 28,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 18,
+                      display: 'grid',
+                      placeItems: 'center',
+                      background: '#5aa7e8',
+                      boxShadow: '0 20px 40px rgba(90,167,232,0.2)',
+                    }}
+                  >
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      border: '3px solid rgba(255,255,255,0.35)',
+                      borderTopColor: '#ffffff',
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ color: '#2e2833', fontSize: 22, fontWeight: 800 }}>Generating your itinerary</div>
+                  <div style={{ color: '#756978', fontSize: 14, marginTop: 4 }}>
+                    Live APIs are running in parallel to keep this as fast as possible.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {GENERATION_PHASES.map((_, index) => (
+                  <motion.div
+                    key={index}
+                    animate={{
+                      opacity: index === loadingPhase ? 1 : 0.32,
+                      scale: index === loadingPhase ? 1 : 0.9,
+                    }}
+                      transition={{ duration: 0.25 }}
+                      style={{
+                        flex: 1,
+                        height: 6,
+                        borderRadius: 999,
+                        background: index <= loadingPhase ? '#5aa7e8' : '#eadde5',
+                      }}
+                  />
+                ))}
+              </div>
+
+              <motion.div
+                key={loadingPhase}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                style={{ color: '#2e2833', fontSize: 16, fontWeight: 700, minHeight: 28 }}
+              >
+                {GENERATION_PHASES[loadingPhase]}
+              </motion.div>
+
+              <p style={{ margin: '12px 0 0', color: '#756978', lineHeight: 1.6, fontSize: 14 }}>
+                We are pulling live POIs, weather, and trip details, then asking the model for a
+                compact JSON itinerary.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 24 }}>
+                {['Places', 'Weather', 'Itinerary'].map((label, index) => (
+                  <motion.div
+                    key={label}
+                    animate={{ y: [0, -4, 0] }}
+                      transition={{
+                      repeat: Infinity,
+                      duration: 1.6,
+                      delay: index * 0.2,
+                      ease: 'easeInOut',
+                    }}
+                    style={{
+                      padding: '12px 10px',
+                      borderRadius: 14,
+                      border: '1px solid rgba(222,211,196,0.9)',
+                      background: 'rgba(252,250,247,0.95)',
+                      textAlign: 'center',
+                      color: '#2e2833',
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {label}
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,0 +1,95 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+import { supabase } from '@/services/supabase';
+import { getAuthenticatedUser } from '@/services/supabase-auth';
+
+function formatTripError(error: { message?: string; code?: string } | null | undefined) {
+  if (!error) {
+    return 'Failed to load trip';
+  }
+
+  if (error.code === 'PGRST205') {
+    return 'The trips table is missing in Supabase. Apply supabase/migrations/20260411_create_trips.sql first.';
+  }
+
+  return error.message || 'Failed to load trip';
+}
+
+function unauthorizedResponse(message = 'Unauthorized') {
+  return NextResponse.json({ error: message }, { status: 401 });
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { user, error: authError } = await getAuthenticatedUser(request);
+
+    if (authError || !user) {
+      return unauthorizedResponse();
+    }
+
+    const { data, error } = await supabase
+      .from('trips')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[api/trips/:id] load failed', {
+        id,
+        error: error.message,
+        code: error.code,
+      });
+      return NextResponse.json({ error: formatTripError(error) }, { status: 500 });
+    }
+
+    return NextResponse.json({ trip: data ?? null });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to load trip' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { user, error: authError } = await getAuthenticatedUser(request);
+
+    if (authError || !user) {
+      return unauthorizedResponse();
+    }
+
+    const { data, error } = await supabase
+      .from('trips')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select('id')
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error('[api/trips/:id] delete failed', {
+        id,
+        error: error?.message,
+        code: error?.code,
+      });
+      return NextResponse.json({ error: error?.message || 'Trip not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to delete trip' },
+      { status: 500 }
+    );
+  }
+}

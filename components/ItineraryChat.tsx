@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Send, Sparkles, X } from 'lucide-react';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -10,35 +11,107 @@ interface ChatMessage {
 
 interface ItineraryChatProps {
   itinerary: any;
-  tripId: string;
-  onSave?: (updatedItinerary: any) => Promise<void>;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: `Hi! 👋 I'm your travel planning assistant for your ${itinerary.destination} trip. Are you happy with your current plan, or would you like to make some changes?`
-    }
-  ]);
+export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryChatProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showChat, setShowChat] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const suggestedPrompts = useMemo(
+    () => [
+      'Make this itinerary lighter and slower.',
+      'Suggest food stops near each day.',
+      'Make this more budget friendly.',
+      'What should I skip if I am short on time?',
+    ],
+    []
+  );
+
+  const renderAssistantMessage = (content: string) => {
+    const lines = content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    const blocks: ReactNode[] = [];
+    let bulletGroup: string[] = [];
+
+    const flushBullets = () => {
+      if (bulletGroup.length === 0) {
+        return;
+      }
+
+      blocks.push(
+        <ul key={`bullets-${blocks.length}`} className="mt-2 space-y-2">
+          {bulletGroup.map((line, index) => (
+            <li key={`${line}-${index}`} className="flex items-start gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-[#5aa7e8]" />
+              <span>{line.replace(/^[-*•]\s*/, '')}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      bulletGroup = [];
+    };
+
+    lines.forEach((line, index) => {
+      const isBullet = /^[-*•]\s+/.test(line) || /^\d+\.\s+/.test(line);
+      const isHeading = /^[A-Za-z][A-Za-z\s]+:$/i.test(line) || /^#[#\s]/.test(line);
+
+      if (isBullet) {
+        bulletGroup.push(line);
+        return;
+      }
+
+      flushBullets();
+
+      if (isHeading) {
+        blocks.push(
+          <div key={`${line}-${index}`} className="mt-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#5aa7e8]">
+            {line.replace(/[:#]/g, '').trim()}
+          </div>
+        );
+        return;
+      }
+
+      blocks.push(
+        <p key={`${line}-${index}`} className={blocks.length === 0 ? 'leading-6' : 'mt-2 leading-6'}>
+          {line}
+        </p>
+      );
+    });
+
+    flushBullets();
+
+    if (blocks.length === 0) {
+      return <p className="leading-6">{content}</p>;
+    }
+
+    return <div className="space-y-1">{blocks}</div>;
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!isOpen) {
+      return;
+    }
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || loading) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [isOpen, messages]);
 
-    const userMessage = input.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+  const handleSendMessage = async (overrideMessage?: string) => {
+    const userMessage = (overrideMessage ?? input).trim();
+
+    if (!userMessage || loading) {
+      return;
+    }
+
+    const nextMessages = [...messages, { role: 'user' as const, content: userMessage }];
+
+    setMessages(nextMessages);
     setInput('');
     setLoading(true);
 
@@ -49,121 +122,161 @@ export default function ItineraryChat({ itinerary, tripId, onSave }: ItineraryCh
         body: JSON.stringify({
           message: userMessage,
           itinerary,
-          conversationHistory: messages
-        })
+          conversationHistory: nextMessages,
+        }),
       });
-
-      if (!response.ok) throw new Error('Chat failed');
 
       const data = await response.json();
 
-      setMessages(prev => [
-        ...prev,
+      if (!response.ok) {
+        throw new Error(data.error || 'Chat failed');
+      }
+
+      setMessages(previous => [
+        ...previous,
         {
           role: 'assistant',
-          content: data.message
-        }
+          content: data.message,
+        },
       ]);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [
-        ...prev,
+      setMessages(previous => [
+        ...previous,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.'
-        }
+          content: 'We could not reach the itinerary assistant. Please try again in a moment.',
+        },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!showChat) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 font-sans w-96 max-h-screen">
-      <div className="w-full h-[550px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center flex-shrink-0">
-          <h3 className="font-bold text-lg">✈️ {itinerary.destination} Assistant</h3>
-          <button
-            onClick={() => setShowChat(false)}
-            className="text-white hover:text-gray-200 text-2xl font-bold transition hover:scale-110"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-gray-50 to-white">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-xs px-4 py-3 rounded-xl text-sm break-words ${
-                  msg.role === 'user'
-                    ? 'bg-blue-500 text-white rounded-br-none font-medium shadow-md'
-                    : 'bg-white border-2 border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
-                }`}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-0 sm:items-center sm:p-4"
+      >
+        <motion.div
+          initial={{ y: 24, scale: 0.98 }}
+          animate={{ y: 0, scale: 1 }}
+          exit={{ y: 24, scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 180, damping: 24 }}
+          className="flex h-[100dvh] w-full max-w-none flex-col overflow-hidden border border-[#e8dde5] bg-[#fffdf9] shadow-[0_30px_120px_rgba(46,40,51,0.18)] sm:h-[min(84vh,760px)] sm:max-w-[420px] sm:rounded-[32px]"
+        >
+          <div className="relative overflow-hidden border-b border-[#eadde5] bg-[#2e2833] px-4 py-5 text-white sm:px-5">
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#5aa7e8] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+                  <Sparkles size={12} />
+                  Trip Assistant
+                </div>
+                <h3 className="text-xl font-extrabold tracking-tight sm:text-2xl">{itinerary?.destination || 'Current itinerary'}</h3>
+                <p className="max-w-[24rem] text-sm text-white">
+                  Ask for swaps, pacing changes, budget help, or smarter routing.
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="grid h-10 w-10 place-items-center border border-white bg-white text-[#2e2833] transition hover:bg-[#f6d23c]"
+                aria-label="Close itinerary assistant"
               >
-                {msg.content}
-              </div>
+                <X size={18} />
+              </button>
             </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-white border-2 border-gray-200 px-4 py-2 rounded-xl text-sm text-gray-500 shadow-sm">
-                <span className="inline-block animate-bounce">⏳</span> Thinking...
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 p-3 grid grid-cols-3 gap-2 text-xs flex-shrink-0">
-          <button
-            onClick={() => setInput('I love this itinerary!')}
-            className="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-2 rounded-lg font-bold transition-all hover:scale-105"
-          >
-            👍 Love It
-          </button>
-          <button
-            onClick={() => setInput('Can you suggest changes?')}
-            className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-2 rounded-lg font-bold transition-all hover:scale-105"
-          >
-            ✏️ Modify
-          </button>
-          <button
-            onClick={() => setInput('What are travel tips?')}
-            className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-2 rounded-lg font-bold transition-all hover:scale-105"
-          >
-            💡 Tips
-          </button>
-        </div>
-
-        {/* Input */}
-        <div className="border-t border-gray-200 p-3 bg-white flex-shrink-0">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Ask a question..."
-              className="flex-1 border-2 border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loading}
-              autoFocus
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={loading || !input.trim()}
-              className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold hover:shadow-md"
-            >
-              <Send size={18} />
-            </button>
           </div>
-        </div>
-      </div>
-    </div>
+
+          <div className="flex-1 overflow-y-auto bg-[#fbfaf7] px-4 py-4 sm:px-5">
+            {messages.length === 0 && (
+              <div className="mb-4 border border-[#eadde5] bg-white p-4 shadow-sm">
+                <p className="text-sm leading-6 text-[#2e2833]">
+                  I can help you tighten the itinerary, swap stops, change the tempo, or make the plan cheaper.
+                </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {suggestedPrompts.map(prompt => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleSendMessage(prompt)}
+                      disabled={loading}
+                      className="rounded-2xl border border-[#eadde5] bg-[#fff8ef] px-3 py-3 text-left text-sm font-medium text-[#2e2833] transition hover:-translate-y-0.5 hover:border-[#4ea0e8] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {messages.map((message, index) => (
+                <div
+                  key={`${message.role}-${index}`}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-[22px] px-4 py-3 text-sm leading-6 shadow-sm sm:max-w-[78%] ${
+                      message.role === 'user'
+                        ? 'rounded-br-md bg-[#4ea0e8] text-white'
+                        : 'rounded-bl-md border border-[#eadde5] bg-white text-[#2e2833]'
+                    }`}
+                  >
+                    <div className={message.role === 'assistant' ? 'whitespace-normal' : 'whitespace-pre-wrap'}>
+                      {message.role === 'assistant' ? renderAssistantMessage(message.content) : message.content}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {loading && (
+              <div className="mt-3 flex justify-start">
+                <div className="inline-flex items-center gap-2 rounded-[18px] border border-[#eadde5] bg-white px-4 py-3 text-sm text-[#756978] shadow-sm">
+                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1 }} className="h-2 w-2 rounded-full bg-[#4ea0e8]" />
+                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.15 }} className="h-2 w-2 rounded-full bg-[#f6d23c]" />
+                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.3 }} className="h-2 w-2 rounded-full bg-[#ff9a45]" />
+                  Thinking
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="border-t border-[#eadde5] bg-white px-3 py-3 sm:px-4">
+            <div className="flex items-end gap-2">
+              <textarea
+                value={input}
+                onChange={event => setInput(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="Ask about this itinerary"
+                rows={1}
+                className="min-h-[48px] max-h-28 flex-1 resize-none rounded-[18px] border border-[#eadde5] bg-[#fffdf9] px-4 py-3 text-sm text-[#2e2833] outline-none transition placeholder:text-[#a79aaa] focus:border-[#4ea0e8] focus:ring-4 focus:ring-[#4ea0e8]/10"
+                disabled={loading}
+              />
+              <button
+                onClick={() => handleSendMessage()}
+                disabled={loading || !input.trim()}
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#5aa7e8] text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

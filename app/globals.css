@@ -4,30 +4,56 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 36 100% 98%;
+    --foreground: 276 18% 18%;
 
-    --card: 222.2 84% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 276 18% 18%;
 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 206 74% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --secondary: 48 94% 58%;
+    --secondary-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --muted: 338 44% 94%;
+    --muted-foreground: 276 10% 42%;
 
-    --radius: 0.75rem;
+    --border: 330 26% 86%;
+    --input: 330 26% 86%;
+
+    --radius: 0rem;
   }
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
+  }
+
   * {
     @apply border-border;
   }
+
+  html {
+    background: #fbfaf7;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+    background: #fbfaf7;
+    color: hsl(var(--foreground));
+  }
+
+  .leaflet-container {
+    z-index: 0 !important;
+  }
+
+  ::selection {
+    background: rgba(84, 166, 232, 0.2);
+    color: hsl(var(--foreground));
   }
 }
