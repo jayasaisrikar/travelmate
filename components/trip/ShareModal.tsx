@@ -410,7 +410,7 @@ export function ShareModal({
                 className="flex items-center justify-center gap-2 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageSquareShare size={15} />
-                {imageLoading ? 'Preparing image...' : 'Share image'}
+                {imageLoading ? 'Preparing image...' : 'Share badge'}
               </button>
 
               <button
