@@ -291,7 +291,7 @@ export function MapComponent({
 
   if (validActivities.length === 0 && !destinationCoordinates) {
     return (
-      <div className="rounded-[28px] border border-[#eadde5] bg-white p-6 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
+      <div className="flex h-full flex-col rounded-[28px] border border-[#eadde5] bg-white p-6 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f6d23c] text-sm font-black text-[#2e2833]">
             MAP
@@ -308,47 +308,21 @@ export function MapComponent({
   }
 
   return (
-    <div className="relative z-0 space-y-4">
-      <div className="rounded-[28px] border border-[#eadde5] bg-white p-4 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-5">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Trip map</div>
-            <h3 className="mt-1 text-2xl font-black tracking-tight text-[#2e2833]">Where the trip actually goes</h3>
-          </div>
-          <div className="text-sm text-[#756978]">
-            {validActivities.length} mapped stop{validActivities.length === 1 ? '' : 's'}
-          </div>
+    <div className="relative z-0 flex h-full flex-col rounded-[28px] border border-[#eadde5] bg-white p-4 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-5 lg:h-[360px]">
+      <div className="mb-4 flex items-end justify-between gap-2">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Trip map</div>
+          <h3 className="mt-1 text-2xl font-black tracking-tight text-[#2e2833]">Where the trip actually goes</h3>
         </div>
-
-        <div
-          ref={mapContainerRef}
-          className="relative z-0 h-[360px] overflow-hidden rounded-[24px] border border-[#eadde5] bg-[#fffdf9] sm:h-[460px]"
-        />
+        <div className="text-sm text-[#756978]">
+          {validActivities.length} mapped stop{validActivities.length === 1 ? '' : 's'}
+        </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {validActivities.map((activity, index) => (
-          <div
-            key={`${activity.time}-${activity.name}-${index}`}
-            className="rounded-[24px] border border-[#eadde5] bg-white p-4 shadow-[0_12px_36px_rgba(46,40,51,0.05)]"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#5aa7e8] text-sm font-black text-white">
-                {index + 1}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-[#2e2833]">
-                  {activity.time} · {activity.name}
-                </div>
-                <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
-                  {activity.category}
-                </div>
-                {activity.address && <div className="mt-2 text-sm leading-6 text-[#756978]">{activity.address}</div>}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <div
+        ref={mapContainerRef}
+        className="relative z-0 min-h-[240px] flex-1 overflow-hidden rounded-[24px] border border-[#eadde5] bg-[#fffdf9] lg:min-h-0"
+      />
     </div>
   );
 }

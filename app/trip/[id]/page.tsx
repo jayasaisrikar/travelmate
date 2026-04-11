@@ -68,14 +68,6 @@ function getStay(itinerary: any) {
   return null;
 }
 
-function getTransfers(itinerary: any): any[] {
-  if (Array.isArray(itinerary?.transfers)) {
-    return itinerary.transfers;
-  }
-
-  return [];
-}
-
 function getFlatActivities(dailyPlans: any[]) {
   return dailyPlans.flatMap((day: any, dayIndex: number) => {
     const activities = Array.isArray(day?.activities) ? day.activities : [];
@@ -114,6 +106,7 @@ export default function TripDetailsPage() {
   const [focusStayTrigger, setFocusStayTrigger] = useState(0);
   const [shareUrl, setShareUrl] = useState('');
   const [shareToken, setShareToken] = useState('');
+  const [isGuestSuggestionsOpen, setIsGuestSuggestionsOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<TripSuggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState('');
@@ -186,7 +179,6 @@ export default function TripDetailsPage() {
   const totalEstimatedCost = useMemo(() => getTotalEstimatedCost(trip?.itinerary), [trip]);
   const destinationCoordinates = useMemo(() => getDestinationCoordinates(trip?.itinerary), [trip]);
   const stay = useMemo(() => getStay(trip?.itinerary), [trip]);
-  const transfers = useMemo(() => getTransfers(trip?.itinerary), [trip]);
   const mapActivities = useMemo(() => getFlatActivities(dailyPlans), [dailyPlans]);
 
   const scrollToMap = () => {
@@ -364,7 +356,10 @@ export default function TripDetailsPage() {
           </div>
         )}
 
-        <section ref={mapSectionRef} className="relative z-0 mt-8 grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
+        <section
+          ref={mapSectionRef}
+          className="relative z-0 mt-8 grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch"
+        >
           <MapComponent
             activities={mapActivities}
             destination={trip.destination}
@@ -374,14 +369,14 @@ export default function TripDetailsPage() {
             focusStayTrigger={focusStayTrigger}
           />
 
-          <div className="rounded-[28px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+          <div className="flex h-full flex-col rounded-[28px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:h-[360px] lg:min-h-0">
             <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Location guide</div>
             <h2 className="mt-1 text-2xl font-black tracking-tight">Places in order</h2>
             <p className="mt-2 text-sm leading-6 text-[#756978]">
               The numbers on the map match the order below, so first-time users can quickly see where each stop sits.
             </p>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 flex-1 min-h-0 space-y-3 overflow-y-auto pr-2">
               {mapActivities.length > 0 ? (
                 mapActivities.map((activity, index) => (
                   <button
@@ -391,14 +386,14 @@ export default function TripDetailsPage() {
                       setSelectedStopIndex(index);
                       scrollToMap();
                     }}
-                    className={`w-full rounded-[22px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(46,40,51,0.08)] ${
+                    className={`w-full rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(46,40,51,0.08)] ${
                       selectedStopIndex === index
                         ? 'border-[#5aa7e8] bg-[#eef7ff]'
                         : 'border-[#eadde5] bg-[#fffdf9]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#2e2833] text-sm font-black text-white">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#2e2833] text-sm font-black text-white">
                         {index + 1}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -408,7 +403,7 @@ export default function TripDetailsPage() {
                         <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
                           {activity.category}
                         </div>
-                        <div className="mt-2 text-sm leading-6 text-[#756978]">
+                        <div className="mt-1 text-sm leading-6 text-[#756978]">
                           {activity.address || 'No address provided'}
                         </div>
                       </div>
@@ -424,258 +419,164 @@ export default function TripDetailsPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
-          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6" open>
-            <summary className="cursor-pointer list-none">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Stay</div>
-                  <h2 className="mt-1 text-2xl font-black tracking-tight">Where you’re staying</h2>
+        <section className="mt-8">
+          <div className="grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
+          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+              <summary className="cursor-pointer list-none">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Stay</div>
+                    <h2 className="mt-1 text-2xl font-black tracking-tight">Where you’re staying</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={event => {
+                      event.preventDefault();
+                      setIsStayRetryOpen(true);
+                      scrollToMap();
+                    }}
+                    className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                  >
+                    Retry stay
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={event => {
-                    event.preventDefault();
-                    setIsStayRetryOpen(true);
-                    scrollToMap();
-                  }}
-                  className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
-                >
-                  Retry stay
-                </button>
-              </div>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
-                Live lodging data gets pinned here so the trip always has a real base.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="border border-[#2e2833] bg-[#fffdf9] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
-                  {stay ? stay.name : 'No stay yet'}
-                </span>
-                {stay && (
-                  <span className="border border-[#2e2833] bg-[#eef7ff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#5aa7e8]">
-                    {stay.type}
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
+                  Live lodging data gets pinned here so the trip always has a real base.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="border border-[#2e2833] bg-[#fffdf9] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+                    {stay ? stay.name : 'No stay yet'}
                   </span>
+                  {stay && (
+                    <span className="border border-[#2e2833] bg-[#eef7ff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#5aa7e8]">
+                      {stay.type}
+                    </span>
+                  )}
+                </div>
+              </summary>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
+                {stay ? (
+                  <>
+                    <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
+                      <div className="inline-flex border border-[#2e2833] bg-[#ff9a45] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+                        Live lodging
+                      </div>
+                      <h3 className="mt-4 text-2xl font-black tracking-tight text-[#2e2833]">{stay.name}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#756978]">{stay.type}</p>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="border border-[#eadde5] bg-white p-4">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-in</div>
+                          <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                            {stay.checkInDate ? `${stay.checkInDate} ` : ''}
+                            {stay.checkInTime || 'Not set'}
+                          </div>
+                        </div>
+                        <div className="border border-[#eadde5] bg-white p-4">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-out</div>
+                          <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                            {stay.checkOutDate ? `${stay.checkOutDate} ` : ''}
+                            {stay.checkOutTime || 'Not set'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {stay.notes && (
+                        <div className="mt-4 border border-[#f6d23c]/40 bg-[#fff8e6] p-4 text-sm leading-6 text-[#2e2833]">
+                          {stay.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Map location</div>
+                      <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                        {stay.latitude.toFixed(4)}, {stay.longitude.toFixed(4)}
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-[#756978]">
+                        The stay marker is shown on the map alongside the places you visit so the route and lodging are visible in one place.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFocusStayTrigger(current => current + 1);
+                            scrollToMap();
+                          }}
+                          className="border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+                        >
+                          Show stay on map
+                        </button>
+                        {stay.address && (
+                          <div className="border border-[#eadde5] bg-white px-4 py-2 text-sm text-[#756978]">
+                            {stay.address}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978] md:col-span-2">
+                    No live stay option was returned for this trip. Tap retry and we will ask for your budget range and preferred area again.
+                  </div>
                 )}
               </div>
-            </summary>
+            </details>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
-              {stay ? (
-                <>
-                  <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-                    <div className="inline-flex border border-[#2e2833] bg-[#ff9a45] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-                      Live lodging
-                    </div>
-                    <h3 className="mt-4 text-2xl font-black tracking-tight text-[#2e2833]">{stay.name}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#756978]">{stay.type}</p>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="border border-[#eadde5] bg-white p-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-in</div>
-                        <div className="mt-2 text-sm font-semibold text-[#2e2833]">
-                          {stay.checkInDate ? `${stay.checkInDate} ` : ''}
-                          {stay.checkInTime || 'Not set'}
-                        </div>
-                      </div>
-                      <div className="border border-[#eadde5] bg-white p-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-out</div>
-                        <div className="mt-2 text-sm font-semibold text-[#2e2833]">
-                          {stay.checkOutDate ? `${stay.checkOutDate} ` : ''}
-                          {stay.checkOutTime || 'Not set'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {stay.notes && (
-                      <div className="mt-4 border border-[#f6d23c]/40 bg-[#fff8e6] p-4 text-sm leading-6 text-[#2e2833]">
-                        {stay.notes}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Map location</div>
-                    <div className="mt-2 text-sm font-semibold text-[#2e2833]">
-                      {stay.latitude.toFixed(4)}, {stay.longitude.toFixed(4)}
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-[#756978]">
-                      The stay marker is shown on the map alongside the places you visit so the route and lodging are visible in one place.
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFocusStayTrigger(current => current + 1);
-                          scrollToMap();
-                        }}
-                        className="border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
-                      >
-                        Show stay on map
-                      </button>
-                      {stay.address && (
-                        <div className="border border-[#eadde5] bg-white px-4 py-2 text-sm text-[#756978]">
-                          {stay.address}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978] md:col-span-2">
-                  No live stay option was returned for this trip. Tap retry and we will ask for your budget range and preferred area again.
-                </div>
-              )}
-            </div>
-          </details>
-
-          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-            <summary className="cursor-pointer list-none">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Transfers</div>
-                  <h2 className="mt-1 text-2xl font-black tracking-tight">Arrival and departure</h2>
-                </div>
-                <div className="text-sm font-semibold text-[#756978]">
-                  {transfers.length > 0 ? `${transfers.length} legs` : 'No legs yet'}
-                </div>
-              </div>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
-                These are the non-negotiable transport legs between the real world and the stay.
-              </p>
-            </summary>
-
-            <div className="mt-5 grid gap-4">
-              {transfers.length > 0 ? (
-                transfers.map((transfer, index) => (
-                  <div
-                    key={`${transfer.kind}-${index}`}
-                    className="border border-[#eadde5] bg-[#fffdf9] p-4"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="inline-flex border border-[#2e2833] bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-                          {transfer.kind}
-                        </div>
-                        <h3 className="mt-3 text-lg font-black tracking-tight text-[#2e2833]">
-                          {transfer.title}
-                        </h3>
-                      </div>
-                      {transfer.time && (
-                        <div className="border border-[#2e2833] bg-white px-3 py-1 text-sm font-bold text-[#ff9a45]">
-                          {transfer.time}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="border border-[#eadde5] bg-white p-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">From</div>
-                        <div className="mt-1 text-sm font-semibold text-[#2e2833]">
-                          {transfer.from || 'Not specified'}
-                        </div>
-                      </div>
-                      <div className="border border-[#eadde5] bg-white p-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">To</div>
-                        <div className="mt-1 text-sm font-semibold text-[#2e2833]">
-                          {transfer.to || 'Not specified'}
-                        </div>
-                      </div>
-                    </div>
-
-                    {transfer.notes && (
-                      <p className="mt-4 text-sm leading-6 text-[#756978]">{transfer.notes}</p>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978]">
-                  No transfer legs were generated for this trip.
-                </div>
-              )}
-            </div>
-          </details>
-
-          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:col-span-2">
-            <summary className="cursor-pointer list-none">
+            <div className="border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Guest suggestions</div>
                   <h2 className="mt-1 text-2xl font-black tracking-tight">People can respond to your trip</h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={event => {
-                    event.preventDefault();
-                    setIsShareOpen(true);
-                  }}
-                  className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
-                >
-                  Share trip
-                </button>
+                <div className="text-sm font-semibold text-[#756978]">
+                  {suggestionsLoading ? 'Loading...' : `${suggestions.length} total`}
+                </div>
               </div>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
-                Guests submit suggestions from the public share page, and you can review them here.
+              <p className="mt-2 text-sm leading-6 text-[#756978]">
+                Guests submit suggestions from the public share page, and you can review them later.
               </p>
-            </summary>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-              <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Public badge</div>
-                <div className="mt-2 text-sm leading-6 text-[#2e2833]">
-                  Hey Check out my trip and submit your suggestions on TravelMate.
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsShareOpen(true)}
-                  className="mt-4 border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
-                >
-                  Open sharing tools
-                </button>
-              </div>
-
-              <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Latest suggestions</div>
-                    <div className="mt-1 text-lg font-black tracking-tight text-[#2e2833]">
-                      {suggestions.length} total
-                    </div>
-                  </div>
-                  {suggestionsLoading && <div className="text-sm font-medium text-[#756978]">Loading...</div>}
-                </div>
-
+              <div className="mt-4 space-y-3">
                 {suggestionsError && (
-                  <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                  <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
                     {suggestionsError}
                   </div>
                 )}
 
-                <div className="mt-4 space-y-3">
-                  {suggestions.length > 0 ? (
-                    suggestions.slice(0, 3).map(suggestion => (
-                      <div key={suggestion.id} className="border border-[#2e2833] bg-white px-4 py-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="text-sm font-bold text-[#2e2833]">
-                            {suggestion.guest_name || 'Anonymous guest'}
-                          </div>
-                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
-                            {new Date(suggestion.created_at).toLocaleDateString()}
-                          </div>
+                {suggestions.length > 0 ? (
+                  suggestions.slice(0, 2).map(suggestion => (
+                    <div key={suggestion.id} className="border border-[#2e2833] bg-[#fffdf9] px-4 py-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm font-bold text-[#2e2833]">
+                          {suggestion.guest_name || 'Anonymous guest'}
                         </div>
-                        <p className="mt-2 text-sm leading-6 text-[#756978]">
-                          {suggestion.message || suggestion.suggestion}
-                        </p>
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                          {new Date(suggestion.created_at).toLocaleDateString()}
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="border border-dashed border-[#eadde5] bg-white px-4 py-3 text-sm leading-6 text-[#756978]">
-                      No suggestions yet. Share the trip publicly and ask guests to react.
+                      <p className="mt-2 text-sm leading-6 text-[#756978]">
+                        {suggestion.message || suggestion.suggestion}
+                      </p>
                     </div>
-                  )}
-                </div>
+                  ))
+                ) : (
+                  <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-3 text-sm leading-6 text-[#756978]">
+                    No suggestions yet. Share the trip publicly and ask guests to react.
+                  </div>
+                )}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsGuestSuggestionsOpen(true)}
+                className="mt-5 w-full border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+              >
+                Click to expand
+              </button>
             </div>
-          </details>
+          </div>
         </section>
 
         <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
@@ -933,6 +834,84 @@ export default function TripDetailsPage() {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isGuestSuggestionsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+            <div className="w-full max-w-3xl border border-[#2e2833] bg-[#fbfaf7] p-5 text-[#2e2833] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6">
+              <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Guest suggestions</div>
+                  <h3 className="mt-1 text-2xl font-black tracking-tight">What guests are saying</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsGuestSuggestionsOpen(false)}
+                  className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+                <div className="border border-[#2e2833] bg-white p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Public badge</div>
+                  <div className="mt-2 text-sm leading-6 text-[#2e2833]">
+                    Hey Check out my trip and submit your suggestions on TravelMate.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsShareOpen(true)}
+                    className="mt-4 border border-[#2e2833] bg-[#2e2833] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                  >
+                    Open sharing tools
+                  </button>
+                </div>
+
+                <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Latest suggestions</div>
+                      <div className="mt-1 text-lg font-black tracking-tight text-[#2e2833]">
+                        {suggestions.length} total
+                      </div>
+                    </div>
+                    {suggestionsLoading && <div className="text-sm font-medium text-[#756978]">Loading...</div>}
+                  </div>
+
+                  {suggestionsError && (
+                    <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                      {suggestionsError}
+                    </div>
+                  )}
+
+                  <div className="mt-4 space-y-3 max-h-[300px] overflow-y-scroll pr-1">
+                    {suggestions.length > 0 ? (
+                      suggestions.map(suggestion => (
+                        <div key={suggestion.id} className="border border-[#2e2833] bg-white px-4 py-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-sm font-bold text-[#2e2833]">
+                              {suggestion.guest_name || 'Anonymous guest'}
+                            </div>
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                              {new Date(suggestion.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-[#756978]">
+                            {suggestion.message || suggestion.suggestion}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="border border-dashed border-[#eadde5] bg-white px-4 py-3 text-sm leading-6 text-[#756978]">
+                        No suggestions yet. Share the trip publicly and ask guests to react.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
