@@ -8,6 +8,7 @@ import { AuthGate } from '@/components/auth/AuthGate';
 import { Brand } from '@/components/common/Brand';
 import ItineraryChat from '@/components/ItineraryChat';
 import { MapComponent } from '@/components/MapComponent';
+import { TimelineView } from '@/components/trip/TimelineView';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, Trip } from '@/lib/supabase-trips';
 import type { TripSuggestion } from '@/lib/travel-types';
@@ -579,184 +580,15 @@ export default function TripDetailsPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Itinerary</div>
-              <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Day-by-day timeline</h2>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#756978]">
-                The trip is collapsed by default so the page stays readable. Open a day when you want the detailed stops.
-              </p>
-            </div>
-            <div className="text-sm font-medium text-[#756978]">
-              {trip.interests.length > 0 ? trip.interests.join(' · ') : 'No interests saved'}
-            </div>
-          </div>
-
-          {dailyPlans.length === 0 ? (
-            <div className="rounded-[28px] border border-[#eadde5] bg-white p-6 text-[#756978] shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              This trip was saved without daily plans. Regenerate the itinerary once the API returns structured activities.
-            </div>
-          ) : (
-            dailyPlans.map((day: any, index: number) => {
-              const activities = Array.isArray(day?.activities) ? day.activities : [];
-              const previewActivities = activities.slice(0, 2);
-              const firstTime = activities[0]?.time;
-              const lastTime = activities[activities.length - 1]?.time;
-
-              return (
-                <details
-                  key={`${day?.day ?? index}-${day?.theme ?? 'day'}`}
-                  className="group overflow-hidden border border-[#eadde5] bg-white shadow-[0_16px_48px_rgba(46,40,51,0.06)]"
-                >
-                  <summary className="cursor-pointer list-none p-5 sm:p-6">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="inline-flex bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-                          Day {day?.day || index + 1}
-                        </div>
-                        {day?.intensity && (
-                          <div className="border border-[#eadde5] bg-[#fffdf9] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#756978]">
-                            {day.intensity}
-                          </div>
-                        )}
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
-                          {activities.length} stops
-                        </div>
-                      </div>
-
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="text-xl font-black tracking-tight sm:text-2xl">
-                            {day?.theme || `Day ${day?.day || index + 1}`}
-                          </h3>
-                          <p className="mt-1 text-sm text-[#756978]">
-                            {day?.date || 'No date'}{firstTime && lastTime ? ` · ${firstTime} to ${lastTime}` : ''}
-                          </p>
-                        </div>
-                        <div className="text-right text-sm text-[#756978]">
-                          {typeof day?.totalActiveHours === 'number' ? `${day.totalActiveHours} active hours` : 'Activity details'}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-[#eadde5] pt-4 text-sm font-semibold text-[#2e2833]">
-                        <span>Open day details</span>
-                        <span className="text-[#5aa7e8]">Tap to expand</span>
-                      </div>
-                    </div>
-                  </summary>
-
-                  <div className="border-t border-[#eadde5] bg-[#fffdf9] p-5 sm:p-6">
-                    {previewActivities.length > 0 && (
-                      <div className="mb-4 grid gap-3 md:grid-cols-2">
-                        {previewActivities.map((activity: any, activityIndex: number) => {
-                          const cost = activity?.cost ?? activity?.estimated_cost;
-
-                          return (
-                            <button
-                              key={`${activity?.name ?? 'activity'}-${activityIndex}`}
-                              type="button"
-                              onClick={() => {
-                                const targetIndex = mapActivities.findIndex(
-                                  stop =>
-                                    stop.day === (day?.day || index + 1) &&
-                                    stop.activityIndex === activityIndex &&
-                                    stop.name === activity?.name
-                                );
-
-                                if (targetIndex >= 0) {
-                                  setSelectedStopIndex(targetIndex);
-                                }
-                              }}
-                              className="border border-[#eadde5] bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#5aa7e8] hover:shadow-[0_16px_36px_rgba(46,40,51,0.08)]"
-                            >
-                              <div className="flex flex-col gap-2">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <div className="text-sm font-bold text-[#2e2833]">
-                                      {[activity?.time, activity?.name].filter(Boolean).join(' · ')}
-                                    </div>
-                                    {activity?.category && (
-                                      <div className="mt-2 inline-flex bg-[#eef7ff] px-3 py-1 text-xs font-semibold text-[#5aa7e8]">
-                                        {activity.category}
-                                      </div>
-                                    )}
-                                  </div>
-                                  {cost !== undefined && cost !== null && (
-                                    <div className="bg-[#fff4e3] px-3 py-1 text-sm font-bold text-[#ff9a45]">
-                                      ${cost}
-                                    </div>
-                                  )}
-                                </div>
-                                {activity?.address && (
-                                  <div className="text-xs leading-6 text-[#756978]">{activity.address}</div>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {activities.length > previewActivities.length && (
-                      <div className="mb-4 border border-[#eadde5] bg-white px-4 py-3 text-sm font-medium text-[#756978]">
-                        Open this day to view the remaining {activities.length - previewActivities.length} stops.
-                      </div>
-                    )}
-
-                    {activities.length > 0 ? (
-                      <div className="grid gap-3">
-                        {activities.map((activity: any, activityIndex: number) => {
-                          const cost = activity?.cost ?? activity?.estimated_cost;
-
-                          return (
-                            <div
-                              key={`${activity?.name ?? 'activity'}-${activityIndex}`}
-                              className="border border-[#eadde5] bg-white p-4"
-                            >
-                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div className="min-w-0">
-                                  <div className="text-base font-bold text-[#2e2833]">
-                                    {[activity?.time, activity?.name].filter(Boolean).join(' · ')}
-                                  </div>
-                                  {activity?.category && (
-                                    <div className="mt-2 inline-flex bg-[#eef7ff] px-3 py-1 text-xs font-semibold text-[#5aa7e8]">
-                                      {activity.category}
-                                    </div>
-                                  )}
-                                </div>
-                                {cost !== undefined && cost !== null && (
-                                  <div className="bg-[#fff4e3] px-3 py-1 text-sm font-bold text-[#ff9a45]">
-                                    ${cost}
-                                  </div>
-                                )}
-                              </div>
-                              {activity?.description && (
-                                <p className="mt-3 text-sm leading-6 text-[#756978]">{activity.description}</p>
-                              )}
-                              {(activity?.address || activity?.latitude || activity?.longitude) && (
-                                <div className="mt-3 border border-[#eadde5] bg-[#fffdf9] px-3 py-2 text-xs leading-6 text-[#756978]">
-                                  {activity.address || 'Address unavailable'}
-                                  {activity.latitude && activity.longitude && (
-                                    <span className="ml-2 font-semibold text-[#2e2833]">
-                                      ({activity.latitude.toFixed(4)}, {activity.longitude.toFixed(4)})
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-[#756978]">No activities returned for this day.</div>
-                    )}
-                  </div>
-                </details>
-              );
-            })
-          )}
-        </section>
+        <TimelineView
+          tripId={trip.id}
+          itinerary={trip.itinerary}
+          dailyPlans={dailyPlans}
+          interests={trip.interests}
+          selectedActivityIndex={selectedStopIndex}
+          onSelectActivity={setSelectedStopIndex}
+          onTripUpdated={updatedTrip => setTrip(updatedTrip)}
+        />
 
         <button
           onClick={() => setIsChatOpen(true)}

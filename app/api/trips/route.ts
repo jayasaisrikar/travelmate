@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { buildPublicShareUrl, createOrRefreshTripShare } from '@/services/trip-sharing';
+import { saveTravelerPreferences } from '@/services/traveler-preferences';
 
 function summarizeTripBody(body: unknown) {
   if (!body || typeof body !== 'object') {
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const now = new Date().toISOString();
+    const preferences = body.preferences ?? null;
 
     const { data, error } = await supabase
       .from('trips')
@@ -108,6 +110,21 @@ export async function POST(request: NextRequest) {
         { error: formatTripError(error) },
         { status: 500 }
       );
+    }
+
+    if (preferences) {
+      const savedPreferences = await saveTravelerPreferences({
+        userId: user.id,
+        email: user.email ?? null,
+        preferences,
+      });
+
+      if (!savedPreferences) {
+        console.warn('[api/trips] preference save failed', {
+          tripId: data.id,
+          userId: user.id,
+        });
+      }
     }
 
     const { share, error: shareError } = await createOrRefreshTripShare(data as any, user.id);

@@ -108,6 +108,18 @@ export interface BudgetBreakdown {
   total: number | null;
 }
 
+export interface TravelerPreferences {
+  arrivalMethod?: 'flight' | 'train' | 'drive' | null;
+  activityIntensity?: 'Relaxed' | 'Balanced' | 'Packed' | null;
+  budget?: string;
+  interests?: string[];
+  arrivalTransferContext?: string;
+  departureTransferContext?: string;
+  dietaryRestrictions?: string[];
+  sleepPreference?: string;
+  updatedAt?: string;
+}
+
 export interface GeneratedItinerary {
   title: string;
   destination: string;
