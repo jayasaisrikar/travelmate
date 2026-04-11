@@ -1,1 +1,9 @@
-export function Navbar(){ return <nav>TravelMate</nav> }
+import { Brand } from './Brand';
+
+export function Navbar() {
+  return (
+    <nav>
+      <Brand href="/" />
+    </nav>
+  );
+}

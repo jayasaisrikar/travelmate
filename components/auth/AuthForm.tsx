@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import { Brand } from '@/components/common/Brand';
 
 type AuthMode = 'login' | 'signup';
 
@@ -105,9 +106,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="border border-[#2e2833] bg-white p-6 shadow-none sm:p-8">
-            <div className="inline-flex rounded-none border border-[#2e2833] bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
-              TravelMate
-            </div>
+            <Brand href="/" className="mb-5" />
             <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
               {mode === 'login' ? 'Log in to your trip workspace' : 'Create your trip workspace'}
             </h1>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { buildPublicShareUrl, createOrRefreshTripShare } from '@/services/trip-sharing';
 
 function summarizeTripBody(body: unknown) {
   if (!body || typeof body !== 'object') {
@@ -109,7 +110,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data);
+    const { share, error: shareError } = await createOrRefreshTripShare(data as any, user.id);
+
+    if (shareError) {
+      console.error('[api/trips] share precreate failed', {
+        tripId: data.id,
+        error: shareError.message,
+        code: shareError.code,
+      });
+    }
+
+    const baseUrl = new URL(request.url).origin;
+
+    return NextResponse.json({
+      ...data,
+      share: share
+        ? {
+            ...share,
+            shareUrl: buildPublicShareUrl(baseUrl, share.token),
+          }
+        : null,
+      shareUrl: share ? buildPublicShareUrl(baseUrl, share.token) : null,
+    });
   } catch (error) {
     console.error('[api/trips] unexpected error', {
       message: error instanceof Error ? error.message : 'Unknown error',

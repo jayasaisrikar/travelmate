@@ -1,4 +1,5 @@
 import { getSupabaseBrowser } from '@/services/supabase-browser'
+import type { TripShareRecord, TripSuggestion } from '@/lib/travel-types'
 
 function createTripId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
@@ -14,6 +15,26 @@ export interface Trip {
   itinerary: any
   created_at: string
   updated_at: string
+}
+
+export interface TripSharePayload {
+  id: string
+  trip_id: string
+  owner_user_id: string
+  token: string
+  share_title: string | null
+  share_description: string | null
+  share_image_url: string | null
+  revoked_at: string | null
+  created_at: string
+  updated_at: string
+  shareUrl: string
+}
+
+export interface TripLoadResponse {
+  trip: Trip | null
+  share: TripSharePayload | null
+  shareUrl: string | null
 }
 
 async function fetchTripApi<T>(path: string, init?: RequestInit): Promise<T> {
@@ -50,9 +71,8 @@ export async function saveTrip(
   })
 }
 
-export async function loadTrip(tripId: string): Promise<Trip | null> {
-  const data = await fetchTripApi<{ trip: Trip | null }>(`/api/trips/${encodeURIComponent(tripId)}`)
-  return data.trip
+export async function loadTrip(tripId: string): Promise<TripLoadResponse> {
+  return fetchTripApi<TripLoadResponse>(`/api/trips/${encodeURIComponent(tripId)}`)
 }
 
 export async function listTrips(): Promise<Trip[]> {
@@ -81,4 +101,44 @@ export async function retryTripStay(
   })
 
   return data.trip
+}
+
+export async function createTripShare(
+  tripId: string,
+  regenerate = false
+): Promise<{ shareUrl: string; shareToken: string }> {
+  const data = await fetchTripApi<{ share: TripShareRecord | null; shareUrl: string | null }>(
+    `/api/trips/${encodeURIComponent(tripId)}/share`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ regenerate }),
+    }
+  )
+
+  return {
+    shareUrl: data.shareUrl || '',
+    shareToken: data.share?.token || '',
+  }
+}
+
+export async function getTripShare(tripId: string): Promise<TripShareRecord | null> {
+  const data = await fetchTripApi<{ share: TripShareRecord | null }>(
+    `/api/trips/${encodeURIComponent(tripId)}/share`
+  )
+  return data.share
+}
+
+export async function revokeTripShare(tripId: string): Promise<boolean> {
+  await fetchTripApi<{ success: boolean }>(`/api/trips/${encodeURIComponent(tripId)}/share`, {
+    method: 'DELETE',
+  })
+
+  return true
+}
+
+export async function loadTripSuggestions(tripId: string): Promise<TripSuggestion[]> {
+  const data = await fetchTripApi<{ suggestions: TripSuggestion[] }>(
+    `/api/trips/${encodeURIComponent(tripId)}/suggestions`
+  )
+  return data.suggestions || []
 }

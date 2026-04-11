@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
-import L from 'leaflet';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 
 interface Activity {
@@ -42,30 +41,49 @@ export function MapComponent({
   focusStayTrigger,
 }: MapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.Marker[]>([]);
-  const activityMarkersRef = useRef<L.Marker[]>([]);
-  const polylineRef = useRef<L.Polyline | null>(null);
+  const [leaflet, setLeaflet] = useState<any>(null);
+  const mapRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const activityMarkersRef = useRef<any[]>([]);
+  const polylineRef = useRef<any>(null);
 
   const validActivities = useMemo(() => activities.filter(hasValidCoordinates), [activities]);
 
   useEffect(() => {
-    if (!mapContainerRef.current) {
+    let mounted = true;
+
+    const loadLeaflet = async () => {
+      const module = await import('leaflet');
+
+      if (mounted) {
+        setLeaflet(module.default ?? module);
+      }
+    };
+
+    loadLeaflet();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!leaflet || !mapContainerRef.current) {
       return;
     }
 
     if (!mapRef.current) {
-      mapRef.current = L.map(mapContainerRef.current, {
+      mapRef.current = leaflet.map(mapContainerRef.current, {
         zoomControl: false,
         scrollWheelZoom: false,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19,
       }).addTo(mapRef.current);
 
-      L.control.zoom({ position: 'bottomright' }).addTo(mapRef.current);
+      leaflet.control.zoom({ position: 'bottomright' }).addTo(mapRef.current);
     }
 
     const map = mapRef.current;
@@ -79,11 +97,11 @@ export function MapComponent({
       polylineRef.current = null;
     }
 
-    const bounds: L.LatLngExpression[] = [];
+    const bounds: any[] = [];
 
     if (destinationCoordinates) {
-      const destinationMarker = L.marker([destinationCoordinates.latitude, destinationCoordinates.longitude], {
-        icon: L.divIcon({
+      const destinationMarker = leaflet.marker([destinationCoordinates.latitude, destinationCoordinates.longitude], {
+        icon: leaflet.divIcon({
           html: `
             <div style="
               width: 42px;
@@ -118,8 +136,8 @@ export function MapComponent({
     }
 
     if (stay) {
-      const stayMarker = L.marker([stay.latitude, stay.longitude], {
-        icon: L.divIcon({
+      const stayMarker = leaflet.marker([stay.latitude, stay.longitude], {
+        icon: leaflet.divIcon({
           html: `
             <div style="
               width: 42px;
@@ -158,8 +176,8 @@ export function MapComponent({
       const palette = ['#5aa7e8', '#f6d23c', '#ff9a45', '#2e2833'];
       const color = palette[index % palette.length];
 
-      const marker = L.marker([activity.latitude, activity.longitude], {
-        icon: L.divIcon({
+      const marker = leaflet.marker([activity.latitude, activity.longitude], {
+        icon: leaflet.divIcon({
           html: `
             <div style="
               width: 40px;
@@ -197,7 +215,7 @@ export function MapComponent({
     });
 
     if (validActivities.length > 1) {
-      polylineRef.current = L.polyline(
+      polylineRef.current = leaflet.polyline(
         validActivities.map(activity => [activity.latitude, activity.longitude] as [number, number]),
         {
           color: '#5aa7e8',
@@ -209,7 +227,7 @@ export function MapComponent({
     }
 
     if (bounds.length > 0) {
-      map.fitBounds(L.latLngBounds(bounds).pad(0.16));
+      map.fitBounds(leaflet.latLngBounds(bounds).pad(0.16));
     } else if (destinationCoordinates) {
       map.setView([destinationCoordinates.latitude, destinationCoordinates.longitude], 10);
     }
@@ -226,7 +244,7 @@ export function MapComponent({
         polylineRef.current = null;
       }
     };
-  }, [destination, destinationCoordinates, validActivities]);
+  }, [destination, destinationCoordinates, leaflet, validActivities]);
 
   useEffect(() => {
     if (selectedActivityIndex === null || selectedActivityIndex === undefined) {
@@ -245,7 +263,7 @@ export function MapComponent({
       duration: 0.7,
     });
     marker.openPopup();
-  }, [selectedActivityIndex, validActivities.length]);
+  }, [leaflet, selectedActivityIndex, validActivities.length]);
 
   useEffect(() => {
     if (!stay || focusStayTrigger === undefined || focusStayTrigger <= 0) {
@@ -258,11 +276,11 @@ export function MapComponent({
       return;
     }
 
-    const target = L.latLng(stay.latitude, stay.longitude);
+    const target = leaflet.latLng(stay.latitude, stay.longitude);
     map.flyTo(target, Math.max(map.getZoom(), 14), {
       duration: 0.7,
     });
-  }, [focusStayTrigger, stay]);
+  }, [focusStayTrigger, leaflet, stay]);
 
   useEffect(() => {
     return () => {

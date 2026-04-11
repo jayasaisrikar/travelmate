@@ -72,6 +72,32 @@ export interface TripTransfer {
   notes: string | null;
 }
 
+export interface TripSuggestion {
+  id: string;
+  share_id: string;
+  trip_id: string;
+  owner_user_id: string;
+  guest_name: string | null;
+  guest_email: string | null;
+  suggestion: string;
+  message: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TripShare {
+  id: string;
+  trip_id: string;
+  owner_user_id: string;
+  token: string;
+  share_title: string | null;
+  share_description: string | null;
+  share_image_url: string | null;
+  revoked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BudgetBreakdown {
   flights: number | null;
   hotels: number | null;
@@ -101,6 +127,25 @@ export interface GeneratedItinerary {
     pois: PointOfInterest[];
     stayCandidates: PointOfInterest[];
   };
+}
+
+export type TripShareRecord = TripShare;
+export type TripSuggestionRecord = TripSuggestion;
+
+export interface PublicTripSharePayload {
+  share: TripShareRecord;
+  trip: {
+    id: string;
+    destination: string;
+    duration: number;
+    budget: string;
+    interests: string[];
+    itinerary: GeneratedItinerary;
+    created_at: string;
+    updated_at: string;
+  };
+  suggestionsCount: number;
+  shareUrl: string;
 }
 
 export interface ItineraryGenerationInput {

@@ -5,9 +5,12 @@ import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AuthGate } from '@/components/auth/AuthGate';
+import { Brand } from '@/components/common/Brand';
 import ItineraryChat from '@/components/ItineraryChat';
 import { MapComponent } from '@/components/MapComponent';
-import { loadTrip, retryTripStay, Trip } from '@/lib/supabase-trips';
+import { ShareModal } from '@/components/trip/ShareModal';
+import { loadTrip, loadTripSuggestions, retryTripStay, Trip } from '@/lib/supabase-trips';
+import type { TripSuggestion } from '@/lib/travel-types';
 
 export const dynamicParams = true;
 
@@ -101,6 +104,7 @@ export default function TripDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [selectedStopIndex, setSelectedStopIndex] = useState<number | null>(null);
   const [isStayRetryOpen, setIsStayRetryOpen] = useState(false);
   const [stayBudgetRange, setStayBudgetRange] = useState('');
@@ -108,6 +112,11 @@ export default function TripDetailsPage() {
   const [stayRetryLoading, setStayRetryLoading] = useState(false);
   const [stayRetryError, setStayRetryError] = useState('');
   const [focusStayTrigger, setFocusStayTrigger] = useState(0);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareToken, setShareToken] = useState('');
+  const [suggestions, setSuggestions] = useState<TripSuggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState('');
   const mapSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -120,7 +129,9 @@ export default function TripDetailsPage() {
     const fetchTrip = async () => {
       try {
         const tripData = await loadTrip(tripId);
-        setTrip(tripData);
+        setTrip(tripData.trip);
+        setShareUrl(tripData.shareUrl || '');
+        setShareToken(tripData.share?.token || '');
       } catch (err: unknown) {
         console.error('Error loading trip:', err);
         setError(err instanceof Error ? err.message : 'Failed to load trip');
@@ -131,6 +142,45 @@ export default function TripDetailsPage() {
 
     fetchTrip();
   }, [tripId]);
+
+  useEffect(() => {
+    if (!tripId || !trip) {
+      return;
+    }
+
+    let mounted = true;
+
+    const fetchSuggestions = async () => {
+      setSuggestionsLoading(true);
+      setSuggestionsError('');
+
+      try {
+        const loadedSuggestions = await loadTripSuggestions(tripId);
+
+        if (!mounted) {
+          return;
+        }
+
+        setSuggestions(loadedSuggestions);
+      } catch (err: unknown) {
+        if (!mounted) {
+          return;
+        }
+
+        setSuggestionsError(err instanceof Error ? err.message : 'Failed to load suggestions');
+      } finally {
+        if (mounted) {
+          setSuggestionsLoading(false);
+        }
+      }
+    };
+
+    fetchSuggestions();
+
+    return () => {
+      mounted = false;
+    };
+  }, [trip, tripId]);
 
   const dailyPlans = useMemo(() => getDailyPlans(trip?.itinerary), [trip]);
   const totalEstimatedCost = useMemo(() => getTotalEstimatedCost(trip?.itinerary), [trip]);
@@ -191,10 +241,7 @@ export default function TripDetailsPage() {
       <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
         <nav className="sticky top-0 z-40 border-b border-[#eadde5] bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-            <Link href="/" className="flex items-center gap-2 transition hover:opacity-80">
-              <div className="h-7 w-7 rounded-xl bg-[#5aa7e8]" />
-              <span className="font-extrabold tracking-tight">TravelMate</span>
-            </Link>
+            <Brand href="/" compact />
           </div>
         </nav>
 
@@ -217,6 +264,14 @@ export default function TripDetailsPage() {
   return (
     <AuthGate>
       <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
+      <ShareModal
+        tripId={trip.id}
+        destination={trip.destination}
+        shareUrl={shareUrl}
+        shareToken={shareToken}
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+      />
       <ItineraryChat
         itinerary={trip.itinerary}
         isOpen={isChatOpen}
@@ -225,16 +280,19 @@ export default function TripDetailsPage() {
 
       <nav className="sticky top-0 z-40 border-b border-[#eadde5] bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 transition hover:opacity-80">
-            <div className="h-7 w-7 rounded-xl bg-[#5aa7e8]" />
-            <span className="font-extrabold tracking-tight">TravelMate</span>
-          </Link>
+          <Brand href="/" compact />
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsChatOpen(true)}
               className="rounded-full bg-[#2e2833] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
             >
               Ask assistant
+            </button>
+            <button
+              onClick={() => setIsShareOpen(true)}
+              className="rounded-full border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+            >
+              Share trip
             </button>
             <Link href="/dashboard" className="text-sm font-medium text-[#756978] transition hover:text-[#2e2833]">
               Back to Trips
@@ -266,6 +324,12 @@ export default function TripDetailsPage() {
                 className="rounded-full bg-[#5aa7e8] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(90,167,232,0.22)] transition hover:translate-y-[-1px]"
               >
                 Open Trip Assistant
+              </button>
+              <button
+                onClick={() => setIsShareOpen(true)}
+                className="rounded-full border border-[#2e2833] bg-white px-5 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+              >
+                Share trip
               </button>
               <Link
                 href="/dashboard"
@@ -360,152 +424,258 @@ export default function TripDetailsPage() {
           </div>
         </section>
 
-        <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Stay</div>
-              <h2 className="mt-1 text-2xl font-black tracking-tight">Where you’re staying</h2>
+        <section className="mt-8 grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
+          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6" open>
+            <summary className="cursor-pointer list-none">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Stay</div>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight">Where you’re staying</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.preventDefault();
+                    setIsStayRetryOpen(true);
+                    scrollToMap();
+                  }}
+                  className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                >
+                  Retry stay
+                </button>
+              </div>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
-                This is pulled from live lodging POIs near the destination so the itinerary includes a real place to stay.
+                Live lodging data gets pinned here so the trip always has a real base.
               </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setIsStayRetryOpen(true);
-                scrollToMap();
-              }}
-              className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
-            >
-              Retry stay
-            </button>
-          </div>
-
-          {stay ? (
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-[24px] border border-[#eadde5] bg-[#fffdf9] p-5">
-                <div className="inline-flex rounded-full bg-[#ff9a45] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-                  Live lodging
-                </div>
-                <h3 className="mt-4 text-2xl font-black tracking-tight text-[#2e2833]">{stay.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#756978]">
-                  {stay.type}
-                </p>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-[#eadde5] bg-white p-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-in</div>
-                    <div className="mt-2 text-sm font-semibold text-[#2e2833]">
-                      {stay.checkInDate ? `${stay.checkInDate} ` : ''}
-                      {stay.checkInTime || 'Not set'}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-[#eadde5] bg-white p-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-out</div>
-                    <div className="mt-2 text-sm font-semibold text-[#2e2833]">
-                      {stay.checkOutDate ? `${stay.checkOutDate} ` : ''}
-                      {stay.checkOutTime || 'Not set'}
-                    </div>
-                  </div>
-                </div>
-
-                {stay.notes && (
-                  <div className="mt-4 rounded-2xl border border-[#f6d23c]/40 bg-[#fff8e6] p-4 text-sm leading-6 text-[#2e2833]">
-                    {stay.notes}
-                  </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="border border-[#2e2833] bg-[#fffdf9] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+                  {stay ? stay.name : 'No stay yet'}
+                </span>
+                {stay && (
+                  <span className="border border-[#2e2833] bg-[#eef7ff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#5aa7e8]">
+                    {stay.type}
+                  </span>
                 )}
               </div>
+            </summary>
 
-            <div className="rounded-[24px] border border-[#eadde5] bg-[#fffdf9] p-5">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Map location</div>
-              <div className="mt-2 text-sm font-semibold text-[#2e2833]">{stay.latitude.toFixed(4)}, {stay.longitude.toFixed(4)}</div>
-              <p className="mt-3 text-sm leading-6 text-[#756978]">
-                The stay marker is shown on the map alongside the places you visit so the route and lodging are visible in one place.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setFocusStayTrigger(current => current + 1);
-                  scrollToMap();
-                }}
-                className="mt-4 border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
-              >
-                Show stay on map
-              </button>
-              {stay.address && (
-                <div className="mt-4 border border-[#eadde5] bg-white px-4 py-3 text-sm text-[#756978]">
-                  {stay.address}
-                </div>
-              )}
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 rounded-[24px] border border-dashed border-[#eadde5] bg-[#fffdf9] p-5 text-sm leading-6 text-[#756978]">
-              No live stay option was returned for this trip. Tap retry and we will ask for your budget range and preferred area again.
-            </div>
-          )}
-        </section>
-
-        <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Transfers</div>
-              <h2 className="mt-1 text-2xl font-black tracking-tight">Arrival and departure legs</h2>
-            </div>
-            <p className="max-w-2xl text-sm leading-6 text-[#756978]">
-              These are the non-negotiable transport legs between the real world and the stay.
-            </p>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            {transfers.length > 0 ? (
-              transfers.map((transfer, index) => (
-                <div
-                  key={`${transfer.kind}-${index}`}
-                  className="rounded-[24px] border border-[#eadde5] bg-[#fffdf9] p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="inline-flex rounded-full bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
-                        {transfer.kind}
-                      </div>
-                      <h3 className="mt-3 text-lg font-black tracking-tight text-[#2e2833]">
-                        {transfer.title}
-                      </h3>
+            <div className="mt-5 grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
+              {stay ? (
+                <>
+                  <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
+                    <div className="inline-flex border border-[#2e2833] bg-[#ff9a45] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+                      Live lodging
                     </div>
-                    {transfer.time && (
-                      <div className="rounded-full bg-white px-3 py-1 text-sm font-bold text-[#ff9a45]">
-                        {transfer.time}
+                    <h3 className="mt-4 text-2xl font-black tracking-tight text-[#2e2833]">{stay.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#756978]">{stay.type}</p>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="border border-[#eadde5] bg-white p-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-in</div>
+                        <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                          {stay.checkInDate ? `${stay.checkInDate} ` : ''}
+                          {stay.checkInTime || 'Not set'}
+                        </div>
+                      </div>
+                      <div className="border border-[#eadde5] bg-white p-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-out</div>
+                        <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                          {stay.checkOutDate ? `${stay.checkOutDate} ` : ''}
+                          {stay.checkOutTime || 'Not set'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {stay.notes && (
+                      <div className="mt-4 border border-[#f6d23c]/40 bg-[#fff8e6] p-4 text-sm leading-6 text-[#2e2833]">
+                        {stay.notes}
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-4 space-y-3">
-                    <div className="rounded-2xl border border-[#eadde5] bg-white p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">From</div>
-                      <div className="mt-1 text-sm font-semibold text-[#2e2833]">
-                        {transfer.from || 'Not specified'}
-                      </div>
+                  <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Map location</div>
+                    <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                      {stay.latitude.toFixed(4)}, {stay.longitude.toFixed(4)}
                     </div>
-                    <div className="rounded-2xl border border-[#eadde5] bg-white p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">To</div>
-                      <div className="mt-1 text-sm font-semibold text-[#2e2833]">
-                        {transfer.to || 'Not specified'}
-                      </div>
+                    <p className="mt-3 text-sm leading-6 text-[#756978]">
+                      The stay marker is shown on the map alongside the places you visit so the route and lodging are visible in one place.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFocusStayTrigger(current => current + 1);
+                          scrollToMap();
+                        }}
+                        className="border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+                      >
+                        Show stay on map
+                      </button>
+                      {stay.address && (
+                        <div className="border border-[#eadde5] bg-white px-4 py-2 text-sm text-[#756978]">
+                          {stay.address}
+                        </div>
+                      )}
                     </div>
                   </div>
+                </>
+              ) : (
+                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978] md:col-span-2">
+                  No live stay option was returned for this trip. Tap retry and we will ask for your budget range and preferred area again.
+                </div>
+              )}
+            </div>
+          </details>
 
-                  {transfer.notes && (
-                    <p className="mt-4 text-sm leading-6 text-[#756978]">{transfer.notes}</p>
+          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+            <summary className="cursor-pointer list-none">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Transfers</div>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight">Arrival and departure</h2>
+                </div>
+                <div className="text-sm font-semibold text-[#756978]">
+                  {transfers.length > 0 ? `${transfers.length} legs` : 'No legs yet'}
+                </div>
+              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
+                These are the non-negotiable transport legs between the real world and the stay.
+              </p>
+            </summary>
+
+            <div className="mt-5 grid gap-4">
+              {transfers.length > 0 ? (
+                transfers.map((transfer, index) => (
+                  <div
+                    key={`${transfer.kind}-${index}`}
+                    className="border border-[#eadde5] bg-[#fffdf9] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="inline-flex border border-[#2e2833] bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+                          {transfer.kind}
+                        </div>
+                        <h3 className="mt-3 text-lg font-black tracking-tight text-[#2e2833]">
+                          {transfer.title}
+                        </h3>
+                      </div>
+                      {transfer.time && (
+                        <div className="border border-[#2e2833] bg-white px-3 py-1 text-sm font-bold text-[#ff9a45]">
+                          {transfer.time}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="border border-[#eadde5] bg-white p-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">From</div>
+                        <div className="mt-1 text-sm font-semibold text-[#2e2833]">
+                          {transfer.from || 'Not specified'}
+                        </div>
+                      </div>
+                      <div className="border border-[#eadde5] bg-white p-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">To</div>
+                        <div className="mt-1 text-sm font-semibold text-[#2e2833]">
+                          {transfer.to || 'Not specified'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {transfer.notes && (
+                      <p className="mt-4 text-sm leading-6 text-[#756978]">{transfer.notes}</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978]">
+                  No transfer legs were generated for this trip.
+                </div>
+              )}
+            </div>
+          </details>
+
+          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:col-span-2">
+            <summary className="cursor-pointer list-none">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Guest suggestions</div>
+                  <h2 className="mt-1 text-2xl font-black tracking-tight">People can respond to your trip</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={event => {
+                    event.preventDefault();
+                    setIsShareOpen(true);
+                  }}
+                  className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                >
+                  Share trip
+                </button>
+              </div>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
+                Guests submit suggestions from the public share page, and you can review them here.
+              </p>
+            </summary>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+              <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Public badge</div>
+                <div className="mt-2 text-sm leading-6 text-[#2e2833]">
+                  Hey Check out my trip and submit your suggestions on TravelMate.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsShareOpen(true)}
+                  className="mt-4 border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+                >
+                  Open sharing tools
+                </button>
+              </div>
+
+              <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Latest suggestions</div>
+                    <div className="mt-1 text-lg font-black tracking-tight text-[#2e2833]">
+                      {suggestions.length} total
+                    </div>
+                  </div>
+                  {suggestionsLoading && <div className="text-sm font-medium text-[#756978]">Loading...</div>}
+                </div>
+
+                {suggestionsError && (
+                  <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                    {suggestionsError}
+                  </div>
+                )}
+
+                <div className="mt-4 space-y-3">
+                  {suggestions.length > 0 ? (
+                    suggestions.slice(0, 3).map(suggestion => (
+                      <div key={suggestion.id} className="border border-[#2e2833] bg-white px-4 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-sm font-bold text-[#2e2833]">
+                            {suggestion.guest_name || 'Anonymous guest'}
+                          </div>
+                          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                            {new Date(suggestion.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <p className="mt-2 text-sm leading-6 text-[#756978]">
+                          {suggestion.message || suggestion.suggestion}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="border border-dashed border-[#eadde5] bg-white px-4 py-3 text-sm leading-6 text-[#756978]">
+                      No suggestions yet. Share the trip publicly and ask guests to react.
+                    </div>
                   )}
                 </div>
-              ))
-            ) : (
-              <div className="rounded-[24px] border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978]">
-                No transfer legs were generated for this trip.
               </div>
-            )}
-          </div>
+            </div>
+          </details>
         </section>
 
         <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">

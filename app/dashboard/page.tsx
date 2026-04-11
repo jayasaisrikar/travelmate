@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { deleteTrip, listTrips, Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import { Brand } from '@/components/common/Brand';
 
 function getEstimatedCost(itinerary: any): string | null {
   const rawValue = itinerary?.totalEstimatedCost ?? itinerary?.total_estimated_cost;
@@ -56,15 +57,15 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fbfaf7] text-[#2e2833]">
-        <div className="rounded-[28px] border border-[#eadde5] bg-white px-6 py-5 shadow-[0_20px_70px_rgba(46,40,51,0.12)]">
+      <div className="flex min-h-screen items-center justify-center bg-[#fbfaf7] px-4 text-[#2e2833]">
+        <div className="border border-[#2e2833] bg-white px-5 py-4">
           <div className="flex items-center gap-3">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
-              className="h-5 w-5 rounded-full border-2 border-[#4ea0e8] border-t-transparent"
+              className="h-5 w-5 border-2 border-[#5aa7e8] border-t-transparent"
             />
-            <span className="font-medium">Loading trips...</span>
+            <span className="text-sm font-semibold sm:text-base">Loading trips...</span>
           </div>
         </div>
       </div>
@@ -73,54 +74,56 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
-      <nav className="relative z-10 border-b border-[#eadde5] bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-xl bg-[#5aa7e8] shadow-sm" />
-            <span className="font-extrabold tracking-tight">TravelMate</span>
-          </Link>
-          <div className="flex items-center gap-3">
+      <div className="border-b border-[#2e2833] bg-[#fffdf9]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <Brand href="/" compact className="shrink-0" />
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Dashboard</div>
+              <div className="text-lg font-black tracking-tight">Saved trips</div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
             <button
               onClick={handleSignOut}
-              className="border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+              className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
             >
-              Sign Out
+              Sign out
             </button>
             <button
               onClick={() => router.push('/dashboard/onboarding')}
-              className="bg-[#5aa7e8] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4ea0e8]"
+              className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
             >
-              New Trip
+              New trip
             </button>
           </div>
         </div>
-      </nav>
+      </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mb-8 grid gap-4 border border-[#eadde5] bg-white p-5 shadow-[0_20px_70px_rgba(46,40,51,0.08)] sm:p-7 lg:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <div className="mb-3 inline-flex rounded-full border border-[#eadde5] bg-[#fff8ef] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="grid gap-4 border border-[#2e2833] bg-white p-5 sm:p-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-3">
+            <div className="inline-flex border border-[#2e2833] bg-[#f6d23c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
               Saved trips
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">My Trips</h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-[#756978] sm:text-lg">
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">My trips</h1>
+            <p className="max-w-2xl text-sm leading-7 text-[#756978] sm:text-base">
               {trips.length === 0
-                ? 'Create your first trip'
-                : `You have ${trips.length} saved trip${trips.length !== 1 ? 's' : ''}`}
+                ? 'Create your first trip from a live destination search.'
+                : `You have ${trips.length} saved trip${trips.length !== 1 ? 's' : ''}.`}
             </p>
           </div>
+
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              { label: 'Trips', value: trips.length.toString(), tone: 'plum' },
-              { label: 'Storage', value: trips.length > 0 ? 'Live' : 'Empty', tone: 'blue' },
-              { label: 'Assistant', value: 'Ready', tone: 'green' },
+              { label: 'Trips', value: trips.length.toString(), color: '#5aa7e8' },
+              { label: 'Storage', value: trips.length > 0 ? 'Live' : 'Empty', color: '#f6d23c' },
+              { label: 'Assistant', value: 'Ready', color: '#ff9a45' },
             ].map(card => (
-              <div
-                key={card.label}
-                className="rounded-[22px] border border-[#eadde5] bg-[#fffdf9] px-4 py-4 shadow-sm"
-              >
+              <div key={card.label} className="border border-[#2e2833] bg-[#fffdf9] p-4">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">{card.label}</div>
-                <div className={`mt-2 text-2xl font-black tracking-tight ${card.tone === 'blue' ? 'text-[#4ea0e8]' : card.tone === 'green' ? 'text-[#ff9a45]' : 'text-[#2e2833]'}`}>
+                <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
                   {card.value}
                 </div>
               </div>
@@ -129,33 +132,31 @@ export default function DashboardPage() {
         </div>
 
         {error && (
-          <div className="mb-8 rounded-2xl border border-[#f0d7de] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372] shadow-sm">
+          <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
             {error}
           </div>
         )}
 
         {trips.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            className="overflow-hidden rounded-[30px] border border-[#eadde5] bg-white p-8 text-center shadow-[0_20px_70px_rgba(46,40,51,0.08)] sm:p-12"
+            className="mt-6 border border-[#2e2833] bg-white p-6 text-center sm:p-10"
           >
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5aa7e8] text-white shadow-lg">
-              TM
-            </div>
-            <h2 className="mb-3 text-2xl font-black tracking-tight sm:text-3xl">No trips yet</h2>
-            <p className="mx-auto mb-8 max-w-xl text-sm leading-7 text-[#756978] sm:text-base">
+            <Brand asLink={false} compact className="mx-auto mb-4 justify-center" />
+            <h2 className="text-2xl font-black tracking-tight sm:text-3xl">No trips yet</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-[#756978] sm:text-base">
               Create a trip after connecting your real destination and preferences.
             </p>
             <button
               onClick={() => router.push('/dashboard/onboarding')}
-              className="rounded-full bg-[#5aa7e8] px-6 py-3 font-semibold text-white shadow-[0_12px_30px_rgba(90,167,232,0.24)] transition hover:translate-y-[-1px]"
+              className="mt-5 border border-[#2e2833] bg-[#2e2833] px-5 py-3 font-semibold text-white"
             >
-              Create First Trip
+              Create first trip
             </button>
           </motion.div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {trips.map((trip, index) => {
               const estimatedCost = getEstimatedCost(trip.itinerary);
 
@@ -164,24 +165,24 @@ export default function DashboardPage() {
                   key={trip.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="overflow-hidden rounded-[28px] border border-[#eadde5] bg-white shadow-[0_20px_70px_rgba(46,40,51,0.08)] transition hover:-translate-y-1 hover:shadow-[0_24px_90px_rgba(46,40,51,0.14)]"
+                  transition={{ delay: index * 0.04 }}
+                  className="border border-[#2e2833] bg-white"
                 >
-                  <div className="bg-[#5aa7e8] p-6 text-white">
-                    <div className="mb-4 inline-flex border border-white bg-[#fbfaf7] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2e2833]">
+                  <div className="border-b border-[#2e2833] bg-[#5aa7e8] p-5 text-white">
+                    <div className="inline-flex border border-white bg-[#fbfaf7] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2e2833]">
                       Saved trip
                     </div>
-                    <h3 className="text-2xl font-black tracking-tight">{trip.destination}</h3>
-                    <p className="mt-1 text-sm text-white">{trip.duration} days</p>
+                    <h3 className="mt-4 text-2xl font-black tracking-tight">{trip.destination}</h3>
+                    <p className="mt-1 text-sm text-white/90">{trip.duration} days</p>
                   </div>
 
-                  <div className="space-y-5 p-6">
+                  <div className="space-y-4 p-5">
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-2xl bg-[#fffdf9] p-4">
+                      <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
                         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Budget</div>
-                        <p className="mt-2 font-semibold text-[#2e2833]">{trip.budget || 'Not set'}</p>
+                        <p className="mt-2 text-sm font-semibold text-[#2e2833]">{trip.budget || 'Not set'}</p>
                       </div>
-                      <div className="rounded-2xl bg-[#fffdf9] p-4">
+                      <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
                         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Interests</div>
                         <p className="mt-2 text-sm leading-6 text-[#756978]">
                           {trip.interests.length > 0 ? trip.interests.join(', ') : 'No interests saved'}
@@ -190,22 +191,22 @@ export default function DashboardPage() {
                     </div>
 
                     {estimatedCost && (
-                      <div className="rounded-2xl border border-[#fde2b7] bg-[#fff4e3] p-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#ff9a45]">Estimated Cost</div>
-                        <p className="mt-2 text-2xl font-black tracking-tight text-[#2e2833]">${estimatedCost}</p>
+                      <div className="border border-[#2e2833] bg-[#fff8e6] p-4">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a65372]">Estimated cost</div>
+                        <p className="mt-2 text-2xl font-black tracking-tight">${estimatedCost}</p>
                       </div>
                     )}
 
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <button
                         onClick={() => router.push(`/trip/${trip.id}`)}
-                        className="flex-1 rounded-full bg-[#5aa7e8] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(90,167,232,0.2)] transition hover:translate-y-[-1px]"
+                        className="flex-1 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
                       >
-                        View Details
+                        View details
                       </button>
                       <button
                         onClick={() => handleDeleteTrip(trip.id)}
-                        className="rounded-full border border-[#f0d7de] bg-white px-4 py-3 text-sm font-semibold text-[#a65372] transition hover:border-[#f6d23c] hover:bg-[#fff8e6]"
+                        className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#a65372]"
                       >
                         Delete
                       </button>

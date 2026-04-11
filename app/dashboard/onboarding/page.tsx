@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { saveTrip } from '@/lib/supabase-trips';
+import { Brand } from '@/components/common/Brand';
 
 const STEPS = ['Destination', 'Trip window', 'Preferences', 'Review'];
 const ARRIVAL_METHODS = ['flight', 'train', 'drive'] as const;
@@ -254,23 +255,21 @@ export default function OnboardingPage() {
           top: 0,
           zIndex: 20,
           borderBottom: '1px solid #eadde5',
-          padding: '16px 20px',
+          padding: '14px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 12,
-          background: 'rgba(251,248,241,0.84)',
-          backdropFilter: 'blur(18px)',
+          background: '#fffdf9',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 30, height: 30, background: '#5aa7e8', borderRadius: 10, boxShadow: '0 10px 24px rgba(90,167,232,0.2)' }} />
-          <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: -0.3 }}>TravelMate</span>
+          <Brand href="/" compact />
         </div>
       </div>
 
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 16px 120px' }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 40, flexWrap: 'wrap' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 104px' }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
           {STEPS.map((label, index) => (
             <div key={label} style={{ flex: '1 1 140px', minWidth: 120 }}>
               <div
@@ -288,10 +287,10 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.75rem)', fontWeight: 900, marginBottom: 10, letterSpacing: -1.5, lineHeight: 1 }}>
+        <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.4rem)', fontWeight: 900, marginBottom: 10, letterSpacing: -1.5, lineHeight: 1 }}>
           {['Search for your destination', 'Choose your trip window', 'Set your preferences', 'Review before generating'][step]}
         </h1>
-        <p style={{ color: '#756978', marginBottom: 32, fontSize: 'clamp(0.98rem, 2.5vw, 1.08rem)', lineHeight: 1.7, maxWidth: 720 }}>
+        <p style={{ color: '#756978', marginBottom: 28, fontSize: 'clamp(0.98rem, 2.5vw, 1.05rem)', lineHeight: 1.65, maxWidth: 640 }}>
           {[
             'Select a real destination from live search results so we can generate your trip with verified place data.',
             'Tell us when you arrive, where the first ride should drop you, and where the last ride should take you.',
@@ -361,8 +360,8 @@ export default function OnboardingPage() {
         )}
 
         {step === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
               {[
                 { label: 'Arrival Date', key: 'arrivalDate' as const, type: 'date' as const },
                 { label: 'Departure Date', key: 'departureDate' as const, type: 'date' as const },
@@ -383,13 +382,13 @@ export default function OnboardingPage() {
               ))}
             </div>
 
-            <div style={{ padding: '14px 16px', borderRadius: 18, border: '1px solid #eadde5', background: '#fffdf9', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}>
+            <div style={{ padding: '14px 16px', border: '1px solid #eadde5', background: '#fffdf9' }}>
               <p style={{ margin: 0, color: '#756978', fontSize: 14, lineHeight: 1.6 }}>
                 We use your arrival and departure times as hard boundaries. The planner should not assume the day starts at 9:00.
               </p>
             </div>
 
-            <div style={{ borderRadius: 22, border: '1px solid #eadde5', background: '#ffffff', boxShadow: '0 14px 32px rgba(67,32,79,0.06)', padding: 18 }}>
+            <div style={{ border: '1px solid #eadde5', background: '#ffffff', padding: 18 }}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{ width: 34, height: 34, borderRadius: 12, background: '#5aa7e8', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
@@ -417,7 +416,7 @@ export default function OnboardingPage() {
                   }
                     placeholder="Example: a station, airport, ferry terminal, or neighborhood"
                     rows={2}
-                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffdf9', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.04)' }}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffdf9', border: '1px solid #eadde5', color: '#2e2833', fontSize: 16, boxSizing: 'border-box' }}
                   />
                 </div>
 
@@ -432,7 +431,7 @@ export default function OnboardingPage() {
                     }
                     placeholder="Example: train station, railway station, airport, or ferry terminal"
                     rows={2}
-                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffdf9', border: '1px solid #eadde5', borderRadius: 16, color: '#2e2833', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.04)' }}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffdf9', border: '1px solid #eadde5', color: '#2e2833', fontSize: 16, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -475,7 +474,7 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
               <div>
                 <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#756978', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                   Budget
@@ -531,7 +530,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 40, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 32, flexWrap: 'wrap' }}>
           {step > 0 && (
             <button
               onClick={() => setStep(currentStep => currentStep - 1)}

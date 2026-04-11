@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { buildPublicShareUrl, getTripShareByTripId } from '@/services/trip-sharing';
 
 function formatTripError(error: { message?: string; code?: string } | null | undefined) {
   if (!error) {
@@ -31,12 +32,17 @@ export async function GET(
       return unauthorizedResponse();
     }
 
-    const { data, error } = await supabase
-      .from('trips')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const [tripResult, shareResult] = await Promise.all([
+      supabase
+        .from('trips')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      getTripShareByTripId(id, user.id),
+    ]);
+
+    const { data, error } = tripResult;
 
     if (error) {
       console.error('[api/trips/:id] load failed', {
@@ -47,7 +53,18 @@ export async function GET(
       return NextResponse.json({ error: formatTripError(error) }, { status: 500 });
     }
 
-    return NextResponse.json({ trip: data ?? null });
+    const baseUrl = new URL(request.url).origin;
+
+    return NextResponse.json({
+      trip: data ?? null,
+      share: shareResult.share
+        ? {
+            ...shareResult.share,
+            shareUrl: buildPublicShareUrl(baseUrl, shareResult.share.token),
+          }
+        : null,
+      shareUrl: shareResult.share ? buildPublicShareUrl(baseUrl, shareResult.share.token) : null,
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to load trip' },
