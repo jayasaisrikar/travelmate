@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { saveTrip } from '@/lib/supabase-trips';
 import { Brand } from '@/components/common/Brand';
+import { getSupabaseBrowser } from '@/services/supabase-browser';
+import type { TravelerPreferences } from '@/lib/travel-types';
 
 const STEPS = ['Destination', 'Trip window', 'Preferences', 'Review'];
 const ARRIVAL_METHODS = ['flight', 'train', 'drive'] as const;
@@ -57,6 +59,21 @@ const INITIAL_FORM: TripFormState = {
   interestsText: '',
 };
 
+function preferencesToForm(preferences: TravelerPreferences | null | undefined): Partial<TripFormState> {
+  if (!preferences) {
+    return {};
+  }
+
+  return {
+    arrivalMethod: preferences.arrivalMethod ?? null,
+    activityIntensity: preferences.activityIntensity ?? null,
+    budget: preferences.budget ?? '',
+    interestsText: Array.isArray(preferences.interests) ? preferences.interests.join(', ') : '',
+    arrivalTransferContext: preferences.arrivalTransferContext ?? '',
+    departureTransferContext: preferences.departureTransferContext ?? '',
+  };
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -67,6 +84,7 @@ export default function OnboardingPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [form, setForm] = useState<TripFormState>(INITIAL_FORM);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const searchAbortRef = useRef<AbortController | null>(null);
 
   const parsedBudget = useMemo(() => {
@@ -147,6 +165,67 @@ export default function OnboardingPage() {
       .map(interest => interest.trim())
       .filter(Boolean);
   }, [form.interestsText]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadPreferences = async () => {
+      try {
+        const { data: sessionData } = await getSupabaseBrowser().auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        const response = await fetch('/api/profile/preferences', {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+        const data = await response.json().catch(() => null);
+
+        if (!mounted || !response.ok || !data?.preferences) {
+          setPreferencesLoaded(true);
+          return;
+        }
+
+        setForm(previous => {
+          const isFreshForm =
+            !previous.destination &&
+            !previous.latitude &&
+            !previous.longitude &&
+            !previous.arrivalDate &&
+            !previous.departureDate &&
+            !previous.arrivalTime &&
+            !previous.departureTime &&
+            !previous.arrivalTransferContext &&
+            !previous.departureTransferContext &&
+            !previous.arrivalMethod &&
+            !previous.activityIntensity &&
+            !previous.budget &&
+            !previous.interestsText;
+
+          if (!isFreshForm) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            ...preferencesToForm(data.preferences),
+          };
+        });
+      } catch (err) {
+        console.warn('Failed to load saved preferences', err);
+      } finally {
+        if (mounted) {
+          setPreferencesLoaded(true);
+        }
+      }
+    };
+
+    loadPreferences();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const searchDestinations = async (query: string) => {
     const trimmedQuery = query.trim();
@@ -253,6 +332,14 @@ export default function OnboardingPage() {
         budget: form.budget,
         interests: parsedInterests,
         itinerary: data.itinerary,
+        preferences: {
+          arrivalMethod: form.arrivalMethod,
+          activityIntensity: form.activityIntensity,
+          budget: form.budget,
+          interests: parsedInterests,
+          arrivalTransferContext: form.arrivalTransferContext.trim(),
+          departureTransferContext: form.departureTransferContext.trim(),
+        },
       });
 
       router.push(`/trip/${savedTrip.id}`);
@@ -321,6 +408,12 @@ export default function OnboardingPage() {
             'Confirm the trip details pulled from your choices before we call the itinerary API.',
           ][step]}
         </p>
+
+        {preferencesLoaded && form.budget && step <= 2 && (
+          <div style={{ marginBottom: 24, padding: '12px 14px', borderRadius: 18, border: '1px solid #eadde5', background: '#fffdf9', color: '#756978', fontSize: 14 }}>
+            Saved preferences loaded where available. We will reuse your budget and pacing defaults unless you change them.
+          </div>
+        )}
 
         {error && (
           <div style={{ marginBottom: 24, padding: '14px 16px', background: '#fff3f7', border: '1px solid #f0d7de', borderRadius: 18, color: '#a65372', fontSize: 14, boxShadow: '0 10px 30px rgba(165,58,83,0.08)' }}>

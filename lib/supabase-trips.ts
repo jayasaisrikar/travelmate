@@ -1,5 +1,5 @@
 import { getSupabaseBrowser } from '@/services/supabase-browser'
-import type { TripShareRecord, TripSuggestion } from '@/lib/travel-types'
+import type { TravelerPreferences, TripShareRecord, TripSuggestion } from '@/lib/travel-types'
 
 function createTripId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
@@ -60,7 +60,9 @@ async function fetchTripApi<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function saveTrip(
-  tripData: Omit<Trip, 'id' | 'created_at' | 'updated_at'>
+  tripData: Omit<Trip, 'id' | 'created_at' | 'updated_at'> & {
+    preferences?: TravelerPreferences | null;
+  }
 ): Promise<Trip> {
   return fetchTripApi<Trip>('/api/trips', {
     method: 'POST',
@@ -69,6 +71,18 @@ export async function saveTrip(
       ...tripData,
     }),
   })
+}
+
+export async function updateTripItinerary(
+  tripId: string,
+  itinerary: Trip['itinerary']
+): Promise<Trip> {
+  const data = await fetchTripApi<{ trip: Trip }>(`/api/trips/${encodeURIComponent(tripId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ itinerary }),
+  })
+
+  return data.trip
 }
 
 export async function loadTrip(tripId: string): Promise<TripLoadResponse> {
