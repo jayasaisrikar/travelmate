@@ -375,9 +375,6 @@ You are generating a production travel itinerary as strict JSON.
 
 Trip request:
 - destination: ${input.destination.name}
-- resolved address: ${input.destination.address ?? input.destination.name}
-- latitude: ${input.destination.latitude}
-- longitude: ${input.destination.longitude}
 - duration_days: ${input.duration}
 - budget_context: ${normalizeBudgetLabel(input.request.budget)}
 - interests: ${interestList}
@@ -402,7 +399,7 @@ Rules:
 - Use only POI names from the live POI list for named activities.
 - Do not invent attractions, restaurants, or destination names.
 - Do not ask the user for a hotel or lodging preference. Choose the stay from live stay options only.
-- If a day needs lighter pacing, you may add generic transit/rest/free-time entries, but all venue-specific entries must come from the POI list.
+- If a day needs lighter pacing, add generic transit/rest/free-time entries, but all venue-specific entries must come from the POI list.
 - Keep activities geographically plausible.
 - Treat arrival_time as the earliest possible start on day 1.
 - Do not place any activity before arrival_time on the first day.
@@ -418,7 +415,7 @@ Rules:
 - Return one itinerary covering all ${input.duration} days.
 - All costs must be numeric or null.
 - All coordinates must come from the POI list when the activity is a venue.
-- Keep each day to 3 to 4 activities maximum so the itinerary stays concise.
+- Keep each day to 3 or 4 activities maximum so the itinerary stays concise.
 
 Return only JSON with this shape:
 {
@@ -514,7 +511,7 @@ export async function generateItineraryFromLiveData(
         longitude: request.longitude as number,
         radius: 8_000,
         types: poiTypes,
-        limit: 24,
+        limit: 16,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const stayPromise = hasCoordinates
@@ -523,19 +520,17 @@ export async function generateItineraryFromLiveData(
         longitude: request.longitude as number,
         radius: 5_000,
         types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
-        limit: 8,
+        limit: 6,
       })
     : Promise.resolve([] as PointOfInterest[]);
-  const staySearchPromise = searchStayCandidates(request.destination);
   const weatherPromise = hasCoordinates
     ? fetchWeatherSnapshot(request.latitude as number, request.longitude as number)
     : Promise.resolve(null as WeatherSnapshot | null);
 
-  const [destinationResult, poIResult, stayResult, staySearchResult, weatherResult] = await Promise.allSettled([
+  const [destinationResult, poIResult, stayResult, weatherResult] = await Promise.allSettled([
     destinationPromise,
     poiPromise,
     stayPromise,
-    staySearchPromise,
     weatherPromise,
   ]);
 
@@ -551,9 +546,15 @@ export async function generateItineraryFromLiveData(
       };
   const pois = poIResult.status === 'fulfilled' ? poIResult.value : [];
   const stayCandidatesRaw = stayResult.status === 'fulfilled' ? stayResult.value : [];
-  const staySearchCandidates = staySearchResult.status === 'fulfilled' ? staySearchResult.value : [];
   const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
   const prioritizedPois = prioritizePois(pois, request.interests ?? []);
+  const staySearchCandidates =
+    stayCandidatesRaw.length > 0
+      ? []
+      : await searchStayCandidates(request.destination, {
+          destination,
+          lodgingCandidates: stayCandidatesRaw,
+        });
   const prioritizedStayCandidates = prioritizeStayCandidates(
     [...stayCandidatesRaw, ...staySearchCandidates],
     destination

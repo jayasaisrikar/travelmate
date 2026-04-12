@@ -142,17 +142,25 @@ function isLodgingPoi(candidate: PointOfInterest): boolean {
   );
 }
 
-export async function searchStayCandidates(query: string): Promise<PointOfInterest[]> {
-  const destination = await resolveDestination(query).catch(() => null);
-  const overpassCandidates = destination
-    ? await fetchPointsOfInterest({
-        latitude: destination.latitude,
-        longitude: destination.longitude,
-        radius: 8_000,
-        types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
-        limit: 12,
-      }).catch(() => [])
-    : [];
+export async function searchStayCandidates(
+  query: string,
+  options?: {
+    destination?: DestinationSearchResult | null;
+    lodgingCandidates?: PointOfInterest[];
+  }
+): Promise<PointOfInterest[]> {
+  const destination = options?.destination ?? (await resolveDestination(query).catch(() => null));
+  const overpassCandidates =
+    options?.lodgingCandidates ??
+    (destination
+      ? await fetchPointsOfInterest({
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+          radius: 8_000,
+          types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
+          limit: 12,
+        }).catch(() => [])
+      : []);
 
   const lodgingCandidates = overpassCandidates.filter(isLodgingPoi).slice(0, 12);
 
