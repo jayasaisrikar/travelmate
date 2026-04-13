@@ -316,6 +316,7 @@ export async function fetchPointsOfInterest(options: {
   radius: number;
   types: string[];
   limit?: number;
+  timeoutMs?: number;
 }): Promise<PointOfInterest[]> {
   const cacheKey = [
     options.latitude.toFixed(4),
@@ -347,7 +348,7 @@ export async function fetchPointsOfInterest(options: {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ data: query }),
       next: { revalidate: 300 },
-  }, 12_000);
+  }, options.timeoutMs ?? 12_000);
 
   if (!response.ok) {
     throw new Error(`POI fetch failed with status ${response.status}`);
