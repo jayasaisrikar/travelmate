@@ -18,6 +18,77 @@ export interface PointOfInterest {
   tags?: Record<string, string>;
 }
 
+export interface BookingConfirmationFlightSegment {
+  airline: string | null;
+  flightNumber: string | null;
+  confirmationCode: string | null;
+  departurePlace: string | null;
+  arrivalPlace: string | null;
+  departureDate: string | null;
+  departureTime: string | null;
+  arrivalDate: string | null;
+  arrivalTime: string | null;
+  notes: string | null;
+}
+
+export interface BookingConfirmationStay {
+  name: string | null;
+  confirmationCode: string | null;
+  address: string | null;
+  checkInDate: string | null;
+  checkOutDate: string | null;
+  notes: string | null;
+}
+
+export interface BookingConfirmationTransportLeg {
+  kind: string;
+  provider: string | null;
+  confirmationCode: string | null;
+  from: string | null;
+  to: string | null;
+  date: string | null;
+  time: string | null;
+  notes: string | null;
+}
+
+export interface BookingConfirmationReservation {
+  kind: string;
+  vendor: string | null;
+  confirmationCode: string | null;
+  date: string | null;
+  time: string | null;
+  notes: string | null;
+}
+
+export interface BookingConfirmationWindow {
+  arrivalDate: string | null;
+  departureDate: string | null;
+  arrivalTime: string | null;
+  departureTime: string | null;
+  timezone: string | null;
+}
+
+export interface BookingConfirmationSource {
+  subject: string | null;
+  from: string | null;
+  medium: 'email' | 'manual' | 'webhook';
+  receivedAt: string | null;
+}
+
+export interface BookingConfirmationExtraction {
+  destinationName: string;
+  destinationAddress: string | null;
+  tripWindow: BookingConfirmationWindow;
+  arrivalMethod: 'flight' | 'train' | 'drive' | 'bus' | 'other' | null;
+  flightSegments: BookingConfirmationFlightSegment[];
+  stay: BookingConfirmationStay | null;
+  transportLegs: BookingConfirmationTransportLeg[];
+  reservations: BookingConfirmationReservation[];
+  summary: string;
+  confidence: 'low' | 'medium' | 'high';
+  source: BookingConfirmationSource;
+}
+
 export interface WeatherSnapshot {
   temperature: number;
   feelsLike: number;
@@ -138,6 +209,7 @@ export interface GeneratedItinerary {
     weather: WeatherSnapshot | null;
     pois: PointOfInterest[];
     stayCandidates: PointOfInterest[];
+    confirmation?: BookingConfirmationExtraction | null;
   };
 }
 
@@ -164,16 +236,18 @@ export interface ItineraryGenerationInput {
   destination: string;
   latitude?: number | null;
   longitude?: number | null;
+  resolvedDestination?: DestinationSearchResult | null;
   duration?: number | null;
   arrivalDate?: string | null;
   departureDate?: string | null;
   arrivalTime?: string | null;
   departureTime?: string | null;
-  arrivalMethod?: 'flight' | 'train' | 'drive' | null;
+  arrivalMethod?: 'flight' | 'train' | 'drive' | 'bus' | 'other' | null;
   activityIntensity?: 'Relaxed' | 'Balanced' | 'Packed' | null;
   arrivalTransferContext?: string | null;
   departureTransferContext?: string | null;
   budget?: number | string | null;
   interests?: string[] | null;
   dietaryRestrictions?: string[] | null;
+  confirmation?: BookingConfirmationExtraction | null;
 }

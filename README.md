@@ -42,6 +42,7 @@ TravelMate is a live-data travel planner that turns a real destination, trip win
 - OpenStreetMap Overpass for POIs and stays
 - Open-Meteo for weather
 - NVIDIA Kimi API for itinerary generation and trip assistant responses
+- Resend for transactional app emails
 
 ## Architecture
 
@@ -72,6 +73,10 @@ NVIDIA_API_KEY=...
 # or
 NVIDIA_KIMI_API_KEY=...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+RESEND_API_KEY=...
+EMAIL_FROM="TravelMate <your-approved-sender>"
+# Optional if you have a real inbox for replies.
+EMAIL_REPLY_TO=
 ```
 
 Notes:
@@ -80,6 +85,9 @@ Notes:
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by server-side Supabase access.
 - `NVIDIA_API_KEY` or `NVIDIA_KIMI_API_KEY` is required for itinerary generation and the trip assistant.
 - `NEXT_PUBLIC_APP_URL` is optional, but it helps generated share links resolve correctly outside local development.
+- `RESEND_API_KEY` authenticates server-side email sending with Resend.
+- Set `EMAIL_FROM` to a sender that is verified in Resend, for example a verified `no-reply@...` alias on a domain you added to Resend.
+- Signup confirmation and password reset emails are sent by TravelMate through Resend-backed server routes, so they do not depend on Supabase Auth's built-in mail sender.
 
 ### 3. Apply the Supabase migrations
 
@@ -121,3 +129,4 @@ npm run dev
 - TravelMate is designed around real trip windows, not generic “full day” plans.
 - The itinerary JSON includes a stay, transfers, daily plans, budget breakdown, and tips.
 - The public share flow is meant to create a feedback loop, not just a read-only trip page.
+- Email notifications are currently used for trip share suggestions and can be extended to other transactional flows.

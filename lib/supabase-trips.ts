@@ -1,5 +1,10 @@
 import { getSupabaseBrowser } from '@/services/supabase-browser'
-import type { TravelerPreferences, TripShareRecord, TripSuggestion } from '@/lib/travel-types'
+import type {
+  BookingConfirmationExtraction,
+  TravelerPreferences,
+  TripShareRecord,
+  TripSuggestion,
+} from '@/lib/travel-types'
 
 function createTripId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`
@@ -155,4 +160,70 @@ export async function loadTripSuggestions(tripId: string): Promise<TripSuggestio
     `/api/trips/${encodeURIComponent(tripId)}/suggestions`
   )
   return data.suggestions || []
+}
+
+export async function parseBookingConfirmation(input: {
+  subject?: string;
+  from?: string;
+  text?: string;
+  html?: string;
+  receivedAt?: string;
+}): Promise<BookingConfirmationExtraction> {
+  const data = await fetchTripApi<{ parsedConfirmation: BookingConfirmationExtraction }>(
+    '/api/booking-confirmations/parse',
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }
+  )
+
+  return data.parsedConfirmation
+}
+
+export async function importBookingConfirmation(input: {
+  subject?: string;
+  from?: string;
+  text?: string;
+  html?: string;
+  receivedAt?: string;
+  parsedConfirmation?: BookingConfirmationExtraction | null;
+  tripId?: string;
+}): Promise<{
+  parsedConfirmation: BookingConfirmationExtraction;
+  trip: Trip;
+  share: TripShareRecord | null;
+  shareUrl: string | null;
+}> {
+  return fetchTripApi<{
+    parsedConfirmation: BookingConfirmationExtraction;
+    trip: Trip;
+    share: TripShareRecord | null;
+    shareUrl: string | null;
+  }>('/api/booking-confirmations/import', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function regenerateTripItinerarySection(input: {
+  tripId: string;
+  scope: 'day' | 'cluster';
+  dayIndex: number;
+  activityIndex?: number | null;
+  instruction: string;
+}): Promise<Trip> {
+  const data = await fetchTripApi<{ trip: Trip }>(
+    `/api/trips/${encodeURIComponent(input.tripId)}/regenerate`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        scope: input.scope,
+        dayIndex: input.dayIndex,
+        activityIndex: input.activityIndex ?? null,
+        instruction: input.instruction,
+      }),
+    }
+  )
+
+  return data.trip
 }

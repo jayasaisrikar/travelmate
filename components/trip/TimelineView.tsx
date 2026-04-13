@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Save } from 'lucide-react';
-import { updateTripItinerary, type Trip } from '@/lib/supabase-trips';
+import { ChevronDown, ChevronUp, RefreshCcw, Save, Sparkles } from 'lucide-react';
+import { regenerateTripItinerarySection, updateTripItinerary, type Trip } from '@/lib/supabase-trips';
 import type { ItineraryDayPlan } from '@/lib/travel-types';
 
 type FlatActivity = {
@@ -27,6 +27,19 @@ interface TimelineViewProps {
   onSelectActivity: (index: number | null) => void;
   onTripUpdated: (trip: Trip) => void;
 }
+
+type RegenerationTarget =
+  | {
+      scope: 'day';
+      dayIndex: number;
+      label: string;
+    }
+  | {
+      scope: 'cluster';
+      dayIndex: number;
+      activityIndex: number;
+      label: string;
+    };
 
 function cloneDayPlans(dailyPlans: ItineraryDayPlan[]): ItineraryDayPlan[] {
   return dailyPlans.map(day => ({
@@ -82,6 +95,11 @@ export function TimelineView({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [regenerationTarget, setRegenerationTarget] = useState<RegenerationTarget | null>(null);
+  const [regenerationInstruction, setRegenerationInstruction] = useState('');
+  const [regenerationLoading, setRegenerationLoading] = useState(false);
+  const [regenerationError, setRegenerationError] = useState('');
+  const [regenerationStatus, setRegenerationStatus] = useState('');
 
   const flatActivities = useMemo(() => flattenActivities(dailyPlans), [dailyPlans]);
 
@@ -137,6 +155,76 @@ export function TimelineView({
     await persistPlans(renumberDayPlans(nextPlans));
   };
 
+  const openDayRegeneration = (dayIndex: number) => {
+    const dayNumber = dailyPlans[dayIndex]?.day || dayIndex + 1;
+    setRegenerationTarget({
+      scope: 'day',
+      dayIndex,
+      label: `Day ${dayNumber}`,
+    });
+    setRegenerationInstruction('Keep the current pacing but refresh this day with better activities and flow.');
+    setRegenerationError('');
+    setRegenerationStatus('');
+  };
+
+  const openClusterRegeneration = (dayIndex: number, activityIndex: number) => {
+    const dayNumber = dailyPlans[dayIndex]?.day || dayIndex + 1;
+    const activity = dailyPlans[dayIndex]?.activities?.[activityIndex];
+
+    setRegenerationTarget({
+      scope: 'cluster',
+      dayIndex,
+      activityIndex,
+      label: activity ? `Day ${dayNumber} · ${activity.time} · ${activity.name}` : `Day ${dayNumber}`,
+    });
+    setRegenerationInstruction('Refresh this stop cluster while keeping the day structure and timing stable.');
+    setRegenerationError('');
+    setRegenerationStatus('');
+  };
+
+  const submitRegeneration = async () => {
+    if (!regenerationTarget) {
+      return;
+    }
+
+    const instruction = regenerationInstruction.trim();
+
+    if (!instruction) {
+      setRegenerationError('Please describe how you want this section changed.');
+      return;
+    }
+
+    setRegenerationLoading(true);
+    setRegenerationError('');
+    setRegenerationStatus('');
+
+    try {
+      const updatedTrip = await regenerateTripItinerarySection({
+        tripId,
+        scope: regenerationTarget.scope,
+        dayIndex: regenerationTarget.dayIndex,
+        activityIndex: regenerationTarget.scope === 'cluster' ? regenerationTarget.activityIndex : null,
+        instruction,
+      });
+
+      onTripUpdated(updatedTrip);
+      onSelectActivity(null);
+      setRegenerationTarget(null);
+      setRegenerationInstruction('');
+      setRegenerationStatus(
+        regenerationTarget.scope === 'day'
+          ? 'Regenerated that day and kept the rest of the trip stable.'
+          : 'Regenerated the selected activity cluster and kept the rest of the trip stable.'
+      );
+
+      window.setTimeout(() => setRegenerationStatus(''), 2200);
+    } catch (err: unknown) {
+      setRegenerationError(err instanceof Error ? err.message : 'Failed to regenerate itinerary section');
+    } finally {
+      setRegenerationLoading(false);
+    }
+  };
+
   if (dailyPlans.length === 0) {
     return (
       <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
@@ -165,7 +253,7 @@ export function TimelineView({
         </div>
       </div>
 
-      {(saving || status || error) && (
+      {(saving || status || error || regenerationLoading || regenerationStatus || regenerationError) && (
         <div className="mt-4 space-y-2">
           {saving && (
             <div className="inline-flex items-center gap-2 border border-[#eadde5] bg-[#fffdf9] px-3 py-2 text-sm font-medium text-[#756978]">
@@ -187,6 +275,29 @@ export function TimelineView({
           {error && (
             <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
               {error}
+            </div>
+          )}
+
+          {regenerationLoading && (
+            <div className="inline-flex items-center gap-2 border border-[#eadde5] bg-[#fffdf9] px-3 py-2 text-sm font-medium text-[#756978]">
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                className="h-4 w-4 border-2 border-[#ff9a45] border-t-transparent"
+              />
+              Regenerating section...
+            </div>
+          )}
+
+          {regenerationStatus && (
+            <div className="border border-[#ff9a45] bg-[#fff8e6] px-4 py-3 text-sm font-medium text-[#2e2833]">
+              {regenerationStatus}
+            </div>
+          )}
+
+          {regenerationError && (
+            <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+              {regenerationError}
             </div>
           )}
         </div>
@@ -234,7 +345,16 @@ export function TimelineView({
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        disabled={saving || dayIndex === 0}
+                        disabled={saving || regenerationLoading}
+                        onClick={() => openDayRegeneration(dayIndex)}
+                        className="inline-flex items-center gap-2 border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <RefreshCcw size={16} />
+                        Regenerate day
+                      </button>
+                      <button
+                        type="button"
+                        disabled={saving || regenerationLoading || dayIndex === 0}
                         onClick={() => void moveDay(dayIndex, -1)}
                         className="inline-flex items-center gap-2 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -243,7 +363,7 @@ export function TimelineView({
                       </button>
                       <button
                         type="button"
-                        disabled={saving || dayIndex === dailyPlans.length - 1}
+                        disabled={saving || regenerationLoading || dayIndex === dailyPlans.length - 1}
                         onClick={() => void moveDay(dayIndex, 1)}
                         className="inline-flex items-center gap-2 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -311,7 +431,16 @@ export function TimelineView({
                             )}
                             <button
                               type="button"
-                              disabled={saving || activityIndex === 0}
+                              disabled={saving || regenerationLoading}
+                              onClick={() => openClusterRegeneration(dayIndex, activityIndex)}
+                              className="inline-flex items-center gap-1 border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Sparkles size={14} />
+                              Regenerate cluster
+                            </button>
+                            <button
+                              type="button"
+                              disabled={saving || regenerationLoading || activityIndex === 0}
                               onClick={() => void moveActivity(dayIndex, activityIndex, -1)}
                               className="inline-flex items-center gap-1 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
                             >
@@ -320,7 +449,7 @@ export function TimelineView({
                             </button>
                             <button
                               type="button"
-                              disabled={saving || activityIndex === activities.length - 1}
+                              disabled={saving || regenerationLoading || activityIndex === activities.length - 1}
                               onClick={() => void moveActivity(dayIndex, activityIndex, 1)}
                               className="inline-flex items-center gap-1 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
                             >
@@ -342,6 +471,91 @@ export function TimelineView({
           );
         })}
       </div>
+
+      {regenerationTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="w-full max-w-2xl border border-[#2e2833] bg-[#fbfaf7] p-5 text-[#2e2833] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">
+                  {regenerationTarget.scope === 'day' ? 'Regenerate day' : 'Regenerate cluster'}
+                </div>
+                <h3 className="mt-1 text-2xl font-black tracking-tight">{regenerationTarget.label}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (regenerationLoading) {
+                    return;
+                  }
+
+                  setRegenerationTarget(null);
+                  setRegenerationInstruction('');
+                  setRegenerationError('');
+                }}
+                className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={regenerationLoading}
+              >
+                Close
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm leading-6 text-[#756978]">
+              Rewrite only this slice of the itinerary. The rest of the trip stays fixed unless you edit it separately.
+            </p>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                What should change?
+              </label>
+              <textarea
+                value={regenerationInstruction}
+                onChange={event => setRegenerationInstruction(event.target.value)}
+                rows={6}
+                placeholder="Example: make this day more relaxed, replace the museum stop with a local food experience, and keep the evening free."
+                className="w-full resize-y border border-[#2e2833] bg-white px-4 py-3 text-base leading-7 text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+              />
+            </div>
+
+            {regenerationError && (
+              <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                {regenerationError}
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={submitRegeneration}
+                disabled={regenerationLoading}
+                className="flex-1 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {regenerationLoading ? 'Regenerating...' : 'Regenerate section'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (regenerationLoading) {
+                    return;
+                  }
+
+                  setRegenerationTarget(null);
+                  setRegenerationInstruction('');
+                  setRegenerationError('');
+                }}
+                disabled={regenerationLoading}
+                className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       <div className="mt-5 flex items-center gap-2 text-sm text-[#756978]">
         <Save size={16} />

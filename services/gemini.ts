@@ -60,7 +60,8 @@ function extractContent(content: string | Array<{ text?: string }> | undefined):
 async function callNvidia(
   messages: NvidiaChatMessage[],
   temperature: number,
-  jsonMode = false
+  jsonMode = false,
+  maxTokens = 3000
 ): Promise<string> {
   const { apiKey, model } = getNvidiaConfig();
   const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
@@ -74,7 +75,7 @@ async function callNvidia(
       messages,
       temperature,
       top_p: 0.8,
-      max_tokens: 3000,
+      max_tokens: maxTokens,
       ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
       chat_template_kwargs: { thinking: false },
     }),
@@ -95,7 +96,15 @@ async function callNvidia(
   return text;
 }
 
-export async function generateJson<T>(prompt: string): Promise<T> {
+export async function generateJson<T>(
+  prompt: string,
+  options?: {
+    maxTokens?: number;
+    repairMaxTokens?: number;
+  }
+): Promise<T> {
+  const maxTokens = options?.maxTokens ?? 3000;
+  const repairMaxTokens = options?.repairMaxTokens ?? Math.max(1500, Math.floor(maxTokens / 2));
   const messages: NvidiaChatMessage[] = [
     {
       role: 'user',
@@ -103,7 +112,7 @@ export async function generateJson<T>(prompt: string): Promise<T> {
     },
   ];
 
-  const text = await callNvidia(messages, 0.2, true);
+  const text = await callNvidia(messages, 0.2, true, maxTokens);
 
   try {
     return JSON.parse(extractLikelyJson(text)) as T;
@@ -116,7 +125,8 @@ export async function generateJson<T>(prompt: string): Promise<T> {
         },
       ],
       0,
-      true
+      true,
+      repairMaxTokens
     );
 
     try {
