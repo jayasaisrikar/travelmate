@@ -1,5 +1,8 @@
+import { buildAppUrl } from '@/services/app-url';
 import { sendEmail } from '@/services/mailer';
 import { supabaseAdmin } from '@/services/supabase-admin';
+
+import { createSignupVerificationLink } from '@/services/signup-verification';
 
 function escapeHtml(value: string) {
   return value
@@ -8,20 +11,6 @@ function escapeHtml(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function getSiteUrl() {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-
-  if (siteUrl) {
-    return siteUrl;
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
-  }
-
-  throw new Error('NEXT_PUBLIC_APP_URL is not configured');
 }
 
 function getDisplayFrom() {
@@ -34,12 +23,8 @@ function getDisplayFrom() {
   return from;
 }
 
-function buildLoginRedirectUrl() {
-  return new URL('/login?message=verify-email', getSiteUrl()).toString();
-}
-
 function buildResetRedirectUrl() {
-  return new URL('/reset-password', getSiteUrl()).toString();
+  return buildAppUrl('/reset-password');
 }
 
 function buildSignupTemplate(email: string, actionLink: string) {
@@ -84,33 +69,39 @@ export async function sendSignupConfirmationEmail(input: {
   email: string;
   password: string;
 }) {
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'signup',
+  const { data: createdUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
     email: input.email,
     password: input.password,
-    options: {
-      redirectTo: buildLoginRedirectUrl(),
-    },
+    email_confirm: false,
   });
 
-  if (error || !data) {
-    throw error ?? new Error('Failed to generate signup email link');
+  if (createUserError || !createdUser.user) {
+    throw createUserError ?? new Error('Failed to create signup account');
   }
 
-  const actionLink = data.properties.action_link;
-  const template = buildSignupTemplate(input.email, actionLink);
+  try {
+    const verificationLink = await createSignupVerificationLink(createdUser.user.id, input.email);
+    const template = buildSignupTemplate(input.email, verificationLink);
 
-  await sendEmail({
-    to: input.email,
-    subject: template.subject,
-    text: template.text,
-    html: template.html,
-    replyTo: process.env.EMAIL_REPLY_TO?.trim() || undefined,
-  });
+    await sendEmail({
+      to: input.email,
+      subject: template.subject,
+      text: template.text,
+      html: template.html,
+      replyTo: process.env.EMAIL_REPLY_TO?.trim() || undefined,
+    });
+  } catch (error) {
+    await Promise.allSettled([
+      supabaseAdmin.from('signup_verification_tokens').delete().eq('email', input.email),
+      supabaseAdmin.auth.admin.deleteUser(createdUser.user.id),
+    ]);
+
+    throw error;
+  }
 
   return {
     email: input.email,
-    redirectTo: data.properties.redirect_to,
+    redirectTo: buildAppUrl('/login?message=verify-email'),
   };
 }
 
