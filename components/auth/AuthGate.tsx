@@ -38,7 +38,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
       if (!userData.user.email_confirmed_at) {
         await supabase.auth.signOut();
-        router.replace(`/login?next=${encodeURIComponent(pathname)}&message=verify-email`);
+        router.replace(`/login?message=verify-email`);
         return;
       }
 
@@ -71,7 +71,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
         if (!userData.user.email_confirmed_at) {
           void supabase.auth.signOut();
-          router.replace(`/login?next=${encodeURIComponent(pathname)}&message=verify-email`);
+          router.replace(`/login?message=verify-email`);
           return;
         }
 

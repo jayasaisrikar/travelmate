@@ -3,6 +3,23 @@ import type { DestinationSearchResult, PointOfInterest } from '@/lib/travel-type
 
 const DESTINATION_SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const destinationSearchCache = new Map<string, { expiresAt: number; results: DestinationSearchResult[] }>();
+const poiCache = new Map<string, { expiresAt: number; results: PointOfInterest[] }>();
+const reverseDestinationCache = new Map<string, { expiresAt: number; result: DestinationSearchResult }>();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function toNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) {
@@ -34,17 +51,14 @@ export async function searchDestinations(query: string): Promise<DestinationSear
     return cached.results;
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&q=${encodeURIComponent(query)}`,
       {
         headers: NOMINATIM_HEADERS,
-        signal: controller.signal,
         next: { revalidate: 300 },
-      }
+      },
+      8000
     );
 
     if (!response.ok) {
@@ -92,8 +106,8 @@ export async function searchDestinations(query: string): Promise<DestinationSear
     });
 
     return normalizedResults;
-  } finally {
-    clearTimeout(timeout);
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -208,27 +222,38 @@ export async function resolveDestination(
   destination: string,
   coordinates?: { latitude?: number | null; longitude?: number | null }
 ): Promise<DestinationSearchResult> {
+  const cacheKey = `${destination.trim().toLowerCase()}::${coordinates?.latitude ?? ''}::${coordinates?.longitude ?? ''}`;
+  const cached = reverseDestinationCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+
   if (coordinates?.latitude !== null && coordinates?.latitude !== undefined &&
       coordinates?.longitude !== null && coordinates?.longitude !== undefined) {
-    const reverseResponse = await fetch(
+    const reverseResponse = await fetchWithTimeout(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordinates.latitude}&lon=${coordinates.longitude}`,
       {
         headers: NOMINATIM_HEADERS,
         next: { revalidate: 300 },
-      }
+      },
+      6000
     );
 
     if (reverseResponse.ok) {
       const reverseData = (await reverseResponse.json()) as Record<string, unknown>;
       const displayName = String(reverseData.display_name ?? destination).trim();
 
-      return {
+      const result = {
         name: displayName.split(',')[0] ?? destination,
         latitude: coordinates.latitude,
         longitude: coordinates.longitude,
         type: String(reverseData.type ?? 'destination'),
         address: displayName,
       };
+
+      reverseDestinationCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, result });
+      return result;
     }
   }
 
@@ -239,6 +264,7 @@ export async function resolveDestination(
     throw new Error(`No destination found for "${destination}"`);
   }
 
+  reverseDestinationCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, result: topResult });
   return topResult;
 }
 
@@ -267,6 +293,19 @@ export async function fetchPointsOfInterest(options: {
   types: string[];
   limit?: number;
 }): Promise<PointOfInterest[]> {
+  const cacheKey = [
+    options.latitude.toFixed(4),
+    options.longitude.toFixed(4),
+    options.radius,
+    options.limit ?? 0,
+    [...options.types].sort().join(','),
+  ].join('|');
+  const cached = poiCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.results;
+  }
+
   const queryGroups = options.types.flatMap((type) =>
     buildOverpassClause(type, options.latitude, options.longitude, options.radius)
   );
@@ -279,12 +318,12 @@ export async function fetchPointsOfInterest(options: {
     out body center;
   `;
 
-  const response = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ data: query }),
-    next: { revalidate: 300 },
-  });
+  const response = await fetchWithTimeout('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ data: query }),
+      next: { revalidate: 300 },
+  }, 12_000);
 
   if (!response.ok) {
     throw new Error(`POI fetch failed with status ${response.status}`);
@@ -326,7 +365,10 @@ export async function fetchPointsOfInterest(options: {
     });
   }
 
-  return Array.from(unique.values())
+  const results = Array.from(unique.values())
     .sort((left, right) => left.name.localeCompare(right.name))
     .slice(0, options.limit ?? 48);
+
+  poiCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, results });
+  return results;
 }

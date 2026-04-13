@@ -1,12 +1,13 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { Brand } from '@/components/common/Brand';
 
 type AuthMode = 'login' | 'signup';
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
 
 interface AuthFormProps {
   mode: AuthMode;
@@ -15,19 +16,50 @@ interface AuthFormProps {
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const authNotice = useMemo(() => searchParams.get('message'), [searchParams]);
   const nextPath = useMemo(() => searchParams.get('next') || '/dashboard', [searchParams]);
   const safeNextPath = nextPath.startsWith('/') ? nextPath : '/dashboard';
-  const authNotice = useMemo(() => searchParams.get('message'), [searchParams]);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  useEffect(() => {
+    let mounted = true;
+
+    const redirectIfAuthenticated = async () => {
+      try {
+        const { data } = await getSupabaseBrowser().auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (data.session) {
+          router.replace('/dashboard');
+          return;
+        }
+      } finally {
+        if (mounted) {
+          setCheckingSession(false);
+        }
+      }
+    };
+
+    void redirectIfAuthenticated();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
+
   const noticeMessage =
-    authNotice === 'verify-email'
-      ? 'Please verify your email before logging in.'
+    authNotice === 'admin-only'
+      ? 'Admin dashboard access is reserved for the control account.'
+      : authNotice === 'verify-email'
+        ? 'Check your email to confirm your account before logging in.'
       : authNotice === 'password-updated'
         ? 'Your password was updated. Please log in again.'
         : '';
@@ -40,6 +72,24 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'login') {
+        const isAdminLogin = email.trim().toLowerCase() === ADMIN_EMAIL;
+
+        if (isAdminLogin) {
+          const bootstrapResponse = await fetch('/api/auth/admin/bootstrap', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const bootstrapData = await bootstrapResponse.json().catch(() => null);
+
+          if (!bootstrapResponse.ok) {
+            throw new Error(bootstrapData?.error || 'Failed to prepare admin account');
+          }
+        }
+
         const { error: signInError } = await getSupabaseBrowser().auth.signInWithPassword({
           email,
           password,
@@ -49,7 +99,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           throw signInError;
         }
 
-        router.replace(safeNextPath);
+        router.replace(isAdminLogin ? '/dashboard' : safeNextPath);
         router.refresh();
         return;
       }
@@ -65,15 +115,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.error || 'Authentication failed');
+        throw new Error(data?.error || 'Failed to create account');
       }
 
-      if (data?.message) {
-        setMessage(data.message);
-        return;
-      }
-
-      setMessage('Account created. Check your email to confirm your account, then log in.');
+      setMessage(data?.message || 'Check your email to confirm your account.');
+      router.replace('/login?message=verify-email');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
@@ -81,41 +127,24 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setOauthLoading(true);
-    setError('');
-    setMessage('');
-
-    try {
-      const redirectTo = `${window.location.origin}${safeNextPath}`;
-
-      const { error: oauthError } = await getSupabaseBrowser().auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-        },
-      });
-
-      if (oauthError) {
-        throw oauthError;
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Google sign-in failed');
-      setOauthLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#fbfaf7] px-4 py-8 text-[#2e2833] sm:px-6">
+      {checkingSession ? (
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
+          <div className="border border-[#2e2833] bg-white px-6 py-5">Checking your session...</div>
+        </div>
+      ) : (
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="border border-[#2e2833] bg-white p-6 shadow-none sm:p-8">
             <Brand href="/" className="mb-5" />
             <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
-              {mode === 'login' ? 'Log in to your trip workspace' : 'Create your trip workspace'}
+              {mode === 'login' ? 'Log in to TravelMate' : 'Create your TravelMate account'}
             </h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-[#756978]">
-              Use one account to save trips, reopen itineraries, and keep your planning history in one place.
+              {mode === 'login'
+                ? 'Use your account to save trips, reopen itineraries, and keep your planning history in one place.'
+                : 'Create an account to save trips, revisit them later, and keep your planning history in one place.'}
             </p>
 
             {noticeMessage && (
@@ -126,7 +155,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
             <div className="mt-8 space-y-3">
               {[
-                'Saved trips stay in your account.',
+                mode === 'login' ? 'Saved trips stay in your account.' : 'Accounts are confirmed by email before login.',
                 'Trip planning works after sign in.',
                 'You can sign out from the dashboard when you are done.',
               ].map(item => (
@@ -150,19 +179,10 @@ export function AuthForm({ mode }: AuthFormProps) {
               <div className="h-10 w-10 border border-[#2e2833] bg-[#f6d23c]" />
             </div>
 
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={loading || oauthLoading}
-              className="mt-6 w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 font-semibold text-[#2e2833] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {oauthLoading ? 'Connecting to Google...' : 'Continue with Google'}
-            </button>
-
-            <div className="my-6 flex items-center gap-3">
-              <span className="h-px flex-1 bg-[#eadde5]" />
-              <span className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Or with email</span>
-              <span className="h-px flex-1 bg-[#eadde5]" />
+            <div className="mt-6 border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-sm font-medium text-[#2e2833]">
+              {mode === 'login'
+                ? 'All user accounts can sign in here.'
+                : 'Create your account here to start saving travel plans.'}
             </div>
 
             <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -186,11 +206,11 @@ export function AuthForm({ mode }: AuthFormProps) {
                   <label className="block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
                     Password
                   </label>
-                  {mode === 'login' && (
+                  {mode === 'login' ? (
                     <Link href="/forgot-password" className="text-xs font-semibold text-[#2e2833] underline">
                       Forgot password?
                     </Link>
-                  )}
+                  ) : null}
                 </div>
                 <input
                   type="password"
@@ -218,7 +238,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
               <button
                 type="submit"
-                disabled={loading || oauthLoading}
+                disabled={loading}
                 className="w-full border border-[#2e2833] bg-[#2e2833] px-4 py-3 font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
@@ -228,9 +248,9 @@ export function AuthForm({ mode }: AuthFormProps) {
             <div className="mt-6 border-t border-[#eadde5] pt-4 text-sm text-[#756978]">
               {mode === 'login' ? (
                 <span>
-                  Need an account?{' '}
-                  <Link href={`/signup?next=${encodeURIComponent(safeNextPath)}`} className="font-semibold text-[#2e2833] underline">
-                    Sign up
+                  Forgot the password?{' '}
+                  <Link href="/forgot-password" className="font-semibold text-[#2e2833] underline">
+                    Reset it here
                   </Link>
                 </span>
               ) : (
@@ -245,6 +265,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

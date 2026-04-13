@@ -3,7 +3,6 @@ import {
   derivePoiTypes,
   fetchPointsOfInterest,
   resolveDestination,
-  searchStayCandidates,
 } from '@/services/places';
 import { fetchWeatherSnapshot } from '@/services/weather';
 import type {
@@ -356,6 +355,130 @@ function buildPoiContext(pois: PointOfInterest[]): string {
     .join('\n');
 }
 
+function buildFallbackDailyPlans(input: {
+  destination: DestinationSearchResult;
+  pois: PointOfInterest[];
+  duration: number;
+  request: ItineraryGenerationInput;
+}): ItineraryDayPlan[] {
+  const plans: ItineraryDayPlan[] = [];
+  const defaultIntensities: Array<'Relaxed' | 'Balanced' | 'Packed'> = ['Balanced', 'Balanced', 'Relaxed'];
+
+  for (let dayIndex = 0; dayIndex < input.duration; dayIndex += 1) {
+    const start = dayIndex * 3;
+    const dayPois = input.pois.slice(start, start + 3);
+    const fallbackPoiPool = dayPois.length > 0 ? dayPois : input.pois.slice(0, 3);
+    const activities: ItineraryActivity[] = [];
+
+    const templates = fallbackPoiPool.length > 0 ? fallbackPoiPool : [null, null, null];
+
+    templates.slice(0, 3).forEach((poi, activityIndex) => {
+      const time = ['09:00', '12:30', '15:30'][activityIndex] ?? `${9 + activityIndex * 2}:00`;
+      const name = poi?.name ?? [
+        `Explore ${input.destination.name}`,
+        `Lunch and reset`,
+        `Easy evening around ${input.destination.name}`,
+      ][activityIndex];
+      const category = poi?.type ?? ['Sightseeing', 'Dining', 'Leisure'][activityIndex];
+      const description = poi
+        ? `Spend time at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`
+        : activityIndex === 1
+          ? 'Pause for a relaxed lunch and recharge.'
+          : `Keep the day light and enjoy ${input.destination.name}.`;
+
+      activities.push({
+        time,
+        name,
+        description,
+        duration: activityIndex === 0 ? 90 : 75,
+        cost: activityIndex === 1 ? 20 : 0,
+        estimated_cost: activityIndex === 1 ? 20 : 0,
+        category,
+        latitude: poi?.latitude ?? input.destination.latitude ?? null,
+        longitude: poi?.longitude ?? input.destination.longitude ?? null,
+        address: poi?.address ?? input.destination.address ?? input.destination.name,
+      });
+    });
+
+    plans.push({
+      day: dayIndex + 1,
+      date: `Day ${dayIndex + 1}`,
+      theme: dayIndex === 0 ? `Start in ${input.destination.name}` : `${input.destination.name} at your pace`,
+      activities,
+      restSlots: [{ time: '14:30', duration: '45 minutes' }],
+      totalActiveHours: 5,
+      intensity: defaultIntensities[dayIndex] ?? 'Balanced',
+    });
+  }
+
+  return plans;
+}
+
+function buildFallbackItinerary(input: {
+  request: ItineraryGenerationInput;
+  destination: DestinationSearchResult;
+  stayCandidates: PointOfInterest[];
+  weather: WeatherSnapshot | null;
+  pois: PointOfInterest[];
+  duration: number;
+  stay: TravelStay | null;
+}): GeneratedItinerary {
+  const dailyPlans = buildFallbackDailyPlans({
+    destination: input.destination,
+    pois: input.pois,
+    duration: input.duration,
+    request: input.request,
+  });
+  const estimatedCost =
+    typeof input.request.budget === 'number' && Number.isFinite(input.request.budget)
+      ? input.request.budget
+      : typeof input.request.budget === 'string' && Number.isFinite(Number.parseFloat(input.request.budget))
+        ? Number.parseFloat(input.request.budget)
+        : null;
+
+  return {
+    title: `${input.destination.name} trip on TravelMate`,
+    destination: input.destination.name,
+    duration: input.duration,
+    stay: input.stay,
+    transfers: normalizeTransfers(undefined, input.request, input.stay),
+    dailyPlans,
+    daily_plans: dailyPlans,
+    totalEstimatedCost: estimatedCost,
+    total_estimated_cost: estimatedCost,
+    budgetBreakdown: {
+      flights: null,
+      hotels: null,
+      food: null,
+      activities: null,
+      transport: null,
+      misc: null,
+      total: estimatedCost,
+    },
+    budget_breakdown: {
+      flights: null,
+      hotels: null,
+      food: null,
+      activities: null,
+      transport: null,
+      misc: null,
+      total: estimatedCost,
+    },
+    tips: [
+      `Use the trip page to refine ${input.destination.name} day by day.`,
+      input.weather ? `Weather: ${input.weather.description}.` : 'Weather data was unavailable for this run.',
+      input.stay ? `Stay: ${input.stay.name}.` : 'No live stay was selected, so the trip stays flexible.',
+    ],
+    sourceData: {
+      destination: input.destination,
+      weather: input.weather,
+      pois: input.pois,
+      stayCandidates: input.stayCandidates,
+      confirmation: input.request.confirmation ?? null,
+    },
+  };
+}
+
 function buildItineraryPrompt(input: {
   request: ItineraryGenerationInput;
   destination: DestinationSearchResult;
@@ -566,13 +689,13 @@ export async function generateItineraryFromLiveData(
         address: request.destination.trim(),
       }));
   const poiTypes = derivePoiTypes(request.interests ?? []);
-  const poiLimit = duration > 7 ? 10 : duration > 3 ? 12 : 16;
-  const stayLimit = duration > 7 ? 4 : 6;
+  const poiLimit = duration <= 2 ? 5 : duration > 7 ? 8 : duration > 3 ? 10 : 12;
+  const stayLimit = duration <= 2 ? 2 : duration > 7 ? 3 : 4;
   const poiPromise = hasCoordinates
     ? fetchPointsOfInterest({
         latitude: request.latitude as number,
         longitude: request.longitude as number,
-        radius: 8_000,
+        radius: duration <= 2 ? 6_000 : 8_000,
         types: poiTypes,
         limit: poiLimit,
       })
@@ -581,7 +704,7 @@ export async function generateItineraryFromLiveData(
     ? fetchPointsOfInterest({
         latitude: request.latitude as number,
         longitude: request.longitude as number,
-        radius: 5_000,
+        radius: duration <= 2 ? 4_000 : 5_000,
         types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
         limit: stayLimit,
       })
@@ -611,62 +734,68 @@ export async function generateItineraryFromLiveData(
   const stayCandidatesRaw = stayResult.status === 'fulfilled' ? stayResult.value : [];
   const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
   const prioritizedPois = prioritizePois(pois, request.interests ?? []);
-  const staySearchCandidates =
-    stayCandidatesRaw.length > 0
-      ? []
-      : await searchStayCandidates(request.destination, {
-          destination,
-          lodgingCandidates: stayCandidatesRaw,
-        });
-  const prioritizedStayCandidates = prioritizeStayCandidates(
-    [...stayCandidatesRaw, ...staySearchCandidates],
-    destination
-  );
-  const maxTokens = Math.min(8000, 2500 + duration * 400);
-  const payload = await generateJson<GeminiItineraryPayload>(
-    buildItineraryPrompt({
+  const prioritizedStayCandidates = prioritizeStayCandidates(stayCandidatesRaw, destination);
+  const maxTokens = duration <= 2 ? 1100 : Math.min(4200, 1000 + duration * 180);
+
+  try {
+    const payload = await generateJson<GeminiItineraryPayload>(
+      buildItineraryPrompt({
+        request,
+        destination,
+        weather,
+        pois: prioritizedPois,
+        stayOptions: prioritizedStayCandidates,
+        duration,
+      }),
+      {
+        maxTokens,
+        repairMaxTokens: Math.max(700, Math.floor(maxTokens / 2)),
+      }
+    );
+
+    if (!payload.dailyPlans?.length) {
+      throw new Error('Kimi 2.5 did not return any itinerary days');
+    }
+
+    const dailyPlans = normalizeDayPlans(payload.dailyPlans, destination);
+    const totalEstimatedCost = payload.totalEstimatedCost ?? null;
+    const budgetBreakdown = normalizeBudgetBreakdown(payload.budgetBreakdown, totalEstimatedCost);
+    const stay = normalizeStay(payload.stay, prioritizedStayCandidates[0] ?? null, request);
+    const transfers = normalizeTransfers(payload.transfers, request, stay);
+
+    return {
+      title: payload.title,
+      destination: payload.destination || destination.name,
+      duration,
+      stay,
+      transfers,
+      dailyPlans,
+      daily_plans: dailyPlans,
+      totalEstimatedCost,
+      total_estimated_cost: totalEstimatedCost,
+      budgetBreakdown,
+      budget_breakdown: budgetBreakdown,
+      tips: payload.tips ?? [],
+      sourceData: {
+        destination,
+        weather,
+        pois,
+        stayCandidates: stayCandidatesRaw,
+        confirmation: request.confirmation ?? null,
+      },
+    };
+  } catch (error) {
+    console.warn('[itinerary] falling back to deterministic itinerary', error);
+    const stay = normalizeStay(null, prioritizedStayCandidates[0] ?? null, request);
+
+    return buildFallbackItinerary({
       request,
       destination,
+      stayCandidates: stayCandidatesRaw,
       weather,
       pois: prioritizedPois,
-      stayOptions: prioritizedStayCandidates,
       duration,
-    }),
-    {
-      maxTokens,
-      repairMaxTokens: Math.max(2000, Math.floor(maxTokens / 2)),
-    }
-  );
-
-  if (!payload.dailyPlans?.length) {
-    throw new Error('Kimi 2.5 did not return any itinerary days');
+      stay,
+    });
   }
-
-  const dailyPlans = normalizeDayPlans(payload.dailyPlans, destination);
-  const totalEstimatedCost = payload.totalEstimatedCost ?? null;
-  const budgetBreakdown = normalizeBudgetBreakdown(payload.budgetBreakdown, totalEstimatedCost);
-  const stay = normalizeStay(payload.stay, prioritizedStayCandidates[0] ?? null, request);
-  const transfers = normalizeTransfers(payload.transfers, request, stay);
-
-  return {
-    title: payload.title,
-    destination: payload.destination || destination.name,
-    duration,
-    stay,
-    transfers,
-    dailyPlans,
-    daily_plans: dailyPlans,
-    totalEstimatedCost,
-    total_estimated_cost: totalEstimatedCost,
-    budgetBreakdown,
-    budget_breakdown: budgetBreakdown,
-    tips: payload.tips ?? [],
-    sourceData: {
-      destination,
-      weather,
-      pois,
-      stayCandidates: [...stayCandidatesRaw, ...staySearchCandidates],
-      confirmation: request.confirmation ?? null,
-    },
-  };
 }

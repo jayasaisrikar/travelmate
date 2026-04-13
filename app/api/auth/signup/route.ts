@@ -12,23 +12,27 @@ export async function POST(request: NextRequest) {
     const email = normalizeField(body?.email);
     const password = normalizeField(body?.password);
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+    if (!password) {
+      return NextResponse.json({ error: 'Password is required' }, { status: 400 });
     }
 
-    await sendSignupConfirmationEmail({ email, password });
+    const result = await sendSignupConfirmationEmail({
+      email,
+      password,
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Check your email to confirm your account, then log in.',
+      message: 'Check your email to confirm your account.',
+      redirectTo: result.redirectTo,
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to send confirmation email' },
+      { error: error instanceof Error ? error.message : 'Failed to create account' },
       { status: 500 }
     );
   }

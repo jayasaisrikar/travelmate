@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 
+import { isAdminEmail } from '@/services/admin-access';
 import { supabase } from '@/services/supabase';
 
 export async function getAuthenticatedUser(request: NextRequest) {
@@ -18,12 +19,14 @@ export async function getAuthenticatedUser(request: NextRequest) {
   if (error || !data.user) {
     return {
       user: null,
+      isAdmin: false,
       error: error?.message || 'Unauthorized',
     };
   }
 
   return {
     user: data.user,
+    isAdmin: isAdminEmail(data.user.email),
     error: null,
   };
 }
