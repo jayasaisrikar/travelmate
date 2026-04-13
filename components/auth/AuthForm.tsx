@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
@@ -17,13 +17,43 @@ export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const authNotice = useMemo(() => searchParams.get('message'), [searchParams]);
-  const nextPath = useMemo(() => searchParams.get('next') || '/dashboard/onboarding', [searchParams]);
-  const safeNextPath = nextPath.startsWith('/') ? nextPath : '/dashboard/onboarding';
+  const nextPath = useMemo(() => searchParams.get('next') || '/dashboard', [searchParams]);
+  const safeNextPath = nextPath.startsWith('/') ? nextPath : '/dashboard';
+  const [checkingSession, setCheckingSession] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+
+    const redirectIfAuthenticated = async () => {
+      try {
+        const { data } = await getSupabaseBrowser().auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (data.session) {
+          router.replace('/dashboard');
+          return;
+        }
+      } finally {
+        if (mounted) {
+          setCheckingSession(false);
+        }
+      }
+    };
+
+    void redirectIfAuthenticated();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router]);
 
   const noticeMessage =
     authNotice === 'admin-only'
@@ -99,6 +129,11 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] px-4 py-8 text-[#2e2833] sm:px-6">
+      {checkingSession ? (
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center">
+          <div className="border border-[#2e2833] bg-white px-6 py-5">Checking your session...</div>
+        </div>
+      ) : (
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="border border-[#2e2833] bg-white p-6 shadow-none sm:p-8">
@@ -230,6 +265,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

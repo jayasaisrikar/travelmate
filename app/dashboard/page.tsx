@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 import { Brand } from '@/components/common/Brand';
+import { listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
@@ -168,10 +169,12 @@ async function callAdminAction(path: string, init?: RequestInit) {
 export default function DashboardPage() {
   const router = useRouter();
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [userTrips, setUserTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionId, setActionId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [userQuery, setUserQuery] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -189,6 +192,19 @@ export default function DashboardPage() {
     }
   };
 
+  const loadUserTrips = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      const trips = await listTrips();
+      setUserTrips(trips);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load your trips');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -201,13 +217,24 @@ export default function DashboardPage() {
 
       const user = data.user;
 
-      if (!user || user.email?.trim().toLowerCase() !== ADMIN_EMAIL) {
-        router.replace('/dashboard/onboarding');
+      if (!user) {
+        router.replace('/login?next=/dashboard');
         return;
       }
 
+      const isAdminLogin = user.email?.trim().toLowerCase() === ADMIN_EMAIL;
+
+      setIsAdminUser(isAdminLogin);
+      setOverview(null);
+      setUserTrips([]);
       setCurrentUserId(user.id);
-      await loadOverview();
+
+      if (isAdminLogin) {
+        await loadOverview();
+        return;
+      }
+
+      await loadUserTrips();
     };
 
     void loadCurrentUserAndOverview();
@@ -386,6 +413,153 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (!isAdminUser) {
+    const latestTrip = userTrips[0] ?? null;
+
+    return (
+      <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
+        <div className="border-b border-[#2e2833] bg-[#fffdf9]">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <Brand href="/" compact className="shrink-0" />
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Dashboard</div>
+                <div className="text-lg font-black tracking-tight">Your TravelMate trips</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                onClick={() => router.push('/dashboard/onboarding')}
+                className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
+              >
+                New trip
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+          <div className="grid gap-4 border border-[#2e2833] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-4">
+              <div className="inline-flex border border-[#2e2833] bg-[#f6d23c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
+                Welcome back
+              </div>
+              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
+                Plan, reopen, and edit your trips from one place.
+              </h1>
+              <p className="max-w-3xl text-sm leading-7 text-[#756978] sm:text-base">
+                Start a new itinerary when you are ready, or jump back into an existing one to edit the destination, budget, and trip details.
+              </p>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => router.push('/dashboard/onboarding')}
+                  className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
+                >
+                  {latestTrip ? 'Create another trip' : 'Create your first trip'}
+                </button>
+                {latestTrip && (
+                  <button
+                    onClick={() => router.push(`/trip/${latestTrip.id}`)}
+                    className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+                  >
+                    Open latest trip
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Trips</div>
+                <div className="mt-2 text-2xl font-black tracking-tight text-[#2e2833]">{userTrips.length}</div>
+              </div>
+              <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Latest</div>
+                <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                  {latestTrip ? latestTrip.destination : 'No trips yet'}
+                </div>
+              </div>
+              <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Next step</div>
+                <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                  {latestTrip ? 'Open or edit a saved trip' : 'Start by creating a trip'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+              {error}
+            </div>
+          )}
+
+          <section className="mt-6 border border-[#2e2833] bg-white p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Your trips</div>
+                <h2 className="mt-1 text-2xl font-black tracking-tight">Saved itineraries</h2>
+              </div>
+              <button
+                onClick={loadUserTrips}
+                className="border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833]"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              {userTrips.length > 0 ? (
+                userTrips.map(trip => (
+                  <article key={trip.id} className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-black tracking-tight">{trip.destination}</h3>
+                        <p className="mt-1 text-sm text-[#756978]">
+                          {trip.duration} days · {trip.budget || 'Budget not set'}
+                        </p>
+                      </div>
+                      <div className="text-right text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                        {new Date(trip.updated_at).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => router.push(`/trip/${trip.id}`)}
+                        className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white"
+                      >
+                        Open trip
+                      </button>
+                      <button
+                        onClick={() => router.push('/dashboard/onboarding')}
+                        className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                      >
+                        Create new
+                      </button>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="border border-dashed border-[#2e2833] bg-[#fffdf9] p-6 text-sm leading-7 text-[#756978] lg:col-span-2">
+                  You do not have any saved trips yet. Start a new trip to build your first itinerary.
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </main>
     );
   }
 

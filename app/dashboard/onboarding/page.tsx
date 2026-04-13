@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { saveTrip } from '@/lib/supabase-trips';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { loadTrip, regenerateFullTrip, saveTrip } from '@/lib/supabase-trips';
 import { Brand } from '@/components/common/Brand';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import type { TravelerPreferences } from '@/lib/travel-types';
@@ -74,8 +74,83 @@ function preferencesToForm(preferences: TravelerPreferences | null | undefined):
   };
 }
 
+function tripToForm(trip: Awaited<ReturnType<typeof loadTrip>>['trip'], preferences: TravelerPreferences | null | undefined): Partial<TripFormState> {
+  if (!trip) {
+    return {};
+  }
+
+  const itinerary = trip.itinerary ?? {};
+  const destinationSource = itinerary?.sourceData?.destination;
+  const confirmation = itinerary?.sourceData?.confirmation;
+  const arrivalTransfer = Array.isArray(itinerary?.transfers)
+    ? itinerary.transfers.find((transfer: { kind?: string; from?: string | null }) => transfer.kind === 'arrival')
+    : null;
+  const departureTransfer = Array.isArray(itinerary?.transfers)
+    ? itinerary.transfers.find((transfer: { kind?: string; to?: string | null }) => transfer.kind === 'departure')
+    : null;
+  const arrivalMethod =
+    preferences?.arrivalMethod === 'flight' ||
+    preferences?.arrivalMethod === 'train' ||
+    preferences?.arrivalMethod === 'drive'
+      ? preferences.arrivalMethod
+      : confirmation?.arrivalMethod === 'flight' ||
+          confirmation?.arrivalMethod === 'train' ||
+          confirmation?.arrivalMethod === 'drive'
+        ? confirmation.arrivalMethod
+        : null;
+  const activityIntensity =
+    preferences?.activityIntensity === 'Relaxed' ||
+    preferences?.activityIntensity === 'Balanced' ||
+    preferences?.activityIntensity === 'Packed'
+      ? preferences.activityIntensity
+      : itinerary?.dailyPlans?.[0]?.intensity === 'Relaxed' ||
+          itinerary?.dailyPlans?.[0]?.intensity === 'Balanced' ||
+          itinerary?.dailyPlans?.[0]?.intensity === 'Packed'
+        ? (itinerary?.dailyPlans?.[0]?.intensity as (typeof ACTIVITY_LEVELS)[number])
+        : null;
+
+  return {
+    destination: trip.destination || destinationSource?.name || '',
+    latitude: typeof destinationSource?.latitude === 'number' ? destinationSource.latitude : null,
+    longitude: typeof destinationSource?.longitude === 'number' ? destinationSource.longitude : null,
+    arrivalDate:
+      itinerary?.stay?.checkInDate ||
+      confirmation?.tripWindow?.arrivalDate ||
+      '',
+    departureDate:
+      itinerary?.stay?.checkOutDate ||
+      confirmation?.tripWindow?.departureDate ||
+      '',
+    arrivalTime:
+      itinerary?.stay?.checkInTime ||
+      confirmation?.tripWindow?.arrivalTime ||
+      '',
+    departureTime:
+      itinerary?.stay?.checkOutTime ||
+      confirmation?.tripWindow?.departureTime ||
+      '',
+    arrivalTransferContext:
+      arrivalTransfer?.from ||
+      preferences?.arrivalTransferContext ||
+      '',
+    departureTransferContext:
+      departureTransfer?.to ||
+      preferences?.departureTransferContext ||
+      '',
+    arrivalMethod,
+    activityIntensity,
+    budget: trip.budget || preferences?.budget || '',
+    interestsText: Array.isArray(trip.interests) && trip.interests.length > 0
+      ? trip.interests.join(', ')
+      : preferences?.interests?.join(', ') ?? '',
+  };
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editTripId = searchParams.get('tripId')?.trim() || '';
+  const isEditMode = Boolean(editTripId);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState(0);
@@ -85,6 +160,7 @@ export default function OnboardingPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [form, setForm] = useState<TripFormState>(INITIAL_FORM);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [prefillLoading, setPrefillLoading] = useState(isEditMode);
   const searchAbortRef = useRef<AbortController | null>(null);
 
   const parsedBudget = useMemo(() => {
@@ -169,63 +245,86 @@ export default function OnboardingPage() {
   useEffect(() => {
     let mounted = true;
 
-    const loadPreferences = async () => {
+    const loadInitialData = async () => {
       try {
         const { data: sessionData } = await getSupabaseBrowser().auth.getSession();
         const accessToken = sessionData.session?.access_token;
+        let loadedPreferences: TravelerPreferences | null = null;
 
-        const response = await fetch('/api/profile/preferences', {
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        });
-        const data = await response.json().catch(() => null);
+        if (accessToken) {
+          const response = await fetch('/api/profile/preferences', {
+            headers: {
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+          });
+          const data = await response.json().catch(() => null);
 
-        if (!mounted || !response.ok || !data?.preferences) {
-          setPreferencesLoaded(true);
-          return;
+          if (response.ok && data?.preferences) {
+            loadedPreferences = data.preferences as TravelerPreferences;
+          }
         }
 
-        setForm(previous => {
-          const isFreshForm =
-            !previous.destination &&
-            !previous.latitude &&
-            !previous.longitude &&
-            !previous.arrivalDate &&
-            !previous.departureDate &&
-            !previous.arrivalTime &&
-            !previous.departureTime &&
-            !previous.arrivalTransferContext &&
-            !previous.departureTransferContext &&
-            !previous.arrivalMethod &&
-            !previous.activityIntensity &&
-            !previous.budget &&
-            !previous.interestsText;
+        if (editTripId) {
+          const tripData = await loadTrip(editTripId);
 
-          if (!isFreshForm) {
-            return previous;
+          if (!mounted) {
+            return;
           }
 
-          return {
-            ...previous,
-            ...preferencesToForm(data.preferences),
-          };
-        });
+          if (tripData.trip) {
+            setForm(previous => ({
+              ...previous,
+              ...tripToForm(tripData.trip, loadedPreferences),
+            }));
+          } else {
+            setError('Trip not found for editing.');
+          }
+        } else if (loadedPreferences) {
+          setForm(previous => {
+            const isFreshForm =
+              !previous.destination &&
+              !previous.latitude &&
+              !previous.longitude &&
+              !previous.arrivalDate &&
+              !previous.departureDate &&
+              !previous.arrivalTime &&
+              !previous.departureTime &&
+              !previous.arrivalTransferContext &&
+              !previous.departureTransferContext &&
+              !previous.arrivalMethod &&
+              !previous.activityIntensity &&
+              !previous.budget &&
+              !previous.interestsText;
+
+            if (!isFreshForm) {
+              return previous;
+            }
+
+            return {
+              ...previous,
+              ...preferencesToForm(loadedPreferences),
+            };
+          });
+        }
       } catch (err) {
-        console.warn('Failed to load saved preferences', err);
+        console.warn('Failed to load initial trip data', err);
+        if (editTripId) {
+          setError(err instanceof Error ? err.message : 'Failed to load trip for editing');
+        }
       } finally {
         if (mounted) {
           setPreferencesLoaded(true);
+          setPrefillLoading(false);
         }
       }
     };
 
-    loadPreferences();
+    loadInitialData();
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [editTripId]);
 
   const searchDestinations = async (query: string) => {
     const trimmedQuery = query.trim();
@@ -307,6 +406,36 @@ export default function OnboardingPage() {
         ) + 1
       );
 
+      if (isEditMode) {
+        const updatedTrip = await regenerateFullTrip(editTripId, {
+          destination: form.destination,
+          latitude: form.latitude,
+          longitude: form.longitude,
+          duration,
+          arrivalDate: form.arrivalDate,
+          departureDate: form.departureDate,
+          arrivalTime: form.arrivalTime,
+          departureTime: form.departureTime,
+          arrivalMethod: form.arrivalMethod,
+          activityIntensity: form.activityIntensity,
+          arrivalTransferContext: form.arrivalTransferContext.trim(),
+          departureTransferContext: form.departureTransferContext.trim(),
+          budget: form.budget,
+          interests: parsedInterests,
+          preferences: {
+            arrivalMethod: form.arrivalMethod,
+            activityIntensity: form.activityIntensity,
+            budget: form.budget,
+            interests: parsedInterests,
+            arrivalTransferContext: form.arrivalTransferContext.trim(),
+            departureTransferContext: form.departureTransferContext.trim(),
+          },
+        });
+
+        router.replace(`/trip/${updatedTrip.trip.id}`);
+        return;
+      }
+
       const response = await fetch('/api/generate-itinerary-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -344,11 +473,31 @@ export default function OnboardingPage() {
 
       router.push(`/trip/${savedTrip.id}`);
     } catch (err: unknown) {
-      console.error('Trip creation error:', err);
+      console.error(isEditMode ? 'Trip update error:' : 'Trip creation error:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
       setLoading(false);
     }
   };
+
+  if (prefillLoading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: '#fbfaf7',
+          color: '#2e2833',
+          fontFamily: 'system-ui, sans-serif',
+          display: 'grid',
+          placeItems: 'center',
+          padding: 24,
+        }}
+      >
+        <div style={{ border: '1px solid #2e2833', background: '#ffffff', padding: '18px 20px', fontWeight: 700 }}>
+          Loading trip details...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -398,15 +547,28 @@ export default function OnboardingPage() {
         </div>
 
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.4rem)', fontWeight: 900, marginBottom: 10, letterSpacing: -1.5, lineHeight: 1 }}>
-          {['Search for your destination', 'Choose your trip window', 'Set your preferences', 'Review before generating'][step]}
+          {(
+            isEditMode
+              ? ['Edit your destination', 'Edit your trip window', 'Update your preferences', 'Review before saving']
+              : ['Search for your destination', 'Choose your trip window', 'Set your preferences', 'Review before generating']
+          )[step]}
         </h1>
         <p style={{ color: '#756978', marginBottom: 28, fontSize: 'clamp(0.98rem, 2.5vw, 1.05rem)', lineHeight: 1.65, maxWidth: 640 }}>
-          {[
-            'Select a real destination from live search results so we can generate your trip with verified place data.',
-            'Tell us when you arrive, where the first ride should drop you, and where the last ride should take you.',
-            'Choose your interests, budget, and pace with no preset selections.',
-            'Confirm the trip details pulled from your choices before we call the itinerary API.',
-          ][step]}
+          {(
+            isEditMode
+              ? [
+                  'Update the destination from live search results so we can regenerate the trip with verified place data.',
+                  'Update when you arrive, where the first ride should drop you, and where the last ride should take you.',
+                  'Change your interests, budget, and pace. Anything you edit here will be used for the regenerated trip.',
+                  'Confirm the updated trip details before we call the regeneration API.',
+                ]
+              : [
+                  'Select a real destination from live search results so we can generate your trip with verified place data.',
+                  'Tell us when you arrive, where the first ride should drop you, and where the last ride should take you.',
+                  'Choose your interests, budget, and pace with no preset selections.',
+                  'Confirm the trip details pulled from your choices before we call the itinerary API.',
+                ]
+          )[step]}
         </p>
 
         {preferencesLoaded && form.budget && step <= 2 && (
@@ -700,7 +862,15 @@ export default function OnboardingPage() {
               boxShadow: isValid() && !loading ? '0 14px 34px rgba(84,166,232,0.22)' : 'none',
             }}
           >
-            {loading ? 'Building your itinerary...' : step === STEPS.length - 1 ? 'Generate Itinerary' : 'Continue'}
+            {loading
+              ? isEditMode
+                ? 'Saving updated trip...'
+                : 'Building your itinerary...'
+              : step === STEPS.length - 1
+                ? isEditMode
+                  ? 'Save Changes'
+                  : 'Generate Itinerary'
+                : 'Continue'}
           </button>
         </div>
       </div>

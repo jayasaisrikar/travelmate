@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAdminEmail } from '@/services/admin-access';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { generateItineraryFromLiveData } from '@/services/itinerary';
 import { regenerateItineraryCluster, regenerateItineraryDay, type RegenerationScope } from '@/services/itinerary-regeneration';
+import { resolveDestination } from '@/services/places';
+import { buildPublicShareUrl, buildSharePreview, createOrRefreshTripShare, getTripShareByTripId, type TripRow } from '@/services/trip-sharing';
+import { saveTravelerPreferences } from '@/services/traveler-preferences';
 import type { GeneratedItinerary } from '@/lib/travel-types';
 
 function unauthorizedResponse(message = 'Unauthorized') {
@@ -20,6 +24,37 @@ function formatTripError(error: { message?: string; code?: string } | null | und
 
 function isValidScope(value: unknown): value is RegenerationScope {
   return value === 'day' || value === 'cluster';
+}
+
+function normalizeString(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeInterests(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map(item => normalizeString(item))
+    .filter(Boolean);
+}
+
+function toNumberOrNull(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function isFullScope(value: unknown): value is 'full' {
+  return value === 'full';
 }
 
 function getDailyPlans(itinerary: Record<string, any> | null | undefined) {
@@ -49,22 +84,10 @@ export async function POST(
     const canAccessAllTrips = isAdminEmail(user.email);
 
     const body = await request.json().catch(() => ({}));
-    const scope = isValidScope(body?.scope) ? body.scope : null;
-    const dayIndex = typeof body?.dayIndex === 'number' ? body.dayIndex : Number(body?.dayIndex);
-    const activityIndex =
-      typeof body?.activityIndex === 'number' ? body.activityIndex : Number(body?.activityIndex);
-    const instruction = typeof body?.instruction === 'string' ? body.instruction.trim() : '';
+    const scope = isValidScope(body?.scope) ? body.scope : isFullScope(body?.scope) ? body.scope : null;
 
     if (!scope) {
       return NextResponse.json({ error: 'A regeneration scope is required' }, { status: 400 });
-    }
-
-    if (!Number.isInteger(dayIndex) || dayIndex < 0) {
-      return NextResponse.json({ error: 'A valid day index is required' }, { status: 400 });
-    }
-
-    if (!instruction) {
-      return NextResponse.json({ error: 'Please add a regeneration instruction' }, { status: 400 });
     }
 
     const loadQuery = supabase.from('trips').select('*').eq('id', id);
@@ -100,6 +123,166 @@ export async function POST(
 
     if (!itinerary || dailyPlans.length === 0) {
       return NextResponse.json({ error: 'Trip itinerary is unavailable' }, { status: 400 });
+    }
+
+    if (scope === 'full') {
+      const destination = normalizeString(body?.destination);
+      const budget = normalizeString(body?.budget);
+      const interests = normalizeInterests(body?.interests);
+      const arrivalDate = normalizeString(body?.arrivalDate) || null;
+      const departureDate = normalizeString(body?.departureDate) || null;
+      const arrivalTime = normalizeString(body?.arrivalTime) || null;
+      const departureTime = normalizeString(body?.departureTime) || null;
+      const arrivalMethod =
+        body?.arrivalMethod === 'flight' ||
+        body?.arrivalMethod === 'train' ||
+        body?.arrivalMethod === 'drive' ||
+        body?.arrivalMethod === 'bus' ||
+        body?.arrivalMethod === 'other'
+          ? body.arrivalMethod
+          : null;
+      const activityIntensity =
+        body?.activityIntensity === 'Relaxed' ||
+        body?.activityIntensity === 'Balanced' ||
+        body?.activityIntensity === 'Packed'
+          ? body.activityIntensity
+          : null;
+      const arrivalTransferContext = normalizeString(body?.arrivalTransferContext) || null;
+      const departureTransferContext = normalizeString(body?.departureTransferContext) || null;
+      const latitude = toNumberOrNull(body?.latitude);
+      const longitude = toNumberOrNull(body?.longitude);
+
+      if (!destination) {
+        return NextResponse.json({ error: 'A destination is required' }, { status: 400 });
+      }
+
+      const resolvedDestination = await resolveDestination(destination, {
+        latitude,
+        longitude,
+      });
+
+      const generated = await generateItineraryFromLiveData({
+        destination,
+        latitude: resolvedDestination.latitude,
+        longitude: resolvedDestination.longitude,
+        resolvedDestination,
+        duration: Number.isInteger(Number(body?.duration)) ? Number(body.duration) : null,
+        arrivalDate,
+        departureDate,
+        arrivalTime,
+        departureTime,
+        arrivalMethod,
+        activityIntensity,
+        arrivalTransferContext,
+        departureTransferContext,
+        budget,
+        interests,
+      });
+
+      const now = new Date().toISOString();
+      const updateQuery = supabase
+        .from('trips')
+        .update({
+          destination: generated.destination || destination,
+          duration: generated.duration,
+          budget: budget || String(body?.budget ?? ''),
+          interests,
+          itinerary: generated,
+          updated_at: now,
+        })
+        .eq('id', id);
+
+      if (!canAccessAllTrips) {
+        updateQuery.eq('user_id', user.id);
+      }
+
+      const { data: updatedTrip, error: updateError } = await updateQuery.select('*').single();
+
+      if (updateError || !updatedTrip) {
+        console.error('[api/trips/:id/regenerate] full update failed', {
+          id,
+          error: updateError?.message,
+          code: updateError?.code,
+        });
+        return NextResponse.json({ error: updateError?.message || 'Failed to update trip' }, { status: 500 });
+      }
+
+      const preview = buildSharePreview(updatedTrip as TripRow);
+      const shareUpdateQuery = supabase
+        .from('trip_shares')
+        .update({
+          share_title: preview.title,
+          share_description: preview.description,
+          updated_at: now,
+        })
+        .eq('trip_id', id);
+
+      if (!canAccessAllTrips) {
+        shareUpdateQuery.eq('owner_user_id', user.id);
+      }
+
+      let shareData = null as Awaited<ReturnType<typeof getTripShareByTripId>>['share'];
+      const { data: refreshedShare, error: shareUpdateError } = await shareUpdateQuery.select('*').maybeSingle();
+
+      if (shareUpdateError) {
+        console.warn('[api/trips/:id/regenerate] share sync failed', {
+          id,
+          error: shareUpdateError.message,
+        });
+      }
+
+      if (refreshedShare) {
+        shareData = refreshedShare;
+      } else {
+        const existingShare = canAccessAllTrips
+          ? await supabase.from('trip_shares').select('*').eq('trip_id', id).maybeSingle()
+          : await getTripShareByTripId(id, user.id);
+        shareData = 'share' in existingShare ? existingShare.share : existingShare.data;
+
+        if (!shareData) {
+          const refreshed = await createOrRefreshTripShare(
+            updatedTrip as TripRow,
+            updatedTrip.user_id || user.id
+          );
+          shareData = refreshed.share;
+        }
+      }
+
+      if (body?.preferences) {
+        await saveTravelerPreferences({
+          userId: user.id,
+          email: user.email ?? null,
+          preferences: body.preferences,
+        });
+      }
+
+      const baseUrl = new URL(request.url).origin;
+
+      return NextResponse.json({
+        success: true,
+        trip: updatedTrip,
+        share: shareData
+          ? {
+              ...shareData,
+              shareUrl: buildPublicShareUrl(baseUrl, shareData.token),
+            }
+          : null,
+        shareUrl: shareData ? buildPublicShareUrl(baseUrl, shareData.token) : null,
+        generated,
+      });
+    }
+
+    const dayIndex = typeof body?.dayIndex === 'number' ? body.dayIndex : Number(body?.dayIndex);
+    const activityIndex =
+      typeof body?.activityIndex === 'number' ? body.activityIndex : Number(body?.activityIndex);
+    const instruction = typeof body?.instruction === 'string' ? body.instruction.trim() : '';
+
+    if (!Number.isInteger(dayIndex) || dayIndex < 0) {
+      return NextResponse.json({ error: 'A valid day index is required' }, { status: 400 });
+    }
+
+    if (!instruction) {
+      return NextResponse.json({ error: 'Please add a regeneration instruction' }, { status: 400 });
     }
 
     const regenerationInput = {

@@ -362,12 +362,12 @@ export default function TripDetailsPage() {
             >
               Ask assistant
             </button>
-            <button
-              onClick={openEditTrip}
+            <Link
+              href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
               className="rounded-full border border-[#5aa7e8] bg-[#eef7ff] px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#ddefff]"
             >
               Edit trip
-            </button>
+            </Link>
             <button
               onClick={() => setIsShareOpen(true)}
               className="rounded-full border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
@@ -405,6 +405,12 @@ export default function TripDetailsPage() {
               >
                 Open Trip Assistant
               </button>
+              <Link
+                href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
+                className="rounded-full border border-[#5aa7e8] bg-[#eef7ff] px-5 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#ddefff]"
+              >
+                Edit trip
+              </Link>
               <button
                 onClick={() => setIsShareOpen(true)}
                 className="rounded-full border border-[#2e2833] bg-white px-5 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"

@@ -61,39 +61,53 @@ async function callNvidia(
   messages: NvidiaChatMessage[],
   temperature: number,
   jsonMode = false,
-  maxTokens = 3000
+  maxTokens = 3000,
+  timeoutMs = 18_000
 ): Promise<string> {
   const { apiKey, model } = getNvidiaConfig();
-  const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      top_p: 0.8,
-      max_tokens: maxTokens,
-      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
-      chat_template_kwargs: { thinking: false },
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    throw new Error(`NVIDIA request failed with status ${response.status}${errorText ? `: ${errorText}` : ''}`);
+  try {
+    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        top_p: 0.8,
+        max_tokens: maxTokens,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        chat_template_kwargs: { thinking: false },
+      }),
+    });
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`NVIDIA request failed with status ${response.status}${errorText ? `: ${errorText}` : ''}`);
+    }
+
+    const data = (await response.json()) as NvidiaChatCompletionResponse;
+    const text = extractContent(data.choices?.[0]?.message?.content);
+
+    if (!text) {
+      throw new Error('Kimi 2.5 returned an empty response');
+    }
+
+    return text;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`NVIDIA request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = (await response.json()) as NvidiaChatCompletionResponse;
-  const text = extractContent(data.choices?.[0]?.message?.content);
-
-  if (!text) {
-    throw new Error('Kimi 2.5 returned an empty response');
-  }
-
-  return text;
 }
 
 export async function generateJson<T>(
@@ -104,7 +118,7 @@ export async function generateJson<T>(
   }
 ): Promise<T> {
   const maxTokens = options?.maxTokens ?? 3000;
-  const repairMaxTokens = options?.repairMaxTokens ?? Math.max(1500, Math.floor(maxTokens / 2));
+  const repairMaxTokens = options?.repairMaxTokens ?? Math.max(900, Math.floor(maxTokens / 2));
   const messages: NvidiaChatMessage[] = [
     {
       role: 'user',
@@ -112,7 +126,7 @@ export async function generateJson<T>(
     },
   ];
 
-  const text = await callNvidia(messages, 0.2, true, maxTokens);
+  const text = await callNvidia(messages, 0, true, maxTokens);
 
   try {
     return JSON.parse(extractLikelyJson(text)) as T;
@@ -126,7 +140,8 @@ export async function generateJson<T>(
       ],
       0,
       true,
-      repairMaxTokens
+      repairMaxTokens,
+      Math.max(6_000, Math.floor(repairMaxTokens * 8))
     );
 
     try {
