@@ -43,6 +43,7 @@ TravelMate is a live-data travel planner that turns a real destination, trip win
 - Open-Meteo for weather
 - NVIDIA Kimi API for itinerary generation and trip assistant responses
 - Resend for transactional app emails
+- Admin-only access through the built-in dashboard
 
 ## Architecture
 
@@ -73,6 +74,8 @@ NVIDIA_API_KEY=...
 # or
 NVIDIA_KIMI_API_KEY=...
 NEXT_PUBLIC_APP_URL=https://travelmate.jayasaisrikar.xyz
+NEXT_PUBLIC_ADMIN_EMAIL=admin@travelmate.com
+ADMIN_PASSWORD=...
 RESEND_API_KEY=...
 EMAIL_FROM="TravelMate <your-approved-sender>"
 # Optional if you have a real inbox for replies.
@@ -85,9 +88,12 @@ Notes:
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by server-side Supabase access.
 - `NVIDIA_API_KEY` or `NVIDIA_KIMI_API_KEY` is required for itinerary generation and the trip assistant.
 - `NEXT_PUBLIC_APP_URL` is required in production for auth links and helps generated share links resolve correctly outside local development.
+- `NEXT_PUBLIC_ADMIN_EMAIL` identifies the account that opens the admin dashboard.
+- `ADMIN_PASSWORD` is the password for that admin account.
 - `RESEND_API_KEY` authenticates server-side email sending with Resend.
 - Set `EMAIL_FROM` to a sender that is verified in Resend, for example a verified `no-reply@...` alias on a domain you added to Resend.
-- Signup confirmation is handled by TravelMate at `/verify-email`, while password reset still uses Supabase-backed recovery links for now.
+- Regular users can sign up and log in normally.
+- If the admin account logs in on `/login`, it lands on `/dashboard`.
 
 ### 3. Apply the Supabase migrations
 

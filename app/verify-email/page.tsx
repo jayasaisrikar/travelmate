@@ -38,8 +38,7 @@ export default async function VerifyEmailPage({
               Verify your email
             </h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-[#756978]">
-              We use your TravelMate domain for verification, then confirm the account in Supabase
-              behind the scenes.
+              We use your TravelMate verification link, then confirm the account in Supabase behind the scenes.
             </p>
           </div>
 
@@ -63,22 +62,16 @@ export default async function VerifyEmailPage({
                 If you already clicked it, go back to login and sign in.
               </p>
               <p>
-                If you never saw the email, sign up again to get a fresh link.
+                If you need a fresh account, create one from the signup page.
               </p>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/login"
+                href="/signup"
                 className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 font-semibold text-white transition hover:bg-[#1f1b23]"
               >
-                Go to login
-              </Link>
-              <Link
-                href="/signup"
-                className="border border-[#2e2833] bg-[#fffdf9] px-4 py-3 font-semibold text-[#2e2833] transition hover:bg-white"
-              >
-                Try signup again
+                Go to signup
               </Link>
             </div>
           </div>

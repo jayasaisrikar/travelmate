@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { isAdminEmail } from '@/services/admin-access';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { searchStayCandidates } from '@/services/places';
@@ -39,6 +40,8 @@ export async function POST(
       return unauthorizedResponse();
     }
 
+    const canAccessAllTrips = isAdminEmail(user.email);
+
     const body = await request.json();
     const budgetRange = typeof body.budgetRange === 'string' ? body.budgetRange.trim() : '';
     const preferredLocation = typeof body.preferredLocation === 'string' ? body.preferredLocation.trim() : '';
@@ -50,12 +53,13 @@ export async function POST(
       );
     }
 
-    const { data: trip, error: loadError } = await supabase
-      .from('trips')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const loadQuery = supabase.from('trips').select('*').eq('id', id);
+
+    if (!canAccessAllTrips) {
+      loadQuery.eq('user_id', user.id);
+    }
+
+    const { data: trip, error: loadError } = await loadQuery.maybeSingle();
 
     if (loadError) {
       console.error('[api/trips/:id/stay] load failed', {
@@ -127,16 +131,19 @@ export async function POST(
     };
 
     const now = new Date().toISOString();
-    const { data: updatedTrip, error: updateError } = await supabase
+    const updateQuery = supabase
       .from('trips')
       .update({
         itinerary: updatedItinerary,
         updated_at: now,
       })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select('*')
-      .single();
+      .eq('id', id);
+
+    if (!canAccessAllTrips) {
+      updateQuery.eq('user_id', user.id);
+    }
+
+    const { data: updatedTrip, error: updateError } = await updateQuery.select('*').single();
 
     if (updateError || !updatedTrip) {
       console.error('[api/trips/:id/stay] update failed', {

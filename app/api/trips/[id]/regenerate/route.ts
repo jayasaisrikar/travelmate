@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { isAdminEmail } from '@/services/admin-access';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { regenerateItineraryCluster, regenerateItineraryDay, type RegenerationScope } from '@/services/itinerary-regeneration';
@@ -45,6 +46,8 @@ export async function POST(
       return unauthorizedResponse();
     }
 
+    const canAccessAllTrips = isAdminEmail(user.email);
+
     const body = await request.json().catch(() => ({}));
     const scope = isValidScope(body?.scope) ? body.scope : null;
     const dayIndex = typeof body?.dayIndex === 'number' ? body.dayIndex : Number(body?.dayIndex);
@@ -64,12 +67,13 @@ export async function POST(
       return NextResponse.json({ error: 'Please add a regeneration instruction' }, { status: 400 });
     }
 
-    const { data: trip, error: loadError } = await supabase
-      .from('trips')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const loadQuery = supabase.from('trips').select('*').eq('id', id);
+
+    if (!canAccessAllTrips) {
+      loadQuery.eq('user_id', user.id);
+    }
+
+    const { data: trip, error: loadError } = await loadQuery.maybeSingle();
 
     if (loadError) {
       console.error('[api/trips/:id/regenerate] load failed', {
@@ -123,16 +127,19 @@ export async function POST(
         : await regenerateItineraryCluster(regenerationInput);
 
     const now = new Date().toISOString();
-    const { data: updatedTrip, error: updateError } = await supabase
+    const updateQuery = supabase
       .from('trips')
       .update({
         itinerary: regenerated.itinerary,
         updated_at: now,
       })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select('*')
-      .single();
+      .eq('id', id);
+
+    if (!canAccessAllTrips) {
+      updateQuery.eq('user_id', user.id);
+    }
+
+    const { data: updatedTrip, error: updateError } = await updateQuery.select('*').single();
 
     if (updateError || !updatedTrip) {
       console.error('[api/trips/:id/regenerate] update failed', {
