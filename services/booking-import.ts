@@ -168,7 +168,7 @@ export async function createTripFromConfirmation(input: {
     id: input.tripId,
     userId: input.userId,
     userEmail: input.userEmail,
-    destination: itinerary.destination,
+    destination: itineraryInput.destination,
     duration: itinerary.duration,
     budget: input.preferences?.budget || 'Imported from booking confirmation',
     interests: input.preferences?.interests || [],

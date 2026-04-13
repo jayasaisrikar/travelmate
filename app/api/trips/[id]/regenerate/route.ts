@@ -159,6 +159,8 @@ export async function POST(
       const resolvedDestination = await resolveDestination(destination, {
         latitude,
         longitude,
+      }, {
+        skipReverseGeocode: Boolean(latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined),
       });
 
       const generated = await generateItineraryFromLiveData({
@@ -183,7 +185,7 @@ export async function POST(
       const updateQuery = supabase
         .from('trips')
         .update({
-          destination: generated.destination || destination,
+          destination,
           duration: generated.duration,
           budget: budget || String(body?.budget ?? ''),
           interests,

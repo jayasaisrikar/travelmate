@@ -220,7 +220,10 @@ export async function searchStayCandidates(
 
 export async function resolveDestination(
   destination: string,
-  coordinates?: { latitude?: number | null; longitude?: number | null }
+  coordinates?: { latitude?: number | null; longitude?: number | null },
+  options?: {
+    skipReverseGeocode?: boolean;
+  }
 ): Promise<DestinationSearchResult> {
   const cacheKey = `${destination.trim().toLowerCase()}::${coordinates?.latitude ?? ''}::${coordinates?.longitude ?? ''}`;
   const cached = reverseDestinationCache.get(cacheKey);
@@ -229,10 +232,31 @@ export async function resolveDestination(
     return cached.result;
   }
 
-  if (coordinates?.latitude !== null && coordinates?.latitude !== undefined &&
-      coordinates?.longitude !== null && coordinates?.longitude !== undefined) {
+  const hasCoordinates =
+    coordinates?.latitude !== null &&
+    coordinates?.latitude !== undefined &&
+    coordinates?.longitude !== null &&
+    coordinates?.longitude !== undefined;
+
+  if (hasCoordinates && options?.skipReverseGeocode) {
+    const result: DestinationSearchResult = {
+      name: destination.trim(),
+      latitude: coordinates.latitude as number,
+      longitude: coordinates.longitude as number,
+      type: 'destination',
+      address: destination.trim(),
+    };
+
+    reverseDestinationCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, result });
+    return result;
+  }
+
+  if (hasCoordinates) {
+    const latitude = coordinates.latitude as number;
+    const longitude = coordinates.longitude as number;
+
     const reverseResponse = await fetchWithTimeout(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordinates.latitude}&lon=${coordinates.longitude}`,
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
       {
         headers: NOMINATIM_HEADERS,
         next: { revalidate: 300 },
@@ -246,8 +270,8 @@ export async function resolveDestination(
 
       const result = {
         name: displayName.split(',')[0] ?? destination,
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
+        latitude,
+        longitude,
         type: String(reverseData.type ?? 'destination'),
         address: displayName,
       };
