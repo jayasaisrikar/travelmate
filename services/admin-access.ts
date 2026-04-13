@@ -5,7 +5,7 @@ function normalizeEmail(value: string | null | undefined) {
 }
 
 export function getAdminEmail() {
-  return normalizeEmail(process.env.NEXT_PUBLIC_ADMIN_EMAIL) || DEFAULT_ADMIN_EMAIL;
+  return normalizeEmail(process.env.ADMIN_EMAIL) || DEFAULT_ADMIN_EMAIL;
 }
 
 export function isAdminEmail(value: string | null | undefined) {

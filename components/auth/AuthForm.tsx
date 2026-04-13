@@ -7,7 +7,7 @@ import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { Brand } from '@/components/common/Brand';
 
 type AuthMode = 'login' | 'signup';
-const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
 
 interface AuthFormProps {
   mode: AuthMode;

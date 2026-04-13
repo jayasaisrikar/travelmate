@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Brand } from '@/components/common/Brand';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 
-const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
 
 interface AdminShare {
   id: string;
