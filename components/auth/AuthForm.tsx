@@ -54,18 +54,22 @@ export function AuthForm({ mode }: AuthFormProps) {
         return;
       }
 
-      const { data, error: signUpError } = await getSupabaseBrowser().auth.signUp({
-        email,
-        password,
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (signUpError) {
-        throw signUpError;
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Authentication failed');
       }
 
-      if (data.session) {
-        router.replace(safeNextPath);
-        router.refresh();
+      if (data?.message) {
+        setMessage(data.message);
         return;
       }
 

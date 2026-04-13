@@ -8,6 +8,7 @@ import {
 import { fetchWeatherSnapshot } from '@/services/weather';
 import type {
   BudgetBreakdown,
+  BookingConfirmationExtraction,
   DestinationSearchResult,
   GeneratedItinerary,
   ItineraryActivity,
@@ -369,6 +370,9 @@ function buildItineraryPrompt(input: {
   const weatherSummary = input.weather
     ? `${input.weather.description}, ${input.weather.temperature}C, feels like ${input.weather.feelsLike}C, wind ${input.weather.windSpeed} km/h`
     : 'Weather unavailable';
+  const activityCap =
+    input.duration > 7 ? 'Keep each day to 2 or 3 activities maximum.' : 'Keep each day to 3 or 4 activities maximum.';
+  const confirmationSummary = buildConfirmationContext(input.request.confirmation);
 
   return `
 You are generating a production travel itinerary as strict JSON.
@@ -388,6 +392,7 @@ Trip request:
 - departure_transfer_context: ${buildTransferHint('departure', input.request.departureTransferContext, null)}
 - dietary_restrictions: ${dietaryRestrictions}
 - weather_snapshot: ${weatherSummary}
+- booking_confirmation_context: ${confirmationSummary}
 
 Live POIs for this destination:
 ${buildPoiContext(input.pois)}
@@ -415,7 +420,8 @@ Rules:
 - Return one itinerary covering all ${input.duration} days.
 - All costs must be numeric or null.
 - All coordinates must come from the POI list when the activity is a venue.
-- Keep each day to 3 or 4 activities maximum so the itinerary stays concise.
+- ${activityCap}
+- Keep each activity description to one short sentence.
 
 Return only JSON with this shape:
 {
@@ -490,6 +496,53 @@ Return only JSON with this shape:
 `.trim();
 }
 
+function buildConfirmationContext(confirmation: BookingConfirmationExtraction | null | undefined): string {
+  if (!confirmation) {
+    return 'Not provided';
+  }
+
+  const flightSummary = confirmation.flightSegments
+    .slice(0, 3)
+    .map((segment) => {
+      const flightNumber = segment.flightNumber ? `${segment.flightNumber}` : 'flight';
+      const route = [segment.departurePlace, segment.arrivalPlace].filter(Boolean).join(' -> ');
+      const time = [segment.departureDate, segment.departureTime, segment.arrivalDate, segment.arrivalTime]
+        .filter(Boolean)
+        .join(' ');
+
+      return [segment.airline, flightNumber, route, time].filter(Boolean).join(' | ');
+    })
+    .join('; ');
+
+  const transportSummary = confirmation.transportLegs
+    .slice(0, 3)
+    .map((leg) => [leg.kind, leg.provider, leg.from, leg.to, leg.date, leg.time].filter(Boolean).join(' | '))
+    .join('; ');
+
+  const reservationSummary = confirmation.reservations
+    .slice(0, 3)
+    .map((reservation) => [reservation.kind, reservation.vendor, reservation.confirmationCode, reservation.date].filter(Boolean).join(' | '))
+    .join('; ');
+
+  return [
+    `destination_hint: ${confirmation.destinationName}`,
+    `trip_window: ${[
+      confirmation.tripWindow.arrivalDate,
+      confirmation.tripWindow.arrivalTime,
+      confirmation.tripWindow.departureDate,
+      confirmation.tripWindow.departureTime,
+    ]
+      .filter(Boolean)
+      .join(' -> ') || 'Not provided'}`,
+    `arrival_method: ${confirmation.arrivalMethod ?? 'Not provided'}`,
+    `stay: ${confirmation.stay ? [confirmation.stay.name, confirmation.stay.address, confirmation.stay.checkInDate, confirmation.stay.checkOutDate].filter(Boolean).join(' | ') : 'Not provided'}`,
+    `flight_segments: ${flightSummary || 'Not provided'}`,
+    `transport_legs: ${transportSummary || 'Not provided'}`,
+    `reservations: ${reservationSummary || 'Not provided'}`,
+    `summary: ${confirmation.summary}`,
+  ].join('\n- ');
+}
+
 export async function generateItineraryFromLiveData(
   request: ItineraryGenerationInput
 ): Promise<GeneratedItinerary> {
@@ -500,18 +553,28 @@ export async function generateItineraryFromLiveData(
   const duration = normalizeDuration(request);
   const hasCoordinates =
     typeof request.latitude === 'number' && typeof request.longitude === 'number';
-  const destinationPromise = resolveDestination(request.destination, {
-    latitude: request.latitude,
-    longitude: request.longitude,
-  });
+  const destinationPromise = request.resolvedDestination
+    ? Promise.resolve(request.resolvedDestination)
+    : resolveDestination(request.destination, {
+        latitude: request.latitude,
+        longitude: request.longitude,
+      }).catch(() => ({
+        name: request.destination.trim(),
+        latitude: request.latitude ?? 0,
+        longitude: request.longitude ?? 0,
+        type: 'destination',
+        address: request.destination.trim(),
+      }));
   const poiTypes = derivePoiTypes(request.interests ?? []);
+  const poiLimit = duration > 7 ? 10 : duration > 3 ? 12 : 16;
+  const stayLimit = duration > 7 ? 4 : 6;
   const poiPromise = hasCoordinates
     ? fetchPointsOfInterest({
         latitude: request.latitude as number,
         longitude: request.longitude as number,
         radius: 8_000,
         types: poiTypes,
-        limit: 16,
+        limit: poiLimit,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const stayPromise = hasCoordinates
@@ -520,7 +583,7 @@ export async function generateItineraryFromLiveData(
         longitude: request.longitude as number,
         radius: 5_000,
         types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
-        limit: 6,
+        limit: stayLimit,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const weatherPromise = hasCoordinates
@@ -559,6 +622,7 @@ export async function generateItineraryFromLiveData(
     [...stayCandidatesRaw, ...staySearchCandidates],
     destination
   );
+  const maxTokens = Math.min(8000, 2500 + duration * 400);
   const payload = await generateJson<GeminiItineraryPayload>(
     buildItineraryPrompt({
       request,
@@ -567,7 +631,11 @@ export async function generateItineraryFromLiveData(
       pois: prioritizedPois,
       stayOptions: prioritizedStayCandidates,
       duration,
-    })
+    }),
+    {
+      maxTokens,
+      repairMaxTokens: Math.max(2000, Math.floor(maxTokens / 2)),
+    }
   );
 
   if (!payload.dailyPlans?.length) {
@@ -598,6 +666,7 @@ export async function generateItineraryFromLiveData(
       weather,
       pois,
       stayCandidates: [...stayCandidatesRaw, ...staySearchCandidates],
+      confirmation: request.confirmation ?? null,
     },
   };
 }

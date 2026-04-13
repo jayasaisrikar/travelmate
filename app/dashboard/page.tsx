@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { deleteTrip, listTrips, Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { Brand } from '@/components/common/Brand';
+import { BookingConfirmationImportCard } from '@/components/dashboard/BookingConfirmationImportCard';
 
 function getEstimatedCost(itinerary: any): string | null {
   const rawValue = itinerary?.totalEstimatedCost ?? itinerary?.total_estimated_cost;
@@ -110,7 +111,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">My trips</h1>
             <p className="max-w-2xl text-sm leading-7 text-[#756978] sm:text-base">
               {trips.length === 0
-                ? 'Create your first trip from a live destination search.'
+                ? 'Create your first trip from a live destination search or import a booking confirmation.'
                 : `You have ${trips.length} saved trip${trips.length !== 1 ? 's' : ''}.`}
             </p>
           </div>
@@ -131,6 +132,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="mt-6">
+          <BookingConfirmationImportCard />
+        </div>
+
         {error && (
           <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
             {error}
@@ -146,7 +151,7 @@ export default function DashboardPage() {
             <Brand asLink={false} compact className="mx-auto mb-4 justify-center" />
             <h2 className="text-2xl font-black tracking-tight sm:text-3xl">No trips yet</h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-[#756978] sm:text-base">
-              Create a trip after connecting your real destination and preferences.
+              Create a trip from live destination search or paste a booking confirmation to auto-fill the trip.
             </p>
             <button
               onClick={() => router.push('/dashboard/onboarding')}

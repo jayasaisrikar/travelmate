@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { Brand } from '@/components/common/Brand';
 
 export function ForgotPasswordForm() {
@@ -18,15 +17,21 @@ export function ForgotPasswordForm() {
     setMessage('');
 
     try {
-      const { error: resetError } = await getSupabaseBrowser().auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const response = await fetch('/api/auth/recover', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
 
-      if (resetError) {
-        throw resetError;
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Failed to send reset email');
       }
 
-      setMessage('Check your email for a password reset link.');
+      setMessage(data?.message || 'Check your email for a password reset link.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send reset email');
     } finally {
