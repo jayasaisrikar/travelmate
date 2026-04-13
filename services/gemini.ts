@@ -115,10 +115,14 @@ export async function generateJson<T>(
   options?: {
     maxTokens?: number;
     repairMaxTokens?: number;
+    skipRepair?: boolean;
+    timeoutMs?: number;
   }
 ): Promise<T> {
   const maxTokens = options?.maxTokens ?? 3000;
   const repairMaxTokens = options?.repairMaxTokens ?? Math.max(900, Math.floor(maxTokens / 2));
+  const skipRepair = options?.skipRepair ?? false;
+  const timeoutMs = options?.timeoutMs ?? 18_000;
   const messages: NvidiaChatMessage[] = [
     {
       role: 'user',
@@ -126,11 +130,17 @@ export async function generateJson<T>(
     },
   ];
 
-  const text = await callNvidia(messages, 0, true, maxTokens);
+  const text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
 
   try {
     return JSON.parse(extractLikelyJson(text)) as T;
   } catch (primaryError) {
+    if (skipRepair) {
+      throw new Error(
+        `Kimi 2.5 returned invalid JSON. Parse error: ${primaryError instanceof Error ? primaryError.message : 'unknown'}`
+      );
+    }
+
     const repairText = await callNvidia(
       [
         {

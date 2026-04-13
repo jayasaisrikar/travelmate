@@ -681,6 +681,8 @@ export async function generateItineraryFromLiveData(
     : resolveDestination(request.destination, {
         latitude: request.latitude,
         longitude: request.longitude,
+      }, {
+        skipReverseGeocode: hasCoordinates,
       }).catch(() => ({
         name: request.destination.trim(),
         latitude: request.latitude ?? 0,
@@ -750,6 +752,8 @@ export async function generateItineraryFromLiveData(
       {
         maxTokens,
         repairMaxTokens: Math.max(700, Math.floor(maxTokens / 2)),
+        skipRepair: true,
+        timeoutMs: duration <= 2 ? 12_000 : 16_000,
       }
     );
 
@@ -762,10 +766,11 @@ export async function generateItineraryFromLiveData(
     const budgetBreakdown = normalizeBudgetBreakdown(payload.budgetBreakdown, totalEstimatedCost);
     const stay = normalizeStay(payload.stay, prioritizedStayCandidates[0] ?? null, request);
     const transfers = normalizeTransfers(payload.transfers, request, stay);
+    const tripDestination = destination.name;
 
     return {
-      title: payload.title,
-      destination: payload.destination || destination.name,
+      title: `${tripDestination} trip on TravelMate`,
+      destination: tripDestination,
       duration,
       stay,
       transfers,
