@@ -135,6 +135,132 @@ function normalizeDayPlans(
   }));
 }
 
+function normalizeCoordinate(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function hasCoordinates(point: { latitude: number | null; longitude: number | null }): boolean {
+  return normalizeCoordinate(point.latitude) !== null && normalizeCoordinate(point.longitude) !== null;
+}
+
+function coordinatesMatch(
+  left: { latitude: number | null; longitude: number | null },
+  right: { latitude: number; longitude: number }
+): boolean {
+  const leftLat = normalizeCoordinate(left.latitude);
+  const leftLon = normalizeCoordinate(left.longitude);
+
+  if (leftLat === null || leftLon === null) {
+    return false;
+  }
+
+  return Math.abs(leftLat - right.latitude) < 0.0001 && Math.abs(leftLon - right.longitude) < 0.0001;
+}
+
+function normalizeSearchText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function scorePoiForActivity(activity: ItineraryActivity, poi: PointOfInterest): number {
+  const activityName = normalizeSearchText(activity.name);
+  const activityCategory = normalizeSearchText(activity.category);
+  const poiName = normalizeSearchText(poi.name);
+  const poiType = normalizeSearchText(poi.type);
+  let score = 0;
+
+  if (activityName && poiName) {
+    if (activityName === poiName) {
+      score += 8;
+    } else if (activityName.includes(poiName) || poiName.includes(activityName)) {
+      score += 5;
+    }
+  }
+
+  if (activityName && poiType && (activityName.includes(poiType) || poiType.includes(activityName))) {
+    score += 4;
+  }
+
+  if (activityCategory && poiType && (activityCategory.includes(poiType) || poiType.includes(activityCategory))) {
+    score += 3;
+  }
+
+  if (activity.address && poi.address) {
+    const activityAddress = normalizeSearchText(activity.address);
+    const poiAddress = normalizeSearchText(poi.address);
+
+    if (activityAddress && poiAddress && (activityAddress.includes(poiAddress) || poiAddress.includes(activityAddress))) {
+      score += 2;
+    }
+  }
+
+  return score;
+}
+
+function attachPoiCoordinates(
+  dailyPlans: ItineraryDayPlan[],
+  pois: PointOfInterest[],
+  destination: DestinationSearchResult
+): ItineraryDayPlan[] {
+  const coordinatePois = pois.filter((poi) => hasCoordinates(poi));
+  const usedPoiIndices = new Set<number>();
+
+  return dailyPlans.map((dayPlan) => ({
+    ...dayPlan,
+    activities: dayPlan.activities.map((activity) => {
+      const currentHasCoordinates = hasCoordinates(activity);
+      const currentMatchesDestination = coordinatesMatch(activity, destination);
+
+      if (currentHasCoordinates && !currentMatchesDestination) {
+        return activity;
+      }
+
+      let bestPoiIndex = -1;
+      let bestScore = 0;
+
+      for (let index = 0; index < coordinatePois.length; index += 1) {
+        if (usedPoiIndices.has(index)) {
+          continue;
+        }
+
+        const score = scorePoiForActivity(activity, coordinatePois[index]);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestPoiIndex = index;
+        }
+      }
+
+      if (bestPoiIndex === -1) {
+        for (let index = 0; index < coordinatePois.length; index += 1) {
+          if (!usedPoiIndices.has(index)) {
+            bestPoiIndex = index;
+            break;
+          }
+        }
+      }
+
+      if (bestPoiIndex === -1) {
+        return {
+          ...activity,
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+          address: activity.address ?? destination.address ?? destination.name,
+        };
+      }
+
+      usedPoiIndices.add(bestPoiIndex);
+      const poi = coordinatePois[bestPoiIndex];
+
+      return {
+        ...activity,
+        latitude: poi.latitude,
+        longitude: poi.longitude,
+        address: activity.address ?? poi.address ?? destination.address ?? destination.name,
+      };
+    }),
+  }));
+}
+
 function normalizeBudgetBreakdown(
   budgetBreakdown: Partial<BudgetBreakdown> | undefined,
   totalEstimatedCost: number | null
@@ -674,6 +800,7 @@ export async function generateItineraryFromLiveData(
   }
 
   const duration = normalizeDuration(request);
+  const fastMode = duration <= 2;
   const hasCoordinates =
     typeof request.latitude === 'number' && typeof request.longitude === 'number';
   const destinationPromise = request.resolvedDestination
@@ -700,6 +827,7 @@ export async function generateItineraryFromLiveData(
         radius: duration <= 2 ? 6_000 : 8_000,
         types: poiTypes,
         limit: poiLimit,
+        timeoutMs: fastMode ? 5_000 : 8_000,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const stayPromise = hasCoordinates
@@ -709,10 +837,13 @@ export async function generateItineraryFromLiveData(
         radius: duration <= 2 ? 4_000 : 5_000,
         types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
         limit: stayLimit,
+        timeoutMs: fastMode ? 4_000 : 7_000,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const weatherPromise = hasCoordinates
-    ? fetchWeatherSnapshot(request.latitude as number, request.longitude as number)
+    ? fastMode
+      ? Promise.resolve(null as WeatherSnapshot | null)
+      : fetchWeatherSnapshot(request.latitude as number, request.longitude as number)
     : Promise.resolve(null as WeatherSnapshot | null);
 
   const [destinationResult, poIResult, stayResult, weatherResult] = await Promise.allSettled([
@@ -737,7 +868,7 @@ export async function generateItineraryFromLiveData(
   const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
   const prioritizedPois = prioritizePois(pois, request.interests ?? []);
   const prioritizedStayCandidates = prioritizeStayCandidates(stayCandidatesRaw, destination);
-  const maxTokens = duration <= 2 ? 1100 : Math.min(4200, 1000 + duration * 180);
+  const maxTokens = duration <= 2 ? 900 : Math.min(4200, 1000 + duration * 180);
 
   try {
     const payload = await generateJson<GeminiItineraryPayload>(
@@ -753,7 +884,7 @@ export async function generateItineraryFromLiveData(
         maxTokens,
         repairMaxTokens: Math.max(700, Math.floor(maxTokens / 2)),
         skipRepair: true,
-        timeoutMs: duration <= 2 ? 12_000 : 16_000,
+        timeoutMs: duration <= 2 ? 8_000 : 14_000,
       }
     );
 
@@ -761,7 +892,7 @@ export async function generateItineraryFromLiveData(
       throw new Error('Kimi 2.5 did not return any itinerary days');
     }
 
-    const dailyPlans = normalizeDayPlans(payload.dailyPlans, destination);
+    const dailyPlans = attachPoiCoordinates(normalizeDayPlans(payload.dailyPlans, destination), prioritizedPois, destination);
     const totalEstimatedCost = payload.totalEstimatedCost ?? null;
     const budgetBreakdown = normalizeBudgetBreakdown(payload.budgetBreakdown, totalEstimatedCost);
     const stay = normalizeStay(payload.stay, prioritizedStayCandidates[0] ?? null, request);
