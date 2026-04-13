@@ -24,17 +24,9 @@ export async function getAuthenticatedUser(request: NextRequest) {
     };
   }
 
-  if (!isAdminEmail(data.user.email)) {
-    return {
-      user: null,
-      isAdmin: false,
-      error: 'Unauthorized',
-    };
-  }
-
   return {
     user: data.user,
-    isAdmin: true,
+    isAdmin: isAdminEmail(data.user.email),
     error: null,
   };
 }

@@ -146,7 +146,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
             <div className="mt-6 border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-sm font-medium text-[#2e2833]">
               {mode === 'login'
-                ? 'All user accounts can sign in here. Admin logs in with the control account and lands on the dashboard.'
+                ? 'All user accounts can sign in here.'
                 : 'Create your account here to start saving travel plans.'}
             </div>
 

@@ -90,6 +90,26 @@ export async function updateTripItinerary(
   return data.trip
 }
 
+export async function updateTripDetails(
+  tripId: string,
+  input: Partial<Pick<Trip, 'destination' | 'duration' | 'budget' | 'interests' | 'itinerary'>>
+): Promise<{ trip: Trip; shareUrl: string | null; shareToken: string | null }> {
+  const data = await fetchTripApi<{
+    trip: Trip
+    shareUrl: string | null
+    share?: { token?: string | null } | null
+  }>(`/api/trips/${encodeURIComponent(tripId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+
+  return {
+    trip: data.trip,
+    shareUrl: data.shareUrl ?? null,
+    shareToken: data.share?.token ?? null,
+  }
+}
+
 export async function loadTrip(tripId: string): Promise<TripLoadResponse> {
   return fetchTripApi<TripLoadResponse>(`/api/trips/${encodeURIComponent(tripId)}`)
 }
