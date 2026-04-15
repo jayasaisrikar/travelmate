@@ -63,6 +63,8 @@ export const INTEREST_TO_POI_TYPES: Record<string, string[]> = {
   beach: ['beach', 'viewpoint'],
 };
 
+export const DEFAULT_POI_TYPES = ['attraction', 'museum', 'gallery', 'park', 'viewpoint', 'market'];
+
 export const POI_TYPE_ALIASES: Record<string, string[]> = {
   restaurant: ['amenity=restaurant', 'amenity=fast_food'],
   cafe: ['amenity=cafe'],

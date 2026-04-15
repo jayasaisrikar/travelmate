@@ -1,4 +1,4 @@
-import { INTEREST_TO_POI_TYPES, NOMINATIM_HEADERS, POI_TYPE_ALIASES } from '@/lib/constants';
+import { DEFAULT_POI_TYPES, INTEREST_TO_POI_TYPES, NOMINATIM_HEADERS, POI_TYPE_ALIASES } from '@/lib/constants';
 import type { DestinationSearchResult, PointOfInterest } from '@/lib/travel-types';
 
 const DESTINATION_SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -41,6 +41,102 @@ function buildOverpassClause(type: string, latitude: number, longitude: number, 
       relation${selector}(around:${radius},${latitude},${longitude});
     `;
   });
+}
+
+function chunkTypes(types: string[], size: number): string[][] {
+  const chunks: string[][] = [];
+
+  for (let index = 0; index < types.length; index += size) {
+    chunks.push(types.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function parsePointOfInterestElements(elements: Array<Record<string, unknown>>): PointOfInterest[] {
+  const unique = new Map<string, PointOfInterest>();
+
+  for (const element of elements) {
+    const tags = (element.tags as Record<string, string> | undefined) ?? {};
+    const name = tags.name?.trim();
+    const latitude = toNumber((element.lat as number | string | undefined) ?? (element.center as { lat?: number } | undefined)?.lat);
+    const longitude = toNumber((element.lon as number | string | undefined) ?? (element.center as { lon?: number } | undefined)?.lon);
+
+    if (!name || latitude === null || longitude === null) {
+      continue;
+    }
+
+    const id = `${element.type ?? 'element'}-${element.id ?? name}`;
+    const type = tags.tourism ?? tags.amenity ?? tags.leisure ?? tags.natural ?? 'place';
+    const address = [
+      tags['addr:housenumber'],
+      tags['addr:street'],
+      tags['addr:city'],
+      tags['addr:state'],
+      tags['addr:country'],
+    ]
+      .filter(Boolean)
+      .join(', ');
+
+    unique.set(id, {
+      id,
+      name,
+      type,
+      latitude,
+      longitude,
+      address: address || undefined,
+      tags,
+    });
+  }
+
+  return Array.from(unique.values());
+}
+
+async function fetchOverpassPoisForTypes(options: {
+  latitude: number;
+  longitude: number;
+  radius: number;
+  types: string[];
+  timeoutMs: number;
+}): Promise<PointOfInterest[]> {
+  if (options.types.length === 0) {
+    return [];
+  }
+
+  const queryGroups = options.types.flatMap((type) =>
+    buildOverpassClause(type, options.latitude, options.longitude, options.radius)
+  );
+
+  const query = `
+    [out:json][timeout:25];
+    (
+      ${queryGroups.join('\n')}
+    );
+    out body center;
+  `;
+
+  const response = await fetchWithTimeout(
+    'https://overpass-api.de/api/interpreter',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ data: query }),
+      next: { revalidate: 300 },
+    },
+    options.timeoutMs
+  );
+
+  if (!response.ok) {
+    throw new Error(`POI fetch failed with status ${response.status}`);
+  }
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('POI fetch returned a non-JSON response');
+  }
+
+  const data = (await response.json()) as { elements?: Array<Record<string, unknown>> };
+  return parsePointOfInterestElements(data.elements ?? []);
 }
 
 export async function searchDestinations(query: string): Promise<DestinationSearchResult[]> {
@@ -123,6 +219,55 @@ function destinationToPoi(result: DestinationSearchResult): PointOfInterest {
   };
 }
 
+function classifyPoiCategory(poi: PointOfInterest): 'food' | 'culture' | 'park' | 'shopping' | 'stay' | 'other' {
+  const type = `${poi.type} ${poi.name}`.toLowerCase();
+
+  if (
+    type.includes('hotel') ||
+    type.includes('hostel') ||
+    type.includes('guest house') ||
+    type.includes('guest_house') ||
+    type.includes('motel') ||
+    type.includes('apartment') ||
+    type.includes('stay')
+  ) {
+    return 'stay';
+  }
+
+  if (
+    type.includes('restaurant') ||
+    type.includes('cafe') ||
+    type.includes('food') ||
+    type.includes('bakery') ||
+    type.includes('bistro') ||
+    type.includes('breakfast')
+  ) {
+    return 'food';
+  }
+
+  if (
+    type.includes('museum') ||
+    type.includes('gallery') ||
+    type.includes('attraction') ||
+    type.includes('historic') ||
+    type.includes('monument') ||
+    type.includes('temple') ||
+    type.includes('church')
+  ) {
+    return 'culture';
+  }
+
+  if (type.includes('park') || type.includes('garden') || type.includes('nature')) {
+    return 'park';
+  }
+
+  if (type.includes('market') || type.includes('shop') || type.includes('mall') || type.includes('store')) {
+    return 'shopping';
+  }
+
+  return 'other';
+}
+
 function isStayType(type: string): boolean {
   const normalized = type.toLowerCase();
 
@@ -134,6 +279,142 @@ function isStayType(type: string): boolean {
     normalized.includes('motel') ||
     normalized.includes('apartment')
   );
+}
+
+function getFallbackSearchTerms(type: string): string[] {
+  const normalized = type.toLowerCase();
+
+  switch (normalized) {
+    case 'hotel':
+      return ['hotel', 'guest house', 'hostel', 'motel', 'apartment'];
+    case 'restaurant':
+      return ['restaurant', 'cafe', 'food'];
+    case 'cafe':
+      return ['cafe', 'coffee', 'restaurant'];
+    case 'market':
+      return ['market', 'marketplace', 'bazaar'];
+    case 'museum':
+      return ['museum', 'gallery', 'attraction'];
+    case 'gallery':
+      return ['gallery', 'museum', 'art gallery'];
+    case 'park':
+      return ['park', 'garden'];
+    case 'beach':
+      return ['beach', 'waterfront'];
+    case 'viewpoint':
+      return ['viewpoint', 'lookout', 'hill'];
+    case 'attraction':
+      return ['attraction', 'sightseeing', 'landmark'];
+    case 'bar':
+      return ['bar', 'pub', 'nightlife'];
+    case 'place_of_worship':
+      return ['place of worship', 'temple', 'church', 'mosque'];
+    case 'spa':
+      return ['spa', 'wellness'];
+    default:
+      return [normalized.replace(/_/g, ' ')];
+  }
+}
+
+function getFallbackAcceptedTypes(type: string): string[] {
+  const normalized = type.toLowerCase();
+
+  switch (normalized) {
+    case 'hotel':
+      return ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'];
+    case 'restaurant':
+      return ['restaurant', 'fast_food', 'cafe'];
+    case 'cafe':
+      return ['cafe', 'restaurant', 'fast_food'];
+    case 'market':
+      return ['marketplace', 'market'];
+    case 'museum':
+      return ['museum', 'gallery', 'attraction'];
+    case 'gallery':
+      return ['gallery', 'museum', 'attraction'];
+    case 'park':
+      return ['park', 'garden'];
+    case 'beach':
+      return ['beach'];
+    case 'viewpoint':
+      return ['viewpoint', 'attraction', 'peak'];
+    case 'attraction':
+      return ['attraction', 'museum', 'park', 'viewpoint'];
+    case 'bar':
+      return ['bar', 'pub'];
+    case 'place_of_worship':
+      return ['place_of_worship', 'temple', 'church', 'mosque'];
+    case 'spa':
+      return ['spa'];
+    default:
+      return [normalized];
+  }
+}
+
+async function fetchFallbackPointsOfInterest(options: {
+  query: string;
+  types: string[];
+  limit: number;
+}): Promise<PointOfInterest[]> {
+  const unique = new Map<string, PointOfInterest>();
+
+  for (const type of options.types) {
+    if (unique.size >= options.limit) {
+      break;
+    }
+
+    const acceptedTypes = new Set(getFallbackAcceptedTypes(type));
+    const searchTerms = getFallbackSearchTerms(type);
+
+    for (const searchTerm of searchTerms) {
+      if (unique.size >= options.limit) {
+        break;
+      }
+
+      const queryVariants = [
+        `${options.query} ${searchTerm}`,
+        `${searchTerm} in ${options.query}`,
+      ];
+
+      for (const query of queryVariants) {
+        if (unique.size >= options.limit) {
+          break;
+        }
+
+        const results = await searchDestinations(query).catch(() => []);
+
+        for (const result of results) {
+          if (unique.size >= options.limit) {
+            break;
+          }
+
+          const normalizedType = result.type.toLowerCase();
+          const normalizedName = result.name.toLowerCase();
+          const normalizedSearchTerm = searchTerm.toLowerCase();
+
+          if (
+            !acceptedTypes.has(normalizedType) &&
+            !normalizedName.includes(normalizedSearchTerm) &&
+            normalizedType !== 'attraction'
+          ) {
+            continue;
+          }
+
+          const poi = destinationToPoi(result);
+          const key = `${poi.name.toLowerCase()}-${poi.latitude.toFixed(4)}-${poi.longitude.toFixed(4)}`;
+
+          if (!unique.has(key)) {
+            unique.set(key, {
+              ...poi,
+              type: normalizedType || poi.type,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(unique.values()).slice(0, options.limit);
 }
 
 function isLodgingPoi(candidate: PointOfInterest): boolean {
@@ -173,6 +454,7 @@ export async function searchStayCandidates(
           radius: 8_000,
           types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
           limit: 12,
+          fallbackQuery: query,
         }).catch(() => [])
       : []);
 
@@ -294,6 +576,10 @@ export async function resolveDestination(
 
 export function derivePoiTypes(interests: string[]): string[] {
   const derived = new Set<string>();
+  const wantsFood = interests.some((interest) => {
+    const normalized = interest.toLowerCase();
+    return normalized.includes('food') || normalized.includes('nightlife');
+  });
 
   for (const rawInterest of interests) {
     const interest = rawInterest.toLowerCase();
@@ -304,8 +590,14 @@ export function derivePoiTypes(interests: string[]): string[] {
     }
   }
 
-  derived.add('attraction');
-  derived.add('restaurant');
+  for (const type of DEFAULT_POI_TYPES) {
+    derived.add(type);
+  }
+
+  if (wantsFood) {
+    derived.add('restaurant');
+    derived.add('cafe');
+  }
 
   return Array.from(derived);
 }
@@ -317,6 +609,7 @@ export async function fetchPointsOfInterest(options: {
   types: string[];
   limit?: number;
   timeoutMs?: number;
+  fallbackQuery?: string;
 }): Promise<PointOfInterest[]> {
   const cacheKey = [
     options.latitude.toFixed(4),
@@ -331,63 +624,66 @@ export async function fetchPointsOfInterest(options: {
     return cached.results;
   }
 
-  const queryGroups = options.types.flatMap((type) =>
-    buildOverpassClause(type, options.latitude, options.longitude, options.radius)
-  );
-
-  const query = `
-    [out:json][timeout:25];
-    (
-      ${queryGroups.join('\n')}
-    );
-    out body center;
-  `;
-
-  const response = await fetchWithTimeout('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ data: query }),
-      next: { revalidate: 300 },
-  }, options.timeoutMs ?? 12_000);
-
-  if (!response.ok) {
-    throw new Error(`POI fetch failed with status ${response.status}`);
-  }
-
-  const data = (await response.json()) as { elements?: Array<Record<string, unknown>> };
   const unique = new Map<string, PointOfInterest>();
 
-  for (const element of data.elements ?? []) {
-    const tags = (element.tags as Record<string, string> | undefined) ?? {};
-    const name = tags.name?.trim();
-    const latitude = toNumber((element.lat as number | string | undefined) ?? (element.center as { lat?: number } | undefined)?.lat);
-    const longitude = toNumber((element.lon as number | string | undefined) ?? (element.center as { lon?: number } | undefined)?.lon);
+  const timeoutMs = options.timeoutMs ?? 12_000;
+  const typeGroups = chunkTypes(options.types, 1);
 
-    if (!name || latitude === null || longitude === null) {
-      continue;
+  for (const typeGroup of typeGroups) {
+    try {
+      const batchResults = await fetchOverpassPoisForTypes({
+        latitude: options.latitude,
+        longitude: options.longitude,
+        radius: options.radius,
+        types: typeGroup,
+        timeoutMs,
+      });
+
+      for (const poi of batchResults) {
+        if (!unique.has(poi.id)) {
+          unique.set(poi.id, poi);
+        }
+      }
+
+      if (unique.size >= (options.limit ?? 48)) {
+        break;
+      }
+    } catch (error) {
+      console.warn('[places] Overpass POI batch failed', {
+        types: typeGroup,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
+  }
 
-    const id = `${element.type ?? 'element'}-${element.id ?? name}`;
-    const type = tags.tourism ?? tags.amenity ?? tags.leisure ?? tags.natural ?? 'place';
-    const address = [
-      tags['addr:housenumber'],
-      tags['addr:street'],
-      tags['addr:city'],
-      tags['addr:state'],
-      tags['addr:country'],
-    ]
-      .filter(Boolean)
-      .join(', ');
-
-    unique.set(id, {
-      id,
-      name,
-      type,
-      latitude,
-      longitude,
-      address: address || undefined,
-      tags,
+  if (unique.size === 0 && options.fallbackQuery) {
+    const fallbackResults = await fetchFallbackPointsOfInterest({
+      query: options.fallbackQuery,
+      types: options.types,
+      limit: options.limit ?? 48,
     });
+
+    for (const poi of fallbackResults) {
+      if (!unique.has(poi.id)) {
+        unique.set(poi.id, poi);
+      }
+    }
+  }
+
+  const currentResults = Array.from(unique.values());
+  const currentCategories = new Set(currentResults.map(classifyPoiCategory));
+  if (options.fallbackQuery && (currentResults.length === 0 || currentCategories.size < 3)) {
+    const fallbackResults = await fetchFallbackPointsOfInterest({
+      query: options.fallbackQuery,
+      types: options.types,
+      limit: options.limit ?? 48,
+    });
+
+    for (const poi of fallbackResults) {
+      if (!unique.has(poi.id)) {
+        unique.set(poi.id, poi);
+      }
+    }
   }
 
   const results = Array.from(unique.values())

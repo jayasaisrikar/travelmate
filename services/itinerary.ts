@@ -67,6 +67,109 @@ interface GeminiItineraryPayload {
   tips?: string[];
 }
 
+const geminiItineraryResponseSchema = {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    destination: { type: 'string' },
+    duration: { type: 'integer' },
+    stay: {
+      type: 'object',
+      nullable: true,
+      properties: {
+        name: { type: 'string' },
+        type: { type: 'string' },
+        latitude: { type: 'number', nullable: true },
+        longitude: { type: 'number', nullable: true },
+        address: { type: 'string', nullable: true },
+        checkInDate: { type: 'string', nullable: true },
+        checkInTime: { type: 'string', nullable: true },
+        checkOutDate: { type: 'string', nullable: true },
+        checkOutTime: { type: 'string', nullable: true },
+        notes: { type: 'string', nullable: true },
+      },
+      required: ['name', 'type', 'latitude', 'longitude', 'address', 'checkInDate', 'checkInTime', 'checkOutDate', 'checkOutTime', 'notes'],
+    },
+    transfers: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          kind: { type: 'string' },
+          title: { type: 'string' },
+          from: { type: 'string', nullable: true },
+          to: { type: 'string', nullable: true },
+          time: { type: 'string', nullable: true },
+          notes: { type: 'string', nullable: true },
+        },
+        required: ['kind', 'title', 'from', 'to', 'time', 'notes'],
+      },
+    },
+    dailyPlans: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          day: { type: 'integer' },
+          date: { type: 'string' },
+          theme: { type: 'string' },
+          activities: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                time: { type: 'string' },
+                name: { type: 'string' },
+                description: { type: 'string' },
+                duration: { type: 'integer', nullable: true },
+                cost: { type: 'number', nullable: true },
+                category: { type: 'string' },
+                latitude: { type: 'number', nullable: true },
+                longitude: { type: 'number', nullable: true },
+                address: { type: 'string', nullable: true },
+              },
+              required: ['time', 'name', 'description', 'duration', 'cost', 'category', 'latitude', 'longitude', 'address'],
+            },
+          },
+          restSlots: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                time: { type: 'string' },
+                duration: { type: 'string' },
+              },
+              required: ['time', 'duration'],
+            },
+          },
+          totalActiveHours: { type: 'number', nullable: true },
+          intensity: { type: 'string', nullable: true },
+        },
+        required: ['day', 'date', 'theme', 'activities', 'restSlots', 'totalActiveHours', 'intensity'],
+      },
+    },
+    totalEstimatedCost: { type: 'number', nullable: true },
+    budgetBreakdown: {
+      type: 'object',
+      properties: {
+        flights: { type: 'number', nullable: true },
+        hotels: { type: 'number', nullable: true },
+        food: { type: 'number', nullable: true },
+        activities: { type: 'number', nullable: true },
+        transport: { type: 'number', nullable: true },
+        misc: { type: 'number', nullable: true },
+        total: { type: 'number', nullable: true },
+      },
+      required: ['flights', 'hotels', 'food', 'activities', 'transport', 'misc', 'total'],
+    },
+    tips: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+  },
+  required: ['title', 'destination', 'duration', 'stay', 'transfers', 'dailyPlans', 'totalEstimatedCost', 'budgetBreakdown', 'tips'],
+} as const;
+
 function isValidDate(value: string | null | undefined): value is string {
   return Boolean(value && !Number.isNaN(Date.parse(value)));
 }
@@ -161,6 +264,154 @@ function normalizeSearchText(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+type PoiCategory = 'food' | 'culture' | 'park' | 'shopping' | 'stay' | 'other';
+
+function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
+  const normalizedType = normalizeSearchText(poi.type);
+  const normalizedName = normalizeSearchText(poi.name);
+
+  if (
+    normalizedType.includes('hotel') ||
+    normalizedType.includes('hostel') ||
+    normalizedType.includes('guest house') ||
+    normalizedType.includes('guest_house') ||
+    normalizedType.includes('motel') ||
+    normalizedType.includes('apartment') ||
+    normalizedName.includes('hotel') ||
+    normalizedName.includes('hostel') ||
+    normalizedName.includes('guest house') ||
+    normalizedName.includes('motel') ||
+    normalizedName.includes('apartment')
+  ) {
+    return 'stay';
+  }
+
+  if (
+    normalizedType.includes('restaurant') ||
+    normalizedType.includes('cafe') ||
+    normalizedType.includes('fast food') ||
+    normalizedType.includes('bakery') ||
+    normalizedName.includes('restaurant') ||
+    normalizedName.includes('cafe') ||
+    normalizedName.includes('breakfast') ||
+    normalizedName.includes('coffee') ||
+    normalizedName.includes('bistro')
+  ) {
+    return 'food';
+  }
+
+  if (
+    normalizedType.includes('museum') ||
+    normalizedType.includes('gallery') ||
+    normalizedType.includes('attraction') ||
+    normalizedType.includes('historic') ||
+    normalizedType.includes('monument') ||
+    normalizedType.includes('temple') ||
+    normalizedType.includes('church') ||
+    normalizedName.includes('museum') ||
+    normalizedName.includes('gallery') ||
+    normalizedName.includes('temple') ||
+    normalizedName.includes('church') ||
+    normalizedName.includes('monument')
+  ) {
+    return 'culture';
+  }
+
+  if (
+    normalizedType.includes('park') ||
+    normalizedType.includes('garden') ||
+    normalizedType.includes('nature') ||
+    normalizedName.includes('park') ||
+    normalizedName.includes('garden')
+  ) {
+    return 'park';
+  }
+
+  if (
+    normalizedType.includes('market') ||
+    normalizedType.includes('shop') ||
+    normalizedType.includes('mall') ||
+    normalizedType.includes('store') ||
+    normalizedName.includes('market') ||
+    normalizedName.includes('street') ||
+    normalizedName.includes('mall') ||
+    normalizedName.includes('shopping')
+  ) {
+    return 'shopping';
+  }
+
+  return 'other';
+}
+
+function inferPoiCategoryFromActivity(activity: ItineraryActivity): PoiCategory {
+  const normalized = normalizeSearchText(`${activity.category} ${activity.name} ${activity.description}`);
+
+  if (
+    normalized.includes('hotel') ||
+    normalized.includes('stay') ||
+    normalized.includes('check in') ||
+    normalized.includes('check in') ||
+    normalized.includes('lodg')
+  ) {
+    return 'stay';
+  }
+
+  if (
+    normalized.includes('food') ||
+    normalized.includes('restaurant') ||
+    normalized.includes('cafe') ||
+    normalized.includes('lunch') ||
+    normalized.includes('dinner') ||
+    normalized.includes('breakfast') ||
+    normalized.includes('meal')
+  ) {
+    return 'food';
+  }
+
+  if (
+    normalized.includes('museum') ||
+    normalized.includes('gallery') ||
+    normalized.includes('culture') ||
+    normalized.includes('historic') ||
+    normalized.includes('temple') ||
+    normalized.includes('church') ||
+    normalized.includes('art')
+  ) {
+    return 'culture';
+  }
+
+  if (
+    normalized.includes('park') ||
+    normalized.includes('garden') ||
+    normalized.includes('nature') ||
+    normalized.includes('walk') ||
+    normalized.includes('stroll')
+  ) {
+    return 'park';
+  }
+
+  if (
+    normalized.includes('shop') ||
+    normalized.includes('market') ||
+    normalized.includes('mall') ||
+    normalized.includes('shopping') ||
+    normalized.includes('souvenir')
+  ) {
+    return 'shopping';
+  }
+
+  return 'other';
+}
+
+function getPoiSector(destination: DestinationSearchResult, poi: PointOfInterest): number {
+  const latDelta = poi.latitude - destination.latitude;
+  const lonDelta = poi.longitude - destination.longitude;
+  const angle = (Math.atan2(latDelta, lonDelta) * 180) / Math.PI;
+  const normalizedAngle = (angle + 360 + 22.5) % 360;
+
+  return Math.floor(normalizedAngle / 45) % 8;
+}
+
 function scorePoiForActivity(activity: ItineraryActivity, poi: PointOfInterest): number {
   const activityName = normalizeSearchText(activity.name);
   const activityCategory = normalizeSearchText(activity.category);
@@ -203,62 +454,102 @@ function attachPoiCoordinates(
 ): ItineraryDayPlan[] {
   const coordinatePois = pois.filter((poi) => hasCoordinates(poi));
   const usedPoiIndices = new Set<number>();
+  const globalSectorCounts = new Map<number, number>();
 
-  return dailyPlans.map((dayPlan) => ({
-    ...dayPlan,
-    activities: dayPlan.activities.map((activity) => {
-      const currentHasCoordinates = hasCoordinates(activity);
-      const currentMatchesDestination = coordinatesMatch(activity, destination);
+  return dailyPlans.map((dayPlan) => {
+    const daySectorCounts = new Map<number, number>();
+    let dayFoodCount = 0;
+    const maxFoodCount = 1;
 
-      if (currentHasCoordinates && !currentMatchesDestination) {
-        return activity;
-      }
+    return {
+      ...dayPlan,
+      activities: dayPlan.activities.map((activity) => {
+        let bestPoiIndex = -1;
+        let bestScore = Number.NEGATIVE_INFINITY;
+        const activityCategory = inferPoiCategoryFromActivity(activity);
 
-      let bestPoiIndex = -1;
-      let bestScore = 0;
-
-      for (let index = 0; index < coordinatePois.length; index += 1) {
-        if (usedPoiIndices.has(index)) {
-          continue;
-        }
-
-        const score = scorePoiForActivity(activity, coordinatePois[index]);
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestPoiIndex = index;
-        }
-      }
-
-      if (bestPoiIndex === -1) {
         for (let index = 0; index < coordinatePois.length; index += 1) {
-          if (!usedPoiIndices.has(index)) {
+          if (usedPoiIndices.has(index)) {
+            continue;
+          }
+
+          const poi = coordinatePois[index];
+          const poiCategory = inferPoiCategoryFromPoi(poi);
+          const sector = getPoiSector(destination, poi);
+          let score = scorePoiForActivity(activity, poi);
+
+          if (activityCategory === poiCategory) {
+            score += 5;
+          }
+
+          if (activityCategory === 'food' && poiCategory === 'food') {
+            score += 4;
+          } else if (activityCategory === 'food' && poiCategory !== 'food') {
+            score += 1;
+          } else if (activityCategory !== 'food' && poiCategory === 'food') {
+            score -= 5;
+          }
+
+          if (dayFoodCount >= maxFoodCount && poiCategory === 'food') {
+            score -= 20;
+          }
+
+          const sectorUsage = daySectorCounts.get(sector) ?? 0;
+          const globalSectorUsage = globalSectorCounts.get(sector) ?? 0;
+
+          score += sectorUsage === 0 ? 4 : -2;
+          score += globalSectorUsage === 0 ? 2 : -globalSectorUsage * 1.25;
+
+          if (score > bestScore) {
+            bestScore = score;
             bestPoiIndex = index;
-            break;
           }
         }
-      }
 
-      if (bestPoiIndex === -1) {
+        if (bestPoiIndex === -1) {
+          for (let index = 0; index < coordinatePois.length; index += 1) {
+            if (!usedPoiIndices.has(index)) {
+              bestPoiIndex = index;
+              break;
+            }
+          }
+        }
+
+        if (bestPoiIndex === -1) {
+          return {
+            ...activity,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+            address: activity.address ?? destination.address ?? destination.name,
+          };
+        }
+
+        usedPoiIndices.add(bestPoiIndex);
+        const poi = coordinatePois[bestPoiIndex];
+        const poiCategory = inferPoiCategoryFromPoi(poi);
+        const sector = getPoiSector(destination, poi);
+        daySectorCounts.set(sector, (daySectorCounts.get(sector) ?? 0) + 1);
+        globalSectorCounts.set(sector, (globalSectorCounts.get(sector) ?? 0) + 1);
+
+        if (poiCategory === 'food') {
+          dayFoodCount += 1;
+        }
+
         return {
           ...activity,
-          latitude: destination.latitude,
-          longitude: destination.longitude,
-          address: activity.address ?? destination.address ?? destination.name,
+          name: poi.name,
+          category: poiCategory === 'stay' ? activity.category : poiCategory,
+          latitude: poi.latitude,
+          longitude: poi.longitude,
+          address: activity.address ?? poi.address ?? destination.address ?? destination.name,
+          description:
+            poiCategory === 'stay'
+              ? activity.description
+              : `Spend time at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`,
         };
-      }
-
-      usedPoiIndices.add(bestPoiIndex);
-      const poi = coordinatePois[bestPoiIndex];
-
-      return {
-        ...activity,
-        latitude: poi.latitude,
-        longitude: poi.longitude,
-        address: activity.address ?? poi.address ?? destination.address ?? destination.name,
-      };
-    }),
-  }));
+      }),
+    };
+  });
 }
 
 function normalizeBudgetBreakdown(
@@ -276,23 +567,127 @@ function normalizeBudgetBreakdown(
   };
 }
 
-function prioritizePois(pois: PointOfInterest[], interests: string[]): PointOfInterest[] {
-  const searchTerms = new Set(interests.map(interest => interest.toLowerCase()));
+function prioritizePois(
+  pois: PointOfInterest[],
+  interests: string[],
+  destination: DestinationSearchResult
+): PointOfInterest[] {
+  const searchTerms = new Set(interests.map((interest) => interest.toLowerCase()));
+  const categoryOrder: PoiCategory[] = ['culture', 'park', 'shopping', 'food', 'other'];
+  const categoryQuotas: Record<PoiCategory, number> = {
+    food: 1,
+    culture: 3,
+    park: 2,
+    shopping: 1,
+    stay: 0,
+    other: 1,
+  };
+  const wantsFood = Array.from(searchTerms).some((term) => term.includes('food') || term.includes('nightlife'));
 
-  return [...pois]
-    .sort((left, right) => {
-      const leftName = left.name.toLowerCase();
-      const rightName = right.name.toLowerCase();
-      const leftMatch = Array.from(searchTerms).some(term => leftName.includes(term) || left.type.toLowerCase().includes(term));
-      const rightMatch = Array.from(searchTerms).some(term => rightName.includes(term) || right.type.toLowerCase().includes(term));
+  const buckets = new Map<PoiCategory, PointOfInterest[]>();
 
-      if (leftMatch !== rightMatch) {
-        return leftMatch ? -1 : 1;
+  for (const poi of pois) {
+    const category = inferPoiCategoryFromPoi(poi);
+    const list = buckets.get(category) ?? [];
+    list.push(poi);
+    buckets.set(category, list);
+  }
+
+  const scorePoi = (poi: PointOfInterest): number => {
+    const name = normalizeSearchText(poi.name);
+    const type = normalizeSearchText(poi.type);
+    const interestMatch = Array.from(searchTerms).some(
+      (term) => name.includes(term) || type.includes(term)
+    );
+    let score = interestMatch ? 5 : 0;
+
+    if (inferPoiCategoryFromPoi(poi) === 'food' && !wantsFood) {
+      score -= 6;
+    }
+
+    score += categoryOrder.length - categoryOrder.indexOf(inferPoiCategoryFromPoi(poi));
+    score += Math.max(0, 4 - Math.min(4, haversineDistanceKm(destination, poi) / 3));
+    score += 2 / (1 + getPoiSector(destination, poi));
+
+    return score;
+  };
+
+  for (const bucket of buckets.values()) {
+    bucket.sort((left, right) => scorePoi(right) - scorePoi(left) || left.name.localeCompare(right.name));
+  }
+
+  const selected = new Map<string, PointOfInterest>();
+  const pickedCounts: Record<PoiCategory, number> = {
+    food: 0,
+    culture: 0,
+    park: 0,
+    shopping: 0,
+    stay: 0,
+    other: 0,
+  };
+
+  const pickFromBucket = (category: PoiCategory): PointOfInterest | null => {
+    const bucket = buckets.get(category);
+
+    while (bucket && bucket.length > 0) {
+      const candidate = bucket.shift() as PointOfInterest;
+      const key = `${candidate.name.toLowerCase()}-${candidate.latitude.toFixed(4)}-${candidate.longitude.toFixed(4)}`;
+
+      if (selected.has(key)) {
+        continue;
       }
 
-      return left.name.localeCompare(right.name);
-    })
-    .slice(0, 12);
+      return candidate;
+    }
+
+    return null;
+  };
+
+  while (selected.size < 8) {
+    let progressed = false;
+
+    for (const category of categoryOrder) {
+      if (selected.size >= 8) {
+        break;
+      }
+
+      if (pickedCounts[category] >= categoryQuotas[category]) {
+        continue;
+      }
+
+      const candidate = pickFromBucket(category);
+      if (!candidate) {
+        continue;
+      }
+
+      const key = `${candidate.name.toLowerCase()}-${candidate.latitude.toFixed(4)}-${candidate.longitude.toFixed(4)}`;
+      selected.set(key, candidate);
+      pickedCounts[category] += 1;
+      progressed = true;
+    }
+
+    if (!progressed) {
+      break;
+    }
+  }
+
+  if (selected.size < 8) {
+    const leftovers = [...buckets.values()].flat();
+    leftovers.sort((left, right) => scorePoi(right) - scorePoi(left) || left.name.localeCompare(right.name));
+
+    for (const poi of leftovers) {
+      if (selected.size >= 8) {
+        break;
+      }
+
+      const key = `${poi.name.toLowerCase()}-${poi.latitude.toFixed(4)}-${poi.longitude.toFixed(4)}`;
+      if (!selected.has(key)) {
+        selected.set(key, poi);
+      }
+    }
+  }
+
+  return Array.from(selected.values()).slice(0, 8);
 }
 
 function haversineDistanceKm(
@@ -669,79 +1064,10 @@ Rules:
 - Return one itinerary covering all ${input.duration} days.
 - All costs must be numeric or null.
 - All coordinates must come from the POI list when the activity is a venue.
+- Keep food or restaurant stops to at most two per day when other live POIs are available.
+- Spread the trip across different neighborhoods or city sectors instead of clustering all stops in one area.
 - ${activityCap}
 - Keep each activity description to one short sentence.
-
-Return only JSON with this shape:
-{
-  "title": "string",
-  "destination": "string",
-  "duration": ${input.duration},
-  "stay": {
-    "name": "string",
-    "type": "string",
-    "latitude": 0,
-    "longitude": 0,
-    "address": "string",
-    "checkInDate": "YYYY-MM-DD or null",
-    "checkInTime": "HH:MM or null",
-    "checkOutDate": "YYYY-MM-DD or null",
-    "checkOutTime": "HH:MM or null",
-    "notes": "string or null"
-  },
-  "transfers": [
-    {
-      "kind": "arrival",
-      "title": "string",
-      "from": "string or null",
-      "to": "string or null",
-      "time": "HH:MM or null",
-      "notes": "string or null"
-    },
-    {
-      "kind": "departure",
-      "title": "string",
-      "from": "string or null",
-      "to": "string or null",
-      "time": "HH:MM or null",
-      "notes": "string or null"
-    }
-  ],
-  "dailyPlans": [
-    {
-      "day": 1,
-      "date": "YYYY-MM-DD or Day 1",
-      "theme": "string",
-      "activities": [
-        {
-          "time": "09:00",
-          "name": "string",
-          "description": "string",
-          "duration": 90,
-          "cost": 20,
-          "category": "string",
-          "latitude": 0,
-          "longitude": 0,
-          "address": "string"
-        }
-      ],
-      "restSlots": [{ "time": "15:00", "duration": "45 minutes" }],
-      "totalActiveHours": 6,
-      "intensity": "Balanced"
-    }
-  ],
-  "totalEstimatedCost": 300,
-  "budgetBreakdown": {
-    "flights": null,
-    "hotels": null,
-    "food": 90,
-    "activities": 140,
-    "transport": 40,
-    "misc": 30,
-    "total": 300
-  },
-  "tips": ["string", "string", "string"]
-}
 `.trim();
 }
 
@@ -803,6 +1129,7 @@ export async function generateItineraryFromLiveData(
   const fastMode = duration <= 2;
   const hasCoordinates =
     typeof request.latitude === 'number' && typeof request.longitude === 'number';
+  const destinationNameHint = request.resolvedDestination?.name ?? request.destination.trim();
   const destinationPromise = request.resolvedDestination
     ? Promise.resolve(request.resolvedDestination)
     : resolveDestination(request.destination, {
@@ -828,6 +1155,7 @@ export async function generateItineraryFromLiveData(
         types: poiTypes,
         limit: poiLimit,
         timeoutMs: fastMode ? 5_000 : 8_000,
+        fallbackQuery: destinationNameHint,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const stayPromise = hasCoordinates
@@ -838,6 +1166,7 @@ export async function generateItineraryFromLiveData(
         types: ['hotel', 'guest_house', 'hostel', 'motel', 'apartment'],
         limit: stayLimit,
         timeoutMs: fastMode ? 4_000 : 7_000,
+        fallbackQuery: destinationNameHint,
       })
     : Promise.resolve([] as PointOfInterest[]);
   const weatherPromise = hasCoordinates
@@ -866,9 +1195,9 @@ export async function generateItineraryFromLiveData(
   const pois = poIResult.status === 'fulfilled' ? poIResult.value : [];
   const stayCandidatesRaw = stayResult.status === 'fulfilled' ? stayResult.value : [];
   const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
-  const prioritizedPois = prioritizePois(pois, request.interests ?? []);
+  const prioritizedPois = prioritizePois(pois, request.interests ?? [], destination);
   const prioritizedStayCandidates = prioritizeStayCandidates(stayCandidatesRaw, destination);
-  const maxTokens = duration <= 2 ? 900 : Math.min(4200, 1000 + duration * 180);
+  const maxTokens = duration <= 2 ? 800 : Math.min(3200, 1600 + duration * 320);
 
   try {
     const payload = await generateJson<GeminiItineraryPayload>(
@@ -883,8 +1212,9 @@ export async function generateItineraryFromLiveData(
       {
         maxTokens,
         repairMaxTokens: Math.max(700, Math.floor(maxTokens / 2)),
-        skipRepair: true,
-        timeoutMs: duration <= 2 ? 8_000 : 14_000,
+        skipRepair: false,
+        timeoutMs: duration <= 2 ? 8_000 : 18_000,
+        responseSchema: geminiItineraryResponseSchema as Record<string, unknown>,
       }
     );
 

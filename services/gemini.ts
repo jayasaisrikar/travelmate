@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
 type NvidiaChatRole = 'user' | 'assistant' | 'system';
 
 interface NvidiaChatMessage {
@@ -13,7 +15,8 @@ interface NvidiaChatCompletionResponse {
   }>;
 }
 
-const NVIDIA_CHAT_MODEL = 'moonshotai/kimi-k2.5';
+const NVIDIA_CHAT_MODEL = 'moonshotai/kimi-k2-instruct-0905';
+const GEMINI_JSON_MODEL = 'gemini-2.5-flash-lite';
 
 function getNvidiaConfig() {
   const apiKey = process.env.NVIDIA_API_KEY || process.env.NVIDIA_KIMI_API_KEY;
@@ -23,6 +26,16 @@ function getNvidiaConfig() {
   }
 
   return { apiKey, model: NVIDIA_CHAT_MODEL };
+}
+
+function getGeminiConfig() {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+
+  return { apiKey, model: GEMINI_JSON_MODEL };
 }
 
 function cleanJsonPayload(text: string): string {
@@ -110,6 +123,53 @@ async function callNvidia(
   }
 }
 
+async function callGeminiJson(
+  prompt: string,
+  maxTokens = 3000,
+  timeoutMs = 12_000,
+  responseSchema?: Record<string, unknown>
+): Promise<string> {
+  const { apiKey, model } = getGeminiConfig();
+  const client = new GoogleGenerativeAI(apiKey);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const generativeModel = client.getGenerativeModel({
+      model,
+      generationConfig: {
+        temperature: 0,
+        topP: 0.8,
+        maxOutputTokens: maxTokens,
+        responseMimeType: 'application/json',
+        ...(responseSchema ? { responseSchema: responseSchema as never } : {}),
+      },
+    });
+
+    const response = await generativeModel.generateContent(prompt, {
+      signal: controller.signal,
+      timeout: timeoutMs,
+      apiVersion: 'v1beta',
+    });
+
+    const text = response.response.text().trim();
+
+    if (!text) {
+      throw new Error('Gemini returned an empty response');
+    }
+
+    return text;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Gemini request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function generateJson<T>(
   prompt: string,
   options?: {
@@ -117,6 +177,7 @@ export async function generateJson<T>(
     repairMaxTokens?: number;
     skipRepair?: boolean;
     timeoutMs?: number;
+    responseSchema?: Record<string, unknown>;
   }
 ): Promise<T> {
   const maxTokens = options?.maxTokens ?? 3000;
@@ -130,7 +191,24 @@ export async function generateJson<T>(
     },
   ];
 
-  const text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
+  const geminiPrompt = `${prompt}\n\nReturn valid JSON only. Do not wrap the response in markdown.`;
+  let text: string;
+
+  try {
+    text = await callGeminiJson(
+      geminiPrompt,
+      maxTokens,
+      Math.min(timeoutMs, 12_000),
+      options?.responseSchema
+    );
+  } catch (geminiError) {
+    if (!process.env.GEMINI_API_KEY) {
+      text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
+    } else {
+      console.warn('[gemini] Gemini JSON generation failed, falling back to NVIDIA', geminiError);
+      text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
+    }
+  }
 
   try {
     return JSON.parse(extractLikelyJson(text)) as T;
