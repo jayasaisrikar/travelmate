@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       itinerary,
-      source: 'kimi-live',
+      source: 'gemini-live',
     });
   } catch (error) {
     return NextResponse.json(
