@@ -79,19 +79,24 @@ export default function Home() {
             : 'bg-transparent py-5'
         }`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Brand href="/" className="shrink-0" />
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:flex-nowrap sm:px-6">
+          <div className="sm:hidden">
+            <Brand href="/" compact showWordmark={false} className="shrink-0" />
+          </div>
+          <div className="hidden sm:block">
+            <Brand href="/" className="shrink-0" />
+          </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/login"
-              className="rounded-xl border border-[#6C63FF]/30 bg-white/80 px-4 py-2 text-sm font-semibold text-[#6C63FF] shadow-[0_10px_24px_rgba(108,99,255,0.08)]"
+              className="rounded-xl border border-[#6C63FF]/30 bg-white/80 px-3 py-2 text-[13px] font-semibold text-[#6C63FF] shadow-[0_10px_24px_rgba(108,99,255,0.08)] sm:px-4 sm:text-sm"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-xl bg-[#6C63FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.28)]"
+              className="rounded-xl bg-[#6C63FF] px-3 py-2 text-[13px] font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.28)] sm:px-4 sm:text-sm"
             >
               Explore now
             </Link>
@@ -99,20 +104,20 @@ export default function Home() {
         </div>
       </nav>
 
-      <section className="mx-auto max-w-6xl px-4 pb-12 pt-28 sm:px-6 sm:pt-32 lg:pt-36">
+      <section className="mx-auto max-w-6xl px-4 pb-10 pt-24 sm:px-6 sm:pb-12 sm:pt-32 lg:pt-36">
         <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <motion.div {...fadeInUp} className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#6C63FF]/15 bg-[#EEEDFE] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6C63FF]">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#6C63FF]/15 bg-[#EEEDFE] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6C63FF] sm:px-4 sm:text-[11px] sm:tracking-[0.24em]">
               <Compass className="h-3.5 w-3.5" />
               travel. flow. freedom.
             </div>
 
             <div className="space-y-4">
-              <h1 className="max-w-3xl text-5xl font-medium leading-[0.94] tracking-[-0.05em] text-[#3F3D56] sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-3xl text-4xl font-medium leading-[0.98] tracking-[-0.05em] text-[#3F3D56] sm:text-5xl lg:text-7xl">
                 Explore freely.
                 <span className="block text-[#6C63FF]">Plan with more flow.</span>
               </h1>
-              <p className="max-w-2xl text-base leading-8 text-[#6F6C82] sm:text-lg">
+              <p className="max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base sm:leading-8 sm:text-lg">
                 Wayflo turns real destinations, trip windows, budgets, and preferences into saved itineraries that
                 feel calm, clear, and ready to use when travel gets real.
               </p>
@@ -121,14 +126,14 @@ export default function Home() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(108,99,255,0.28)]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(108,99,255,0.28)] sm:py-3.5"
               >
                 Explore now
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/dashboard/onboarding"
-                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/30 bg-white px-5 py-3.5 text-sm font-semibold text-[#6C63FF]"
+                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/30 bg-white px-5 py-3 text-sm font-semibold text-[#6C63FF] sm:py-3.5"
               >
                 Learn more
               </Link>
@@ -149,23 +154,27 @@ export default function Home() {
           <motion.div
             {...fadeInUp}
             transition={{ duration: 0.45, delay: 0.05 }}
-            className="relative overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-5 shadow-[0_30px_90px_rgba(63,61,86,0.12)] sm:p-6"
+            className="relative overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-4 shadow-[0_30px_90px_rgba(63,61,86,0.12)] sm:p-6"
           >
-            <div className="absolute inset-x-6 top-0 h-24 rounded-b-[28px] bg-[radial-gradient(circle,rgba(108,99,255,0.18),transparent_72%)]" />
+            <div className="absolute inset-x-4 top-0 h-20 rounded-b-[28px] bg-[radial-gradient(circle,rgba(108,99,255,0.18),transparent_72%)] sm:inset-x-6 sm:h-24" />
 
-            <div className="relative flex items-start justify-between gap-4">
+            <div className="relative flex items-start justify-between gap-3">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Trip flow</div>
-                <h2 className="mt-2 text-2xl font-medium tracking-[-0.03em] text-[#3F3D56]">What wayflo keeps in sync</h2>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
+                  Trip flow
+                </div>
+                <h2 className="mt-2 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:text-2xl">
+                  What wayflo keeps in sync
+                </h2>
               </div>
-              <div className="flex gap-2">
-                <span className="h-3 w-3 rounded-full bg-[#6C63FF]" />
-                <span className="h-3 w-3 rounded-full bg-[#FF6584]" />
-                <span className="h-3 w-3 rounded-full bg-[#3F3D56]" />
+              <div className="flex gap-1.5 pt-1 sm:gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#6C63FF] sm:h-3 sm:w-3" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#FF6584] sm:h-3 sm:w-3" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#3F3D56] sm:h-3 sm:w-3" />
               </div>
             </div>
 
-            <div className="relative mt-6 space-y-3">
+            <div className="relative mt-4 space-y-3 sm:mt-6">
               {[
                 ['Destination', 'Search a live place'],
                 ['Trip window', 'Set arrival and departure time'],
@@ -174,11 +183,11 @@ export default function Home() {
               ].map(([label, value], index) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 shadow-[0_12px_28px_rgba(63,61,86,0.05)]"
+                  className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-3.5 shadow-[0_12px_28px_rgba(63,61,86,0.05)] sm:py-4"
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className="mt-0.5 h-11 w-11 shrink-0 rounded-2xl"
+                      className="mt-0.5 h-10 w-10 shrink-0 rounded-2xl sm:h-11 sm:w-11"
                       style={{
                         background:
                           index % 2 === 0
@@ -187,16 +196,20 @@ export default function Home() {
                       }}
                     />
                     <div>
-                      <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7E7A92]">{label}</div>
-                      <div className="mt-1 text-base font-medium text-[#3F3D56]">{value}</div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7E7A92] sm:text-sm sm:tracking-[0.16em]">
+                        {label}
+                      </div>
+                      <div className="mt-1 text-sm font-medium text-[#3F3D56] sm:text-base">{value}</div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="relative mt-4 rounded-2xl bg-[#3F3D56] px-4 py-4 text-white">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">Why it works</div>
+            <div className="relative mt-4 rounded-2xl bg-[#3F3D56] px-4 py-4 text-white sm:mt-5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 sm:text-[11px] sm:tracking-[0.22em]">
+                Why it works
+              </div>
               <p className="mt-2 text-sm leading-6 text-white/90">
                 The itinerary stays tied to your actual timing so the whole route feels usable, not over-promised.
               </p>
@@ -208,8 +221,10 @@ export default function Home() {
       <section className="px-4 py-10 sm:px-6 sm:py-14">
         <div className="mx-auto max-w-6xl">
           <motion.div {...fadeInUp} className="mb-6 max-w-2xl">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Why wayflo</div>
-            <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
+              Why wayflo
+            </div>
+            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
               The route, the timing, and the mood stay connected.
             </h2>
             <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
@@ -226,12 +241,14 @@ export default function Home() {
                   key={item.title}
                   {...fadeInUp}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="rounded-[28px] border border-white/80 bg-white p-6 shadow-[0_18px_54px_rgba(63,61,86,0.08)]"
+                  className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF]">
-                    <Icon className="h-5 w-5" />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF] sm:h-12 sm:w-12">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <h3 className="mt-5 text-2xl font-medium tracking-[-0.03em] text-[#3F3D56]">{item.title}</h3>
+                  <h3 className="mt-4 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:mt-5 sm:text-2xl">
+                    {item.title}
+                  </h3>
                   <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{item.body}</p>
                 </motion.article>
               );
@@ -244,10 +261,12 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[0.95fr_1.05fr]">
           <motion.div
             {...fadeInUp}
-            className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#faf8ff_100%)] p-6 shadow-[0_18px_60px_rgba(63,61,86,0.08)]"
+            className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#faf8ff_100%)] p-5 shadow-[0_18px_60px_rgba(63,61,86,0.08)] sm:p-6"
           >
-            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Feels clear</div>
-            <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56]">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
+              Feels clear
+            </div>
+            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-3xl">
               It stays easy to read when you are planning fast.
             </h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -258,8 +277,8 @@ export default function Home() {
                 ['Helpful emphasis', '#FF6584', 'Important moments are highlighted without making the screen feel loud.'],
               ].map(([label, color, body]) => (
                 <div key={label} className="rounded-2xl border border-[#E4E2F0] bg-white p-4">
-                  <div className="h-11 w-full rounded-xl" style={{ backgroundColor: color }} />
-                  <div className="mt-3 text-base font-medium text-[#3F3D56]">{label}</div>
+                  <div className="h-10 w-full rounded-xl sm:h-11" style={{ backgroundColor: color }} />
+                  <div className="mt-3 text-sm font-medium text-[#3F3D56] sm:text-base">{label}</div>
                   <p className="mt-1 text-sm leading-6 text-[#6F6C82]">{body}</p>
                 </div>
               ))}
@@ -269,14 +288,20 @@ export default function Home() {
           <motion.div
             {...fadeInUp}
             transition={{ duration: 0.45, delay: 0.05 }}
-            className="rounded-[30px] border border-[#4D4970] bg-[#3F3D56] p-6 text-white shadow-[0_20px_70px_rgba(63,61,86,0.18)]"
+            className="rounded-[30px] border border-[#4D4970] bg-[#3F3D56] p-5 text-white shadow-[0_20px_70px_rgba(63,61,86,0.18)] sm:p-6"
           >
-            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">Journey rhythm</div>
-            <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em]">From idea to route without breaking momentum</h2>
-            <div className="mt-6 space-y-3">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-[11px] sm:tracking-[0.24em]">
+              Journey rhythm
+            </div>
+            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] sm:text-3xl">
+              From idea to route without breaking momentum
+            </h2>
+            <div className="mt-5 space-y-3 sm:mt-6">
               {tripFlowSteps.map((step, index) => (
                 <div key={step} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#FF6584]">Step {index + 1}</div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FF6584] sm:text-[11px] sm:tracking-[0.18em]">
+                    Step {index + 1}
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-white/88">{step}</p>
                 </div>
               ))}
@@ -292,12 +317,12 @@ export default function Home() {
               key={card.title}
               {...fadeInUp}
               transition={{ duration: 0.4, delay: index * 0.06 }}
-              className="rounded-[30px] border border-white/80 bg-white p-6 shadow-[0_18px_54px_rgba(63,61,86,0.08)]"
+              className="rounded-[30px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
             >
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: card.accent }}>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px] sm:tracking-[0.22em]" style={{ color: card.accent }}>
                 {card.eyebrow}
               </div>
-              <h3 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56]">{card.title}</h3>
+              <h3 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-3xl">{card.title}</h3>
               <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{card.body}</p>
             </motion.article>
           ))}
@@ -307,11 +332,13 @@ export default function Home() {
       <section className="px-4 pb-10 pt-2 sm:px-6 sm:pb-14">
         <motion.div
           {...fadeInUp}
-          className="mx-auto max-w-6xl rounded-[34px] border border-[#D8D4F2] bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_52%,#FFE9EF_100%)] p-6 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-8"
+          className="mx-auto max-w-6xl rounded-[34px] border border-[#D8D4F2] bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_52%,#FFE9EF_100%)] p-5 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-8"
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Ready to move</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
+                Ready to move
+              </div>
               <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
                 Start planning in the new wayflo system.
               </h2>
