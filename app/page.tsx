@@ -213,8 +213,7 @@ export default function Home() {
               The route, the timing, and the mood stay connected.
             </h2>
             <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
-              The design kit leans into softness and clarity, so the experience now feels closer to a modern travel
-              companion than a rigid planning form.
+              You get a calmer way to plan, with the important details easy to spot and the next step always obvious.
             </p>
           </motion.div>
 
@@ -247,14 +246,16 @@ export default function Home() {
             {...fadeInUp}
             className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#faf8ff_100%)] p-6 shadow-[0_18px_60px_rgba(63,61,86,0.08)]"
           >
-            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Color system</div>
-            <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56]">Built from the new kit</h2>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Feels clear</div>
+            <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56]">
+              It stays easy to read when you are planning fast.
+            </h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {[
-                ['Violet', '#6C63FF', 'Primary actions and branded moments'],
-                ['Charcoal', '#3F3D56', 'Grounding text and contrast'],
-                ['Off-white', '#F2F2F2', 'Ambient surfaces and page background'],
-                ['Accent pink', '#FF6584', 'CTAs, highlights, and emphasis'],
+                ['Fast to scan', '#6C63FF', 'The main action stands out so you do not have to hunt for the next step.'],
+                ['Easy on the eyes', '#3F3D56', 'Trip details stay legible even when there is a lot to review.'],
+                ['Calm background', '#F2F2F2', 'The page feels light, so the planning flow does not feel crowded.'],
+                ['Helpful emphasis', '#FF6584', 'Important moments are highlighted without making the screen feel loud.'],
               ].map(([label, color, body]) => (
                 <div key={label} className="rounded-2xl border border-[#E4E2F0] bg-white p-4">
                   <div className="h-11 w-full rounded-xl" style={{ backgroundColor: color }} />
