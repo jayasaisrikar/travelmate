@@ -136,3 +136,4 @@ npm run dev
 - The itinerary JSON includes a stay, transfers, daily plans, budget breakdown, and tips.
 - The public share flow is meant to create a feedback loop, not just a read-only trip page.
 - Email notifications are currently used for trip share suggestions and can be extended to other transactional flows.
+
