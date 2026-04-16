@@ -302,8 +302,8 @@ export default function TripDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fbfaf7] text-[#2e2833]">
-        <div className="rounded-[28px] border border-[#eadde5] bg-white px-6 py-5 shadow-[0_20px_70px_rgba(46,40,51,0.12)]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] text-[#3F3D56]">
+        <div className="rounded-[28px] border border-[#DDDCE8] bg-white px-6 py-5 shadow-[0_20px_70px_rgba(46,40,51,0.12)]">
           Loading trip...
         </div>
       </div>
@@ -312,8 +312,8 @@ export default function TripDetailsPage() {
 
   if (!trip) {
     return (
-      <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
-        <nav className="sticky top-0 z-40 border-b border-[#eadde5] bg-white">
+      <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
+        <nav className="sticky top-0 z-40 border-b border-[#DDDCE8] bg-white">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
             <Brand href="/" compact />
           </div>
@@ -321,12 +321,12 @@ export default function TripDetailsPage() {
 
         <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6">
           <h1 className="mb-4 text-3xl font-black tracking-tight sm:text-5xl">Trip not found</h1>
-          <p className="mb-8 text-[#756978]">
+          <p className="mb-8 text-[#6F6C82]">
             {error || 'The requested trip is unavailable. It may have been deleted or not saved correctly.'}
           </p>
           <Link
             href="/dashboard"
-            className="inline-block rounded-full bg-[#2e2833] px-6 py-3 font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
+            className="inline-block rounded-full bg-[#3F3D56] px-6 py-3 font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
           >
             Back to Dashboard
           </Link>
@@ -337,7 +337,7 @@ export default function TripDetailsPage() {
 
   return (
     <AuthGate>
-      <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
+      <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
       <ShareModal
         tripId={trip.id}
         destination={trip.destination}
@@ -352,29 +352,29 @@ export default function TripDetailsPage() {
         onClose={() => setIsChatOpen(false)}
       />
 
-      <nav className="sticky top-0 z-40 border-b border-[#eadde5] bg-white">
+      <nav className="sticky top-0 z-40 border-b border-[#DDDCE8] bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Brand href="/" compact />
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsChatOpen(true)}
-              className="rounded-full bg-[#2e2833] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
+              className="rounded-full bg-[#3F3D56] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
             >
               Ask assistant
             </button>
             <Link
               href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
-              className="rounded-full border border-[#5aa7e8] bg-[#eef7ff] px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#ddefff]"
+              className="rounded-full border border-[#6C63FF] bg-[#EEEDFE] px-4 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#E6E4FF]"
             >
               Edit trip
             </Link>
             <button
               onClick={() => setIsShareOpen(true)}
-              className="rounded-full border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+              className="rounded-full border border-[#3F3D56] bg-white px-4 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF]"
             >
               Share trip
             </button>
-            <Link href="/dashboard" className="text-sm font-medium text-[#756978] transition hover:text-[#2e2833]">
+            <Link href="/dashboard" className="text-sm font-medium text-[#6F6C82] transition hover:text-[#3F3D56]">
               Back to Trips
             </Link>
           </div>
@@ -387,60 +387,60 @@ export default function TripDetailsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
         >
-            <div className="rounded-[32px] border border-[#eadde5] bg-white p-6 shadow-[0_18px_60px_rgba(46,40,51,0.07)] sm:p-8">
-              <div className="inline-flex rounded-full bg-[#f6d23c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#2e2833]">
+            <div className="rounded-[32px] border border-[#DDDCE8] bg-white p-6 shadow-[0_18px_60px_rgba(46,40,51,0.07)] sm:p-8">
+              <div className="inline-flex rounded-full bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F3D56]">
                 Saved trip
               </div>
               <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">
               {trip.destination}
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-[#756978] sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base">
                 A trip built from live destination data, your trip window, and the places we can actually map.
               </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => setIsChatOpen(true)}
-                className="rounded-full bg-[#5aa7e8] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(90,167,232,0.22)] transition hover:translate-y-[-1px]"
+                className="rounded-full bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(90,167,232,0.22)] transition hover:translate-y-[-1px]"
               >
                 Open Trip Assistant
               </button>
               <Link
                 href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
-                className="rounded-full border border-[#5aa7e8] bg-[#eef7ff] px-5 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#ddefff]"
+                className="rounded-full border border-[#6C63FF] bg-[#EEEDFE] px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#E6E4FF]"
               >
                 Edit trip
               </Link>
               <button
                 onClick={() => setIsShareOpen(true)}
-                className="rounded-full border border-[#2e2833] bg-white px-5 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+                className="rounded-full border border-[#3F3D56] bg-white px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF]"
               >
                 Share trip
               </button>
               <Link
                 href="/dashboard"
-                className="rounded-full border border-[#eadde5] bg-[#fffdf9] px-5 py-3 text-sm font-semibold text-[#2e2833] transition hover:border-[#5aa7e8] hover:text-[#5aa7e8]"
+                className="rounded-full border border-[#DDDCE8] bg-[#FBFAFF] px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:border-[#6C63FF] hover:text-[#6C63FF]"
               >
                 Back to Dashboard
               </Link>
             </div>
-            <p className="mt-4 text-sm leading-6 text-[#756978]">
+            <p className="mt-4 text-sm leading-6 text-[#6F6C82]">
               Want to adjust the trip after it’s created? Update the destination, duration, budget, or interests and we’ll keep the saved share preview aligned.
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-[28px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Duration</div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-[#2e2833]">{trip.duration} days</div>
+            <div className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Duration</div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-[#3F3D56]">{trip.duration} days</div>
             </div>
-            <div className="rounded-[28px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Map stops</div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-[#5aa7e8]">{mapActivities.length}</div>
+            <div className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Map stops</div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-[#6C63FF]">{mapActivities.length}</div>
             </div>
-            <div className="rounded-[28px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Estimated cost</div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-[#ff9a45]">
+            <div className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Estimated cost</div>
+              <div className="mt-2 text-2xl font-black tracking-tight text-[#FF6584]">
                 {totalEstimatedCost ? `$${totalEstimatedCost}` : 'Not set'}
               </div>
             </div>
@@ -448,7 +448,7 @@ export default function TripDetailsPage() {
         </motion.section>
 
         {error && (
-          <div className="mt-6 rounded-2xl border border-[#f0d7de] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+          <div className="mt-6 rounded-2xl border border-[#f0d7de] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
             {error}
           </div>
         )}
@@ -466,10 +466,10 @@ export default function TripDetailsPage() {
             focusStayTrigger={focusStayTrigger}
           />
 
-          <div className="flex h-full flex-col rounded-[28px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:h-[360px] lg:min-h-0">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Location guide</div>
+          <div className="flex h-full flex-col rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:h-[360px] lg:min-h-0">
+            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Location guide</div>
             <h2 className="mt-1 text-2xl font-black tracking-tight">Places in order</h2>
-            <p className="mt-2 text-sm leading-6 text-[#756978]">
+            <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
               The numbers on the map match the order below, so first-time users can quickly see where each stop sits.
             </p>
 
@@ -485,22 +485,22 @@ export default function TripDetailsPage() {
                     }}
                     className={`w-full rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(46,40,51,0.08)] ${
                       selectedStopIndex === index
-                        ? 'border-[#5aa7e8] bg-[#eef7ff]'
-                        : 'border-[#eadde5] bg-[#fffdf9]'
+                        ? 'border-[#6C63FF] bg-[#EEEDFE]'
+                        : 'border-[#DDDCE8] bg-[#FBFAFF]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#2e2833] text-sm font-black text-white">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#3F3D56] text-sm font-black text-white">
                         {index + 1}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-[#2e2833]">
+                        <div className="text-sm font-bold text-[#3F3D56]">
                           Day {activity.day} · {activity.time} · {activity.name}
                         </div>
-                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
                           {activity.category}
                         </div>
-                        <div className="mt-1 text-sm leading-6 text-[#756978]">
+                        <div className="mt-1 text-sm leading-6 text-[#6F6C82]">
                           {activity.address || 'No address provided'}
                         </div>
                       </div>
@@ -508,7 +508,7 @@ export default function TripDetailsPage() {
                   </button>
                 ))
               ) : (
-                <div className="rounded-[22px] border border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978]">
+                <div className="rounded-[22px] border border-[#DDDCE8] bg-[#FBFAFF] p-4 text-sm leading-6 text-[#6F6C82]">
                   This itinerary does not have geocoded stops yet. The trip details are still available below.
                 </div>
               )}
@@ -518,11 +518,11 @@ export default function TripDetailsPage() {
 
         <section className="mt-8">
           <div className="grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
-          <details className="group border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+          <details className="group border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
               <summary className="cursor-pointer list-none">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Stay</div>
+                    <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Stay</div>
                     <h2 className="mt-1 text-2xl font-black tracking-tight">Where you’re staying</h2>
                   </div>
                   <button
@@ -532,20 +532,20 @@ export default function TripDetailsPage() {
                       setIsStayRetryOpen(true);
                       scrollToMap();
                     }}
-                    className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                    className="border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#302F43]"
                   >
                     Retry stay
                   </button>
                 </div>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6F6C82]">
                   Live lodging data gets pinned here so the trip always has a real base.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="border border-[#2e2833] bg-[#fffdf9] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+                  <span className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
                     {stay ? stay.name : 'No stay yet'}
                   </span>
                   {stay && (
-                    <span className="border border-[#2e2833] bg-[#eef7ff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#5aa7e8]">
+                    <span className="border border-[#3F3D56] bg-[#EEEDFE] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#6C63FF]">
                       {stay.type}
                     </span>
                   )}
@@ -555,24 +555,24 @@ export default function TripDetailsPage() {
               <div className="mt-5 grid gap-4 md:grid-cols-[1.05fr_0.95fr]">
                 {stay ? (
                   <>
-                    <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-                      <div className="inline-flex border border-[#2e2833] bg-[#ff9a45] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+                    <div className="border border-[#DDDCE8] bg-[#FBFAFF] p-4">
+                      <div className="inline-flex border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
                         Live lodging
                       </div>
-                      <h3 className="mt-4 text-2xl font-black tracking-tight text-[#2e2833]">{stay.name}</h3>
-                      <p className="mt-2 text-sm leading-6 text-[#756978]">{stay.type}</p>
+                      <h3 className="mt-4 text-2xl font-black tracking-tight text-[#3F3D56]">{stay.name}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#6F6C82]">{stay.type}</p>
 
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div className="border border-[#eadde5] bg-white p-4">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-in</div>
-                          <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                        <div className="border border-[#DDDCE8] bg-white p-4">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Check-in</div>
+                          <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
                             {stay.checkInDate ? `${stay.checkInDate} ` : ''}
                             {stay.checkInTime || 'Not set'}
                           </div>
                         </div>
-                        <div className="border border-[#eadde5] bg-white p-4">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Check-out</div>
-                          <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                        <div className="border border-[#DDDCE8] bg-white p-4">
+                          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Check-out</div>
+                          <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
                             {stay.checkOutDate ? `${stay.checkOutDate} ` : ''}
                             {stay.checkOutTime || 'Not set'}
                           </div>
@@ -580,18 +580,18 @@ export default function TripDetailsPage() {
                       </div>
 
                       {stay.notes && (
-                        <div className="mt-4 border border-[#f6d23c]/40 bg-[#fff8e6] p-4 text-sm leading-6 text-[#2e2833]">
+                        <div className="mt-4 border border-[#FF6584]/40 bg-[#FFEAF0] p-4 text-sm leading-6 text-[#3F3D56]">
                           {stay.notes}
                         </div>
                       )}
                     </div>
 
-                    <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Map location</div>
-                      <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+                    <div className="border border-[#DDDCE8] bg-[#FBFAFF] p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Map location</div>
+                      <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
                         {stay.latitude.toFixed(4)}, {stay.longitude.toFixed(4)}
                       </div>
-                      <p className="mt-3 text-sm leading-6 text-[#756978]">
+                      <p className="mt-3 text-sm leading-6 text-[#6F6C82]">
                         The stay marker is shown on the map alongside the places you visit so the route and lodging are visible in one place.
                       </p>
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -601,12 +601,12 @@ export default function TripDetailsPage() {
                             setFocusStayTrigger(current => current + 1);
                             scrollToMap();
                           }}
-                          className="border border-[#2e2833] bg-white px-4 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9]"
+                          className="border border-[#3F3D56] bg-white px-4 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF]"
                         >
                           Show stay on map
                         </button>
                         {stay.address && (
-                          <div className="border border-[#eadde5] bg-white px-4 py-2 text-sm text-[#756978]">
+                          <div className="border border-[#DDDCE8] bg-white px-4 py-2 text-sm text-[#6F6C82]">
                             {stay.address}
                           </div>
                         )}
@@ -614,52 +614,52 @@ export default function TripDetailsPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] p-4 text-sm leading-6 text-[#756978] md:col-span-2">
+                  <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] p-4 text-sm leading-6 text-[#6F6C82] md:col-span-2">
                     No live stay option was returned for this trip. Tap retry and we will ask for your budget range and preferred area again.
                   </div>
                 )}
               </div>
             </details>
 
-            <div className="border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+            <div className="border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Guest suggestions</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Guest suggestions</div>
                   <h2 className="mt-1 text-2xl font-black tracking-tight">People can respond to your trip</h2>
                 </div>
-                <div className="text-sm font-semibold text-[#756978]">
+                <div className="text-sm font-semibold text-[#6F6C82]">
                   {suggestionsLoading ? 'Loading...' : `${suggestions.length} total`}
                 </div>
               </div>
-              <p className="mt-2 text-sm leading-6 text-[#756978]">
+              <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
                 Guests submit suggestions from the public share page, and you can review them later.
               </p>
 
               <div className="mt-4 space-y-3">
                 {suggestionsError && (
-                  <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                  <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
                     {suggestionsError}
                   </div>
                 )}
 
                 {suggestions.length > 0 ? (
                   suggestions.slice(0, 2).map(suggestion => (
-                    <div key={suggestion.id} className="border border-[#2e2833] bg-[#fffdf9] px-4 py-4">
+                    <div key={suggestion.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-sm font-bold text-[#2e2833]">
+                        <div className="text-sm font-bold text-[#3F3D56]">
                           {suggestion.guest_name || 'Anonymous guest'}
                         </div>
-                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
                           {new Date(suggestion.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-[#756978]">
+                      <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
                         {suggestion.message || suggestion.suggestion}
                       </p>
                     </div>
                   ))
                 ) : (
-                  <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-3 text-sm leading-6 text-[#756978]">
+                  <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm leading-6 text-[#6F6C82]">
                     No suggestions yet. Share the trip publicly and ask guests to react.
                   </div>
                 )}
@@ -668,7 +668,7 @@ export default function TripDetailsPage() {
               <button
                 type="button"
                 onClick={() => setIsGuestSuggestionsOpen(true)}
-                className="mt-5 w-full border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                className="mt-5 w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43]"
               >
                 Click to expand
               </button>
@@ -688,60 +688,60 @@ export default function TripDetailsPage() {
 
         <button
           onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-4 right-4 z-30 rounded-full bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px] sm:hidden"
+          className="fixed bottom-4 right-4 z-30 rounded-full bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px] sm:hidden"
         >
           Ask assistant
         </button>
 
         {isStayRetryOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-            <div className="w-full max-w-lg border border-[#2e2833] bg-[#fbfaf7] p-5 text-[#2e2833] shadow-[0_30px_120px_rgba(46,40,51,0.24)] sm:p-6">
+            <div className="w-full max-w-lg border border-[#3F3D56] bg-[#F2F2F2] p-5 text-[#3F3D56] shadow-[0_30px_120px_rgba(46,40,51,0.24)] sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Retry stay</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Retry stay</div>
                   <h3 className="mt-1 text-2xl font-black tracking-tight">Tell us your budget and preferred area</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsStayRetryOpen(false)}
-                  className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                 >
                   Close
                 </button>
               </div>
 
-              <p className="mt-3 text-sm leading-6 text-[#756978]">
+              <p className="mt-3 text-sm leading-6 text-[#6F6C82]">
                 We will use live lodging options and update only the stay card and its transfer legs.
               </p>
 
               <div className="mt-5 space-y-4">
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                     Budget range
                   </label>
                   <input
                     value={stayBudgetRange}
                     onChange={event => setStayBudgetRange(event.target.value)}
                     placeholder="Example: $80-$140 per night or mid-range"
-                    className="w-full border border-[#2e2833] bg-white px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                    className="w-full border border-[#3F3D56] bg-white px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                     Preferred location
                   </label>
                   <input
                     value={stayPreferredLocation}
                     onChange={event => setStayPreferredLocation(event.target.value)}
                     placeholder="Example: near the station, old town, downtown, or the beach"
-                    className="w-full border border-[#2e2833] bg-white px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                    className="w-full border border-[#3F3D56] bg-white px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                   />
                 </div>
               </div>
 
               {stayRetryError && (
-                <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
                   {stayRetryError}
                 </div>
               )}
@@ -751,14 +751,14 @@ export default function TripDetailsPage() {
                   type="button"
                   onClick={handleStayRetry}
                   disabled={stayRetryLoading}
-                  className="flex-1 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {stayRetryLoading ? 'Updating stay...' : 'Update stay'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsStayRetryOpen(false)}
-                  className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+                  className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
                 >
                   Cancel
                 </button>
@@ -769,40 +769,40 @@ export default function TripDetailsPage() {
 
         {isEditTripOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-            <div className="w-full max-w-2xl border border-[#2e2833] bg-[#fbfaf7] p-5 text-[#2e2833] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6">
-              <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+            <div className="w-full max-w-2xl border border-[#3F3D56] bg-[#F2F2F2] p-5 text-[#3F3D56] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6">
+              <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Edit trip</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Edit trip</div>
                   <h3 className="mt-1 text-2xl font-black tracking-tight">Update the saved trip</h3>
                 </div>
                 <button
                   type="button"
                   onClick={closeEditTrip}
-                  className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                 >
                   Close
                 </button>
               </div>
 
-              <p className="mt-3 text-sm leading-6 text-[#756978]">
+              <p className="mt-3 text-sm leading-6 text-[#6F6C82]">
                 These changes update the trip record and refresh the public share preview. The itinerary itself stays as-is unless you regenerate it separately.
               </p>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                     Destination
                   </label>
                   <input
                     value={editDestination}
                     onChange={event => setEditDestination(event.target.value)}
                     placeholder="Example: Kyoto, Japan"
-                    className="w-full border border-[#2e2833] bg-white px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                    className="w-full border border-[#3F3D56] bg-white px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                     Duration
                   </label>
                   <input
@@ -810,24 +810,24 @@ export default function TripDetailsPage() {
                     min="1"
                     value={editDuration}
                     onChange={event => setEditDuration(event.target.value)}
-                    className="w-full border border-[#2e2833] bg-white px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                    className="w-full border border-[#3F3D56] bg-white px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                     Budget
                   </label>
                   <input
                     value={editBudget}
                     onChange={event => setEditBudget(event.target.value)}
                     placeholder="Example: $1,500"
-                    className="w-full border border-[#2e2833] bg-white px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                    className="w-full border border-[#3F3D56] bg-white px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                     Interests
                   </label>
                   <textarea
@@ -835,16 +835,16 @@ export default function TripDetailsPage() {
                     onChange={event => setEditInterests(event.target.value)}
                     placeholder="Example: food, museums, nightlife"
                     rows={4}
-                    className="w-full resize-none border border-[#2e2833] bg-white px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                    className="w-full resize-none border border-[#3F3D56] bg-white px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                   />
-                  <p className="mt-2 text-xs leading-5 text-[#a79aaa]">
+                  <p className="mt-2 text-xs leading-5 text-[#8A869C]">
                     Separate interests with commas.
                   </p>
                 </div>
               </div>
 
               {editTripError && (
-                <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
                   {editTripError}
                 </div>
               )}
@@ -854,14 +854,14 @@ export default function TripDetailsPage() {
                   type="button"
                   onClick={handleEditTrip}
                   disabled={editTripLoading}
-                  className="flex-1 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="flex-1 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {editTripLoading ? 'Saving changes...' : 'Save changes'}
                 </button>
                 <button
                   type="button"
                   onClick={closeEditTrip}
-                  className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+                  className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
                 >
                   Cancel
                 </button>
@@ -872,49 +872,49 @@ export default function TripDetailsPage() {
 
         {isGuestSuggestionsOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-            <div className="w-full max-w-3xl border border-[#2e2833] bg-[#fbfaf7] p-5 text-[#2e2833] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6">
-              <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+            <div className="w-full max-w-3xl border border-[#3F3D56] bg-[#F2F2F2] p-5 text-[#3F3D56] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6">
+              <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Guest suggestions</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Guest suggestions</div>
                   <h3 className="mt-1 text-2xl font-black tracking-tight">What guests are saying</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsGuestSuggestionsOpen(false)}
-                  className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                 >
                   Close
                 </button>
               </div>
 
               <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-                <div className="border border-[#2e2833] bg-white p-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Public badge</div>
-                  <div className="mt-2 text-sm leading-6 text-[#2e2833]">
-                    Hey Check out my trip and submit your suggestions on TravelMate.
+                <div className="border border-[#3F3D56] bg-white p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Public badge</div>
+                  <div className="mt-2 text-sm leading-6 text-[#3F3D56]">
+                    Check out my trip on wayflo and send your suggestions.
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsShareOpen(true)}
-                    className="mt-4 border border-[#2e2833] bg-[#2e2833] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+                    className="mt-4 border border-[#3F3D56] bg-[#3F3D56] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#302F43]"
                   >
                     Open sharing tools
                   </button>
                 </div>
 
-                <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Latest suggestions</div>
-                      <div className="mt-1 text-lg font-black tracking-tight text-[#2e2833]">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Latest suggestions</div>
+                      <div className="mt-1 text-lg font-black tracking-tight text-[#3F3D56]">
                         {suggestions.length} total
                       </div>
                     </div>
-                    {suggestionsLoading && <div className="text-sm font-medium text-[#756978]">Loading...</div>}
+                    {suggestionsLoading && <div className="text-sm font-medium text-[#6F6C82]">Loading...</div>}
                   </div>
 
                   {suggestionsError && (
-                    <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                    <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
                       {suggestionsError}
                     </div>
                   )}
@@ -922,22 +922,22 @@ export default function TripDetailsPage() {
                   <div className="mt-4 space-y-3 max-h-[300px] overflow-y-scroll pr-1">
                     {suggestions.length > 0 ? (
                       suggestions.map(suggestion => (
-                        <div key={suggestion.id} className="border border-[#2e2833] bg-white px-4 py-4">
+                        <div key={suggestion.id} className="border border-[#3F3D56] bg-white px-4 py-4">
                           <div className="flex items-center justify-between gap-3">
-                            <div className="text-sm font-bold text-[#2e2833]">
+                            <div className="text-sm font-bold text-[#3F3D56]">
                               {suggestion.guest_name || 'Anonymous guest'}
                             </div>
-                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
                               {new Date(suggestion.created_at).toLocaleDateString()}
                             </div>
                           </div>
-                          <p className="mt-2 text-sm leading-6 text-[#756978]">
+                          <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
                             {suggestion.message || suggestion.suggestion}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <div className="border border-dashed border-[#eadde5] bg-white px-4 py-3 text-sm leading-6 text-[#756978]">
+                      <div className="border border-dashed border-[#DDDCE8] bg-white px-4 py-3 text-sm leading-6 text-[#6F6C82]">
                         No suggestions yet. Share the trip publicly and ask guests to react.
                       </div>
                     )}

@@ -87,8 +87,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fbfaf7] text-[#2e2833]">
-        <div className="rounded-none border border-[#2e2833] bg-white px-6 py-5 shadow-none">
+      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] text-[#3F3D56]">
+        <div className="rounded-none border border-[#3F3D56] bg-white px-6 py-5 shadow-none">
           Checking your account...
         </div>
       </div>

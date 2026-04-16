@@ -15,8 +15,8 @@ export const INTERESTS = [
 
 export const NOMINATIM_HEADERS = {
   'Accept-Language': 'en',
-  'From': 'support@travelmate.app',
-  'User-Agent': 'TravelMate/1.0 (support@travelmate.app)',
+  'From': 'support@wayflo.app',
+  'User-Agent': 'wayflo/1.0 (support@wayflo.app)',
 } as const;
 
 export const OPEN_METEO_WEATHER_CODES: Record<number, { description: string; icon: string }> = {

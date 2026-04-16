@@ -32,13 +32,13 @@ function buildSignupTemplate(email: string, actionLink: string) {
   const safeLink = escapeHtml(actionLink);
 
   return {
-    subject: 'Confirm your TravelMate account',
+    subject: 'Confirm your wayflo account',
     text:
-      `Welcome to TravelMate, ${email}.\n\n` +
+      `Welcome to wayflo, ${email}.\n\n` +
       `Confirm your account by opening this link:\n${actionLink}\n\n` +
       `If you did not request this account, you can ignore this email.`,
     html: `
-      <p>Welcome to TravelMate, <strong>${safeEmail}</strong>.</p>
+      <p>Welcome to wayflo, <strong>${safeEmail}</strong>.</p>
       <p>Confirm your account by opening this link:</p>
       <p><a href="${safeLink}">${safeLink}</a></p>
       <p>If you did not request this account, you can ignore this email.</p>
@@ -51,7 +51,7 @@ function buildRecoveryTemplate(email: string, actionLink: string) {
   const safeLink = escapeHtml(actionLink);
 
   return {
-    subject: 'Reset your TravelMate password',
+    subject: 'Reset your wayflo password',
     text:
       `We received a password reset request for ${email}.\n\n` +
       `Reset your password here:\n${actionLink}\n\n` +

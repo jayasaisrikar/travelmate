@@ -27,8 +27,8 @@ export function buildSharePreview(trip: Pick<TripRow, 'destination' | 'duration'
   const destination = trip.destination.trim();
 
   return {
-    title: `${destination} trip on TravelMate`,
-    description: `Check out my ${trip.duration}-day trip to ${destination} and leave suggestions on TravelMate.`,
+    title: `${destination} trip on wayflo`,
+    description: `Check out my ${trip.duration}-day trip to ${destination} and leave suggestions on wayflo.`,
     imageUrl: null as string | null,
   };
 }

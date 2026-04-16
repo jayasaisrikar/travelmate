@@ -958,7 +958,7 @@ function buildFallbackItinerary(input: {
         : null;
 
   return {
-    title: `${input.destination.name} trip on TravelMate`,
+    title: `${input.destination.name} trip on wayflo`,
     destination: input.destination.name,
     duration: input.duration,
     stay: input.stay,
@@ -1230,7 +1230,7 @@ export async function generateItineraryFromLiveData(
     const tripDestination = destination.name;
 
     return {
-      title: `${tripDestination} trip on TravelMate`,
+      title: `${tripDestination} trip on wayflo`,
       destination: tripDestination,
       duration,
       stay,

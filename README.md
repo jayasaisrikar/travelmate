@@ -1,6 +1,6 @@
-# TravelMate
+# wayflo
 
-TravelMate is a live-data travel planner that turns a real destination, trip window, budget, and interests into a saved itinerary with map context, lodging, chat assistance, and public sharing.
+wayflo is a live-data travel planner that turns a real destination, trip window, budget, and interests into a saved itinerary with map context, lodging, chat assistance, and public sharing.
 
 ## What It Does
 
@@ -17,7 +17,7 @@ TravelMate is a live-data travel planner that turns a real destination, trip win
 1. The traveler signs up or logs in.
 2. They search for a destination and confirm the live result.
 3. They enter their trip window, transfer context, budget, interests, and activity pace.
-4. TravelMate generates an itinerary from live data and saves it.
+4. wayflo generates an itinerary from live data and saves it.
 5. The trip page shows the route, stay, estimated cost, and assistant.
 6. The user can share the trip publicly and collect feedback from other people.
 
@@ -73,11 +73,11 @@ SUPABASE_SERVICE_ROLE_KEY=...
 NVIDIA_API_KEY=...
 # or
 NVIDIA_KIMI_API_KEY=...
-NEXT_PUBLIC_APP_URL=https://travelmate.jayasaisrikar.xyz
-ADMIN_EMAIL=admin@travelmate.com
+NEXT_PUBLIC_APP_URL=https://wayflo.jayasaisrikar.xyz
+ADMIN_EMAIL=admin@wayflo.app
 ADMIN_PASSWORD=...
 RESEND_API_KEY=...
-EMAIL_FROM="TravelMate <your-approved-sender>"
+EMAIL_FROM="wayflo <your-approved-sender>"
 # Optional if you have a real inbox for replies.
 EMAIL_REPLY_TO=
 ```
@@ -132,7 +132,7 @@ npm run dev
 
 ## Notes
 
-- TravelMate is designed around real trip windows, not generic “full day” plans.
+- wayflo is designed around real trip windows, not generic “full day” plans.
 - The itinerary JSON includes a stay, transfers, daily plans, budget breakdown, and tips.
 - The public share flow is meant to create a feedback loop, not just a read-only trip page.
 - Email notifications are currently used for trip share suggestions and can be extended to other transactional flows.

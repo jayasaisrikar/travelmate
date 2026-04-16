@@ -227,10 +227,10 @@ export function TimelineView({
 
   if (dailyPlans.length === 0) {
     return (
-      <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-        <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Itinerary</div>
+      <section className="mt-8 rounded-[30px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+        <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Itinerary</div>
         <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Day-by-day timeline</h2>
-        <div className="mt-4 rounded-[24px] border border-dashed border-[#eadde5] bg-[#fffdf9] p-5 text-sm leading-6 text-[#756978]">
+        <div className="mt-4 rounded-[24px] border border-dashed border-[#DDDCE8] bg-[#FBFAFF] p-5 text-sm leading-6 text-[#6F6C82]">
           This trip was saved without daily plans. Regenerate the itinerary once the API returns structured activities.
         </div>
       </section>
@@ -238,17 +238,17 @@ export function TimelineView({
   }
 
   return (
-    <section className="mt-8 rounded-[30px] border border-[#eadde5] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+    <section className="mt-8 rounded-[30px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Itinerary</div>
+          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Itinerary</div>
           <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Day-by-day timeline</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#756978]">
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#6F6C82]">
             Reorder days or stops and save the result back to the trip. This is the first step toward a fuller editable timeline.
           </p>
         </div>
 
-        <div className="text-sm font-medium text-[#756978]">
+        <div className="text-sm font-medium text-[#6F6C82]">
           {interests.length > 0 ? interests.join(' · ') : 'No interests saved'}
         </div>
       </div>
@@ -256,47 +256,47 @@ export function TimelineView({
       {(saving || status || error || regenerationLoading || regenerationStatus || regenerationError) && (
         <div className="mt-4 space-y-2">
           {saving && (
-            <div className="inline-flex items-center gap-2 border border-[#eadde5] bg-[#fffdf9] px-3 py-2 text-sm font-medium text-[#756978]">
+            <div className="inline-flex items-center gap-2 border border-[#DDDCE8] bg-[#FBFAFF] px-3 py-2 text-sm font-medium text-[#6F6C82]">
               <motion.span
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                className="h-4 w-4 border-2 border-[#5aa7e8] border-t-transparent"
+                className="h-4 w-4 border-2 border-[#6C63FF] border-t-transparent"
               />
               Saving timeline changes...
             </div>
           )}
 
           {status && (
-            <div className="border border-[#5aa7e8] bg-[#eef7ff] px-4 py-3 text-sm font-medium text-[#2e2833]">
+            <div className="border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
               {status}
             </div>
           )}
 
           {error && (
-            <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+            <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
               {error}
             </div>
           )}
 
           {regenerationLoading && (
-            <div className="inline-flex items-center gap-2 border border-[#eadde5] bg-[#fffdf9] px-3 py-2 text-sm font-medium text-[#756978]">
+            <div className="inline-flex items-center gap-2 border border-[#DDDCE8] bg-[#FBFAFF] px-3 py-2 text-sm font-medium text-[#6F6C82]">
               <motion.span
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                className="h-4 w-4 border-2 border-[#ff9a45] border-t-transparent"
+                className="h-4 w-4 border-2 border-[#FF6584] border-t-transparent"
               />
               Regenerating section...
             </div>
           )}
 
           {regenerationStatus && (
-            <div className="border border-[#ff9a45] bg-[#fff8e6] px-4 py-3 text-sm font-medium text-[#2e2833]">
+            <div className="border border-[#FF6584] bg-[#FFEAF0] px-4 py-3 text-sm font-medium text-[#3F3D56]">
               {regenerationStatus}
             </div>
           )}
 
           {regenerationError && (
-            <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+            <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
               {regenerationError}
             </div>
           )}
@@ -313,20 +313,20 @@ export function TimelineView({
           return (
             <div
               key={`${currentDayNumber}-${day.theme ?? 'day'}`}
-              className="overflow-hidden border border-[#eadde5] bg-white shadow-[0_16px_48px_rgba(46,40,51,0.06)]"
+              className="overflow-hidden border border-[#DDDCE8] bg-white shadow-[0_16px_48px_rgba(46,40,51,0.06)]"
             >
-              <div className="border-b border-[#eadde5] bg-[#fffdf9] p-5 sm:p-6">
+              <div className="border-b border-[#DDDCE8] bg-[#FBFAFF] p-5 sm:p-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="inline-flex bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+                    <div className="inline-flex bg-[#6C63FF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
                       Day {currentDayNumber}
                     </div>
                     {day.intensity && (
-                      <div className="border border-[#eadde5] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#756978]">
+                      <div className="border border-[#DDDCE8] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6F6C82]">
                         {day.intensity}
                       </div>
                     )}
-                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
                       {activities.length} stops
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export function TimelineView({
                       <h3 className="text-xl font-black tracking-tight sm:text-2xl">
                         {day.theme || `Day ${currentDayNumber}`}
                       </h3>
-                      <p className="mt-1 text-sm text-[#756978]">
+                      <p className="mt-1 text-sm text-[#6F6C82]">
                         {day.date || 'No date'}
                         {firstTime && lastTime ? ` · ${firstTime} to ${lastTime}` : ''}
                       </p>
@@ -347,7 +347,7 @@ export function TimelineView({
                         type="button"
                         disabled={saving || regenerationLoading}
                         onClick={() => openDayRegeneration(dayIndex)}
-                        className="inline-flex items-center gap-2 border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center gap-2 border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <RefreshCcw size={16} />
                         Regenerate day
@@ -356,7 +356,7 @@ export function TimelineView({
                         type="button"
                         disabled={saving || regenerationLoading || dayIndex === 0}
                         onClick={() => void moveDay(dayIndex, -1)}
-                        className="inline-flex items-center gap-2 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center gap-2 border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <ChevronUp size={16} />
                         Move day up
@@ -365,7 +365,7 @@ export function TimelineView({
                         type="button"
                         disabled={saving || regenerationLoading || dayIndex === dailyPlans.length - 1}
                         onClick={() => void moveDay(dayIndex, 1)}
-                        className="inline-flex items-center gap-2 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center gap-2 border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <ChevronDown size={16} />
                         Move day down
@@ -391,7 +391,7 @@ export function TimelineView({
                       <div
                         key={`${dayIndex}-${activityIndex}-${activity.name}`}
                         className={`border p-4 transition ${
-                          isSelected ? 'border-[#5aa7e8] bg-[#eef7ff]' : 'border-[#eadde5] bg-[#fffdf9]'
+                          isSelected ? 'border-[#6C63FF] bg-[#EEEDFE]' : 'border-[#DDDCE8] bg-[#FBFAFF]'
                         }`}
                       >
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -400,22 +400,22 @@ export function TimelineView({
                             onClick={() => onSelectActivity(isSelected ? null : flatIndex)}
                             className="min-w-0 flex-1 text-left"
                           >
-                            <div className="text-base font-bold text-[#2e2833]">
+                            <div className="text-base font-bold text-[#3F3D56]">
                               {[activity.time, activity.name].filter(Boolean).join(' · ')}
                             </div>
                             {activity.category && (
-                              <div className="mt-2 inline-flex bg-[#eef7ff] px-3 py-1 text-xs font-semibold text-[#5aa7e8]">
+                              <div className="mt-2 inline-flex bg-[#EEEDFE] px-3 py-1 text-xs font-semibold text-[#6C63FF]">
                                 {activity.category}
                               </div>
                             )}
                             {activity.description && (
-                              <p className="mt-3 text-sm leading-6 text-[#756978]">{activity.description}</p>
+                              <p className="mt-3 text-sm leading-6 text-[#6F6C82]">{activity.description}</p>
                             )}
                             {(activity.address || activity.latitude || activity.longitude) && (
-                              <div className="mt-3 border border-[#eadde5] bg-white px-3 py-2 text-xs leading-6 text-[#756978]">
+                              <div className="mt-3 border border-[#DDDCE8] bg-white px-3 py-2 text-xs leading-6 text-[#6F6C82]">
                                 {activity.address || 'Address unavailable'}
                                 {activity.latitude && activity.longitude && (
-                                  <span className="ml-2 font-semibold text-[#2e2833]">
+                                  <span className="ml-2 font-semibold text-[#3F3D56]">
                                     ({activity.latitude.toFixed(4)}, {activity.longitude.toFixed(4)})
                                   </span>
                                 )}
@@ -425,7 +425,7 @@ export function TimelineView({
 
                           <div className="flex flex-wrap items-center gap-2">
                             {cost !== undefined && cost !== null && (
-                              <div className="bg-[#fff4e3] px-3 py-1 text-sm font-bold text-[#ff9a45]">
+                              <div className="bg-[#FFEAF0] px-3 py-1 text-sm font-bold text-[#FF6584]">
                                 ${cost}
                               </div>
                             )}
@@ -433,7 +433,7 @@ export function TimelineView({
                               type="button"
                               disabled={saving || regenerationLoading}
                               onClick={() => openClusterRegeneration(dayIndex, activityIndex)}
-                              className="inline-flex items-center gap-1 border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1 border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <Sparkles size={14} />
                               Regenerate cluster
@@ -442,7 +442,7 @@ export function TimelineView({
                               type="button"
                               disabled={saving || regenerationLoading || activityIndex === 0}
                               onClick={() => void moveActivity(dayIndex, activityIndex, -1)}
-                              className="inline-flex items-center gap-1 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1 border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <ChevronUp size={14} />
                               Up
@@ -451,7 +451,7 @@ export function TimelineView({
                               type="button"
                               disabled={saving || regenerationLoading || activityIndex === activities.length - 1}
                               onClick={() => void moveActivity(dayIndex, activityIndex, 1)}
-                              className="inline-flex items-center gap-1 border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1 border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <ChevronDown size={14} />
                               Down
@@ -462,7 +462,7 @@ export function TimelineView({
                     );
                   })
                 ) : (
-                  <div className="rounded-[24px] border border-dashed border-[#eadde5] bg-[#fffdf9] p-5 text-sm leading-6 text-[#756978]">
+                  <div className="rounded-[24px] border border-dashed border-[#DDDCE8] bg-[#FBFAFF] p-5 text-sm leading-6 text-[#6F6C82]">
                     No activities returned for this day.
                   </div>
                 )}
@@ -477,11 +477,11 @@ export function TimelineView({
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="w-full max-w-2xl border border-[#2e2833] bg-[#fbfaf7] p-5 text-[#2e2833] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6"
+            className="w-full max-w-2xl border border-[#3F3D56] bg-[#F2F2F2] p-5 text-[#3F3D56] shadow-[0_30px_120px_rgba(46,40,51,0.28)] sm:p-6"
           >
-            <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+            <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">
                   {regenerationTarget.scope === 'day' ? 'Regenerate day' : 'Regenerate cluster'}
                 </div>
                 <h3 className="mt-1 text-2xl font-black tracking-tight">{regenerationTarget.label}</h3>
@@ -497,19 +497,19 @@ export function TimelineView({
                   setRegenerationInstruction('');
                   setRegenerationError('');
                 }}
-                className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] disabled:cursor-not-allowed disabled:opacity-50"
+                className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={regenerationLoading}
               >
                 Close
               </button>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-[#756978]">
+            <p className="mt-3 text-sm leading-6 text-[#6F6C82]">
               Rewrite only this slice of the itinerary. The rest of the trip stays fixed unless you edit it separately.
             </p>
 
             <div className="mt-5">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                 What should change?
               </label>
               <textarea
@@ -517,12 +517,12 @@ export function TimelineView({
                 onChange={event => setRegenerationInstruction(event.target.value)}
                 rows={6}
                 placeholder="Example: make this day more relaxed, replace the museum stop with a local food experience, and keep the evening free."
-                className="w-full resize-y border border-[#2e2833] bg-white px-4 py-3 text-base leading-7 text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                className="w-full resize-y border border-[#3F3D56] bg-white px-4 py-3 text-base leading-7 text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
               />
             </div>
 
             {regenerationError && (
-              <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+              <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
                 {regenerationError}
               </div>
             )}
@@ -532,7 +532,7 @@ export function TimelineView({
                 type="button"
                 onClick={submitRegeneration}
                 disabled={regenerationLoading}
-                className="flex-1 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex-1 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {regenerationLoading ? 'Regenerating...' : 'Regenerate section'}
               </button>
@@ -548,7 +548,7 @@ export function TimelineView({
                   setRegenerationError('');
                 }}
                 disabled={regenerationLoading}
-                className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833] disabled:cursor-not-allowed disabled:opacity-50"
+                className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -557,7 +557,7 @@ export function TimelineView({
         </div>
       )}
 
-      <div className="mt-5 flex items-center gap-2 text-sm text-[#756978]">
+      <div className="mt-5 flex items-center gap-2 text-sm text-[#6F6C82]">
         <Save size={16} />
         Changes are saved back to the trip record immediately.
       </div>
