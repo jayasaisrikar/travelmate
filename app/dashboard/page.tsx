@@ -8,7 +8,7 @@ import { Brand } from '@/components/common/Brand';
 import { listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@travelmate.com').trim().toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@wayflo.app').trim().toLowerCase();
 
 interface AdminShare {
   id: string;
@@ -120,8 +120,8 @@ function shorten(value: string, length = 120) {
 
 function chipClass(active: boolean) {
   return active
-    ? 'border border-[#2e2833] bg-[#def4d8] text-[#2e2833]'
-    : 'border border-[#2e2833] bg-[#fff3f7] text-[#a65372]';
+    ? 'border border-[#3F3D56] bg-[#def4d8] text-[#3F3D56]'
+    : 'border border-[#3F3D56] bg-[#FFF0F4] text-[#C14D72]';
 }
 
 async function fetchAdminOverview() {
@@ -401,13 +401,13 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fbfaf7] px-4 text-[#2e2833]">
-        <div className="border border-[#2e2833] bg-white px-5 py-4">
+      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] px-4 text-[#3F3D56]">
+        <div className="border border-[#3F3D56] bg-white px-5 py-4">
           <div className="flex items-center gap-3">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
-              className="h-5 w-5 border-2 border-[#5aa7e8] border-t-transparent"
+              className="h-5 w-5 border-2 border-[#6C63FF] border-t-transparent"
             />
             <span className="text-sm font-semibold sm:text-base">Loading admin dashboard...</span>
           </div>
@@ -420,27 +420,27 @@ export default function DashboardPage() {
     const latestTrip = userTrips[0] ?? null;
 
     return (
-      <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
-        <div className="border-b border-[#2e2833] bg-[#fffdf9]">
+      <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
+        <div className="border-b border-[#3F3D56] bg-[#FBFAFF]">
           <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
               <Brand href="/" compact className="shrink-0" />
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Dashboard</div>
-                <div className="text-lg font-black tracking-tight">Your TravelMate trips</div>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Dashboard</div>
+                <div className="text-lg font-black tracking-tight">Your wayflo trips</div>
               </div>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 onClick={() => router.push('/dashboard/onboarding')}
-                className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
+                className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white"
               >
                 New trip
               </button>
               <button
                 onClick={handleSignOut}
-                className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+                className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
               >
                 Sign out
               </button>
@@ -449,29 +449,29 @@ export default function DashboardPage() {
         </div>
 
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <div className="grid gap-4 border border-[#2e2833] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="grid gap-4 border border-[#3F3D56] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="space-y-4">
-              <div className="inline-flex border border-[#2e2833] bg-[#f6d23c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
+              <div className="inline-flex border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
                 Welcome back
               </div>
               <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
                 Plan, reopen, and edit your trips from one place.
               </h1>
-              <p className="max-w-3xl text-sm leading-7 text-[#756978] sm:text-base">
+              <p className="max-w-3xl text-sm leading-7 text-[#6F6C82] sm:text-base">
                 Start a new itinerary when you are ready, or jump back into an existing one to edit the destination, budget, and trip details.
               </p>
 
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => router.push('/dashboard/onboarding')}
-                  className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
+                  className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white"
                 >
                   {latestTrip ? 'Create another trip' : 'Create your first trip'}
                 </button>
                 {latestTrip && (
                   <button
                     onClick={() => router.push(`/trip/${latestTrip.id}`)}
-                    className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+                    className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
                   >
                     Open latest trip
                   </button>
@@ -480,19 +480,19 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Trips</div>
-                <div className="mt-2 text-2xl font-black tracking-tight text-[#2e2833]">{userTrips.length}</div>
+              <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Trips</div>
+                <div className="mt-2 text-2xl font-black tracking-tight text-[#3F3D56]">{userTrips.length}</div>
               </div>
-              <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Latest</div>
-                <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+              <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Latest</div>
+                <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
                   {latestTrip ? latestTrip.destination : 'No trips yet'}
                 </div>
               </div>
-              <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Next step</div>
-                <div className="mt-2 text-sm font-semibold text-[#2e2833]">
+              <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Next step</div>
+                <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
                   {latestTrip ? 'Open or edit a saved trip' : 'Start by creating a trip'}
                 </div>
               </div>
@@ -500,20 +500,20 @@ export default function DashboardPage() {
           </div>
 
           {error && (
-            <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+            <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
               {error}
             </div>
           )}
 
-          <section className="mt-6 border border-[#2e2833] bg-white p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Your trips</div>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Your trips</div>
                 <h2 className="mt-1 text-2xl font-black tracking-tight">Saved itineraries</h2>
               </div>
               <button
                 onClick={loadUserTrips}
-                className="border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56]"
               >
                 Refresh
               </button>
@@ -522,15 +522,15 @@ export default function DashboardPage() {
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               {userTrips.length > 0 ? (
                 userTrips.map(trip => (
-                  <article key={trip.id} className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                  <article key={trip.id} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-lg font-black tracking-tight">{trip.destination}</h3>
-                        <p className="mt-1 text-sm text-[#756978]">
+                        <p className="mt-1 text-sm text-[#6F6C82]">
                           {trip.duration} days · {trip.budget || 'Budget not set'}
                         </p>
                       </div>
-                      <div className="text-right text-xs font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">
+                      <div className="text-right text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
                         {new Date(trip.updated_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -538,13 +538,13 @@ export default function DashboardPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         onClick={() => router.push(`/trip/${trip.id}`)}
-                        className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white"
+                        className="border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
                       >
                         Open trip
                       </button>
                       <button
                         onClick={() => router.push('/dashboard/onboarding')}
-                        className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                        className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                       >
                         Create new
                       </button>
@@ -552,7 +552,7 @@ export default function DashboardPage() {
                   </article>
                 ))
               ) : (
-                <div className="border border-dashed border-[#2e2833] bg-[#fffdf9] p-6 text-sm leading-7 text-[#756978] lg:col-span-2">
+                <div className="border border-dashed border-[#3F3D56] bg-[#FBFAFF] p-6 text-sm leading-7 text-[#6F6C82] lg:col-span-2">
                   You do not have any saved trips yet. Start a new trip to build your first itinerary.
                 </div>
               )}
@@ -564,27 +564,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
-      <div className="border-b border-[#2e2833] bg-[#fffdf9]">
+    <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
+      <div className="border-b border-[#3F3D56] bg-[#FBFAFF]">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <Brand href="/" compact className="shrink-0" />
             <div>
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Admin</div>
-              <div className="text-lg font-black tracking-tight">TravelMate control center</div>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Admin</div>
+              <div className="text-lg font-black tracking-tight">wayflo control center</div>
             </div>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
             <button
               onClick={() => router.push('/dashboard/onboarding')}
-              className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white"
+              className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white"
             >
               New trip
             </button>
             <button
               onClick={handleSignOut}
-              className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]"
+              className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
             >
               Sign out
             </button>
@@ -593,30 +593,30 @@ export default function DashboardPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid gap-4 border border-[#2e2833] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-4 border border-[#3F3D56] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <div className="inline-flex border border-[#2e2833] bg-[#f6d23c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
+            <div className="inline-flex border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
               Admin only
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Manage every TravelMate surface from one place.</h1>
-            <p className="max-w-3xl text-sm leading-7 text-[#756978] sm:text-base">
+            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Manage every wayflo surface from one place.</h1>
+            <p className="max-w-3xl text-sm leading-7 text-[#6F6C82] sm:text-base">
               Trips, public shares, guest suggestions, and profile data all sit behind this panel.
-              Only <span className="font-semibold text-[#2e2833]">{ADMIN_EMAIL}</span> can enter it.
+              Only <span className="font-semibold text-[#3F3D56]">{ADMIN_EMAIL}</span> can enter it.
             </p>
           </div>
 
           {overview && (
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                { label: 'Trips', value: overview.stats.trips.toString(), color: '#5aa7e8' },
-                { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#f6d23c' },
-                { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#ff9a45' },
-                { label: 'Users', value: overview.stats.users.toString(), color: '#2e2833' },
+                { label: 'Trips', value: overview.stats.trips.toString(), color: '#6C63FF' },
+                { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#FF6584' },
+                { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#FF6584' },
+                { label: 'Users', value: overview.stats.users.toString(), color: '#3F3D56' },
                 { label: 'Confirmed', value: overview.stats.confirmedUsers.toString(), color: '#15a15f' },
-                { label: 'Profiles', value: overview.profiles.length.toString(), color: '#a65372' },
+                { label: 'Profiles', value: overview.profiles.length.toString(), color: '#C14D72' },
               ].map(card => (
-                <div key={card.label} className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">{card.label}</div>
+                <div key={card.label} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
                   <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
                     {card.value}
                   </div>
@@ -627,19 +627,19 @@ export default function DashboardPage() {
         </div>
 
         {error && (
-          <div className="mt-4 border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+          <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
             {error}
           </div>
         )}
-        <div className="mt-6 flex flex-wrap gap-2 border-b border-[#2e2833] pb-4">
+        <div className="mt-6 flex flex-wrap gap-2 border-b border-[#3F3D56] pb-4">
           {DASHBOARD_TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={
                 activeTab === tab.id
-                  ? 'border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white'
-                  : 'border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833]'
+                  ? 'border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white'
+                  : 'border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]'
               }
             >
               <span className="block text-[11px] uppercase tracking-[0.18em] opacity-70">{tab.description}</span>
@@ -650,15 +650,15 @@ export default function DashboardPage() {
 
         {activeTab === 'overview' && (
           <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <section className="border border-[#2e2833] bg-white p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+            <section className="border border-[#3F3D56] bg-white p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Overview</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Overview</div>
                   <h2 className="mt-1 text-2xl font-black tracking-tight">Activity summary</h2>
                 </div>
                 <button
                   onClick={loadOverview}
-                  className="border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                  className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                 >
                   Refresh
                 </button>
@@ -667,15 +667,15 @@ export default function DashboardPage() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {overview &&
                   [
-                    { label: 'Trips', value: overview.stats.trips.toString(), color: '#5aa7e8' },
-                    { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#f6d23c' },
-                    { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#ff9a45' },
-                    { label: 'Users', value: overview.stats.users.toString(), color: '#2e2833' },
+                    { label: 'Trips', value: overview.stats.trips.toString(), color: '#6C63FF' },
+                    { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#FF6584' },
+                    { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#FF6584' },
+                    { label: 'Users', value: overview.stats.users.toString(), color: '#3F3D56' },
                     { label: 'Confirmed', value: overview.stats.confirmedUsers.toString(), color: '#15a15f' },
-                    { label: 'Profiles', value: overview.profiles.length.toString(), color: '#a65372' },
+                    { label: 'Profiles', value: overview.profiles.length.toString(), color: '#C14D72' },
                   ].map(card => (
-                    <div key={card.label} className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">{card.label}</div>
+                    <div key={card.label} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
                       <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
                         {card.value}
                       </div>
@@ -684,37 +684,37 @@ export default function DashboardPage() {
               </div>
 
               <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#a79aaa]">Recent trips</h3>
+                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#8A869C]">Recent trips</h3>
                   <div className="mt-3 space-y-3">
                     {(overview?.trips ?? []).slice(0, 3).map(trip => (
-                      <div key={trip.id} className="border border-[#2e2833] bg-white px-3 py-2 text-sm">
+                      <div key={trip.id} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm">
                         <div className="font-semibold">{trip.destination}</div>
-                        <div className="text-xs text-[#756978]">{trip.owner_email || 'Unknown owner'}</div>
+                        <div className="text-xs text-[#6F6C82]">{trip.owner_email || 'Unknown owner'}</div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#a79aaa]">Recent shares</h3>
+                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#8A869C]">Recent shares</h3>
                   <div className="mt-3 space-y-3">
                     {(overview?.shares ?? []).slice(0, 3).map(share => (
-                      <div key={share.id} className="border border-[#2e2833] bg-white px-3 py-2 text-sm">
+                      <div key={share.id} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm">
                         <div className="font-semibold">{share.destination}</div>
-                        <div className="text-xs text-[#756978]">{share.revoked_at ? 'Revoked' : 'Live'}</div>
+                        <div className="text-xs text-[#6F6C82]">{share.revoked_at ? 'Revoked' : 'Live'}</div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#a79aaa]">Recent users</h3>
+                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#8A869C]">Recent users</h3>
                   <div className="mt-3 space-y-3">
                     {(overview?.users ?? []).slice(0, 3).map(user => (
-                      <div key={user.id} className="border border-[#2e2833] bg-white px-3 py-2 text-sm">
+                      <div key={user.id} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm">
                         <div className="font-semibold">{user.email || 'No email'}</div>
-                        <div className="text-xs text-[#756978]">{user.usage.total_actions} actions</div>
+                        <div className="text-xs text-[#6F6C82]">{user.usage.total_actions} actions</div>
                       </div>
                     ))}
                   </div>
@@ -722,13 +722,13 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            <section className="border border-[#2e2833] bg-white p-5 sm:p-6">
-              <div className="border-b border-[#2e2833] pb-4">
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Need a shortcut?</div>
+            <section className="border border-[#3F3D56] bg-white p-5 sm:p-6">
+              <div className="border-b border-[#3F3D56] pb-4">
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Need a shortcut?</div>
                 <h2 className="mt-1 text-2xl font-black tracking-tight">Jump into a management tab</h2>
               </div>
 
-              <div className="mt-5 space-y-3 text-sm leading-7 text-[#756978]">
+              <div className="mt-5 space-y-3 text-sm leading-7 text-[#6F6C82]">
                 <p>Use Trips to delete an itinerary, Shares to revoke a public link, Suggestions to moderate feedback, and Users to inspect activity.</p>
                 <p>The dashboard now uses existing app data for usage tracking, so you can see who’s active without adding extra tables.</p>
               </div>
@@ -737,15 +737,15 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'trips' && (
-          <section className="mt-6 border border-[#2e2833] bg-white p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-[#2e2833] pb-4">
+          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Trips</div>
+                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Trips</div>
                 <h2 className="mt-1 text-2xl font-black tracking-tight">All trips</h2>
               </div>
               <button
                 onClick={loadOverview}
-                className="border border-[#2e2833] bg-[#fffdf9] px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56]"
               >
                 Refresh
               </button>
@@ -754,7 +754,7 @@ export default function DashboardPage() {
             <div className="mt-5 space-y-4">
               {overview?.trips.length ? (
                 overview.trips.map(trip => (
-                  <article key={trip.id} className="border border-[#2e2833] bg-[#fffdf9] p-4">
+                  <article key={trip.id} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -763,16 +763,16 @@ export default function DashboardPage() {
                             {trip.share && !trip.share.revoked_at ? 'Shared' : 'Private'}
                           </span>
                         </div>
-                        <p className="mt-1 text-sm text-[#756978]">
+                        <p className="mt-1 text-sm text-[#6F6C82]">
                           {trip.duration} days · {trip.owner_email || 'Unknown owner'}{trip.owner_name ? ` · ${trip.owner_name}` : ''}
                         </p>
-                        <p className="mt-1 text-xs text-[#a79aaa]">
+                        <p className="mt-1 text-xs text-[#8A869C]">
                           Created {formatDate(trip.created_at)} · Updated {formatDate(trip.updated_at)}
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Suggestions</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Suggestions</div>
                         <div className="text-2xl font-black tracking-tight">{trip.suggestions_count}</div>
                       </div>
                     </div>
@@ -780,7 +780,7 @@ export default function DashboardPage() {
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button
                         onClick={() => router.push(`/trip/${trip.id}`)}
-                        className="border border-[#2e2833] bg-[#2e2833] px-3 py-2 text-sm font-semibold text-white"
+                        className="border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
                       >
                         Open trip
                       </button>
@@ -789,7 +789,7 @@ export default function DashboardPage() {
                           href={trip.share.share_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                          className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                         >
                           Open share
                         </a>
@@ -797,20 +797,20 @@ export default function DashboardPage() {
                       <button
                         onClick={() => handleDeleteTrip(trip.id)}
                         disabled={actionId === `trip-${trip.id}`}
-                        className="border border-[#2e2833] bg-[#fff3f7] px-3 py-2 text-sm font-semibold text-[#a65372] disabled:opacity-70"
+                        className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
                       >
                         {actionId === `trip-${trip.id}` ? 'Deleting...' : 'Delete'}
                       </button>
                     </div>
 
                     {trip.share && (
-                      <div className="mt-4 border border-dashed border-[#eadde5] bg-white px-4 py-3 text-sm">
+                      <div className="mt-4 border border-dashed border-[#DDDCE8] bg-white px-4 py-3 text-sm">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">
+                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">
                               Share link
                             </div>
-                            <p className="mt-1 text-[#2e2833]">
+                            <p className="mt-1 text-[#3F3D56]">
                               {trip.share.revoked_at ? 'Revoked' : trip.share.share_url}
                             </p>
                           </div>
@@ -818,7 +818,7 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleRevokeShare(trip.share!.id)}
                               disabled={actionId === `share-${trip.share.id}`}
-                              className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] disabled:opacity-70"
+                              className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
                             >
                               {actionId === `share-${trip.share.id}` ? 'Revoking...' : 'Revoke share'}
                             </button>
@@ -829,7 +829,7 @@ export default function DashboardPage() {
                   </article>
                 ))
               ) : (
-                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-6 text-sm text-[#756978]">
+                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
                   No trips yet.
                 </div>
               )}
@@ -838,23 +838,23 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'shares' && (
-          <section className="mt-6 border border-[#2e2833] bg-white p-5 sm:p-6">
-            <div className="border-b border-[#2e2833] pb-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Shares</div>
+          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
+            <div className="border-b border-[#3F3D56] pb-4">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Shares</div>
               <h2 className="mt-1 text-2xl font-black tracking-tight">Public links</h2>
             </div>
 
             <div className="mt-5 space-y-3">
               {overview?.shares.length ? (
                 overview.shares.map(share => (
-                  <div key={share.id} className="border border-[#2e2833] bg-[#fffdf9] px-4 py-3">
+                  <div key={share.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold text-[#2e2833]">{share.destination}</div>
-                        <div className="text-xs text-[#756978]">
+                        <div className="font-semibold text-[#3F3D56]">{share.destination}</div>
+                        <div className="text-xs text-[#6F6C82]">
                           {share.owner_email || 'Unknown owner'} · {formatDate(share.created_at)}
                         </div>
-                        <div className="mt-1 text-xs text-[#a79aaa]">
+                        <div className="mt-1 text-xs text-[#8A869C]">
                           {share.suggestions_count} suggestion{share.suggestions_count === 1 ? '' : 's'}
                         </div>
                       </div>
@@ -867,7 +867,7 @@ export default function DashboardPage() {
                         href={share.share_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833]"
+                        className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                       >
                         Open share
                       </a>
@@ -875,7 +875,7 @@ export default function DashboardPage() {
                         <button
                           onClick={() => handleRevokeShare(share.id)}
                           disabled={actionId === `share-${share.id}`}
-                          className="border border-[#2e2833] bg-[#fff3f7] px-3 py-2 text-sm font-semibold text-[#a65372] disabled:opacity-70"
+                          className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
                         >
                           {actionId === `share-${share.id}` ? 'Revoking...' : 'Revoke'}
                         </button>
@@ -884,7 +884,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-6 text-sm text-[#756978]">
+                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
                   No shares yet.
                 </div>
               )}
@@ -893,32 +893,32 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'suggestions' && (
-          <section className="mt-6 border border-[#2e2833] bg-white p-5 sm:p-6">
-            <div className="border-b border-[#2e2833] pb-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Suggestions</div>
+          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
+            <div className="border-b border-[#3F3D56] pb-4">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Suggestions</div>
               <h2 className="mt-1 text-2xl font-black tracking-tight">Guest feedback</h2>
             </div>
 
             <div className="mt-5 space-y-3">
               {overview?.suggestions.length ? (
                 overview.suggestions.map(suggestion => (
-                  <div key={suggestion.id} className="border border-[#2e2833] bg-[#fffdf9] px-4 py-3">
+                  <div key={suggestion.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold text-[#2e2833]">{suggestion.destination}</div>
-                        <div className="text-xs text-[#756978]">
+                        <div className="font-semibold text-[#3F3D56]">{suggestion.destination}</div>
+                        <div className="text-xs text-[#6F6C82]">
                           {suggestion.guest_name || 'A guest'}
                           {suggestion.guest_email ? ` · ${suggestion.guest_email}` : ''}
                         </div>
                       </div>
-                      <div className="text-xs text-[#a79aaa]">{formatDate(suggestion.created_at)}</div>
+                      <div className="text-xs text-[#8A869C]">{formatDate(suggestion.created_at)}</div>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-[#2e2833]">{shorten(suggestion.message, 180)}</p>
+                    <p className="mt-3 text-sm leading-6 text-[#3F3D56]">{shorten(suggestion.message, 180)}</p>
                     <div className="mt-3">
                       <button
                         onClick={() => handleDeleteSuggestion(suggestion.id)}
                         disabled={actionId === `suggestion-${suggestion.id}`}
-                        className="border border-[#2e2833] bg-[#fff3f7] px-3 py-2 text-sm font-semibold text-[#a65372] disabled:opacity-70"
+                        className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
                       >
                         {actionId === `suggestion-${suggestion.id}` ? 'Deleting...' : 'Delete suggestion'}
                       </button>
@@ -926,7 +926,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-6 text-sm text-[#756978]">
+                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
                   No suggestions yet.
                 </div>
               )}
@@ -935,21 +935,21 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'users' && (
-          <section className="mt-6 border border-[#2e2833] bg-white p-5 sm:p-6">
-            <div className="border-b border-[#2e2833] pb-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Users</div>
+          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
+            <div className="border-b border-[#3F3D56] pb-4">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Users</div>
               <h2 className="mt-1 text-2xl font-black tracking-tight">Manage accounts and usage</h2>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               {overview &&
                 [
-                  { label: 'Trips created', value: overview.users.reduce((sum, user) => sum + user.usage.trips_created, 0), color: '#5aa7e8' },
-                  { label: 'Shares created', value: overview.users.reduce((sum, user) => sum + user.usage.shares_created, 0), color: '#f6d23c' },
-                  { label: 'Suggestions received', value: overview.users.reduce((sum, user) => sum + user.usage.suggestions_received, 0), color: '#ff9a45' },
+                  { label: 'Trips created', value: overview.users.reduce((sum, user) => sum + user.usage.trips_created, 0), color: '#6C63FF' },
+                  { label: 'Shares created', value: overview.users.reduce((sum, user) => sum + user.usage.shares_created, 0), color: '#FF6584' },
+                  { label: 'Suggestions received', value: overview.users.reduce((sum, user) => sum + user.usage.suggestions_received, 0), color: '#FF6584' },
                 ].map(card => (
-                  <div key={card.label} className="border border-[#2e2833] bg-[#fffdf9] p-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">{card.label}</div>
+                  <div key={card.label} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
                     <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
                       {card.value}
                     </div>
@@ -958,19 +958,19 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-5">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                 Search users
               </label>
               <input
                 value={userQuery}
                 onChange={event => setUserQuery(event.target.value)}
                 placeholder="Search by email, name, role, or usage count"
-                className="w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa] focus:bg-white"
+                className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
               />
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 border border-[#2e2833] bg-[#fffdf9] p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm font-medium text-[#2e2833]">
+            <div className="mt-4 flex flex-col gap-3 border border-[#3F3D56] bg-[#FBFAFF] p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm font-medium text-[#3F3D56]">
                 {selectedUserIds.length > 0
                   ? `${selectedUserIds.length} user${selectedUserIds.length === 1 ? '' : 's'} selected`
                   : 'No users selected'}
@@ -979,21 +979,21 @@ export default function DashboardPage() {
                 <button
                   onClick={toggleVisibleUsers}
                   disabled={selectableUserIds.length === 0}
-                  className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] disabled:opacity-70"
+                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
                 >
                   {allVisibleSelected ? 'Unselect visible' : someVisibleSelected ? 'Select visible' : 'Select visible'}
                 </button>
                 <button
                   onClick={() => setSelectedUserIds([])}
                   disabled={selectedUserIds.length === 0}
-                  className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-semibold text-[#2e2833] disabled:opacity-70"
+                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
                 >
                   Clear selection
                 </button>
                 <button
                   onClick={handleBulkDeleteUsers}
                   disabled={selectedUserIds.filter(id => id !== currentUserId).length === 0 || actionId === 'bulk-users'}
-                  className="border border-[#2e2833] bg-[#fff3f7] px-3 py-2 text-sm font-semibold text-[#a65372] disabled:opacity-70"
+                  className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
                 >
                   {actionId === 'bulk-users' ? 'Deleting selected...' : 'Delete selected'}
                 </button>
@@ -1007,7 +1007,7 @@ export default function DashboardPage() {
                   const isSelected = selectedUserIds.includes(user.id);
 
                   return (
-                    <div key={user.id} className="border border-[#2e2833] bg-[#fffdf9] px-4 py-3">
+                    <div key={user.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex items-start gap-3">
                           <input
@@ -1015,19 +1015,19 @@ export default function DashboardPage() {
                             checked={isSelected}
                             disabled={isCurrentUser}
                             onChange={() => toggleUserSelection(user.id)}
-                            className="mt-1 h-4 w-4 border-[#2e2833] text-[#2e2833] accent-[#2e2833]"
+                            className="mt-1 h-4 w-4 border-[#3F3D56] text-[#3F3D56] accent-[#3F3D56]"
                           />
                           <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <div className="font-semibold text-[#2e2833]">{user.email || 'No email'}</div>
+                            <div className="font-semibold text-[#3F3D56]">{user.email || 'No email'}</div>
                             <span className={chipClass(Boolean(user.email_confirmed_at)) + ' px-2 py-1 text-[11px] font-bold uppercase tracking-[0.16em]'}>
                               {user.email_confirmed_at ? 'Confirmed' : 'Unconfirmed'}
                             </span>
                           </div>
-                          <div className="text-xs text-[#756978]">
+                          <div className="text-xs text-[#6F6C82]">
                             {user.full_name || 'No profile name'} · {user.role || 'authenticated'}
                           </div>
-                          <div className="mt-2 text-xs text-[#a79aaa]">
+                          <div className="mt-2 text-xs text-[#8A869C]">
                             Joined {formatDate(user.created_at)}
                             {user.last_sign_in_at ? ` · Last sign in ${formatDate(user.last_sign_in_at)}` : ''}
                           </div>
@@ -1041,8 +1041,8 @@ export default function DashboardPage() {
                             { label: 'Suggestions', value: user.usage.suggestions_received },
                             { label: 'Active shares', value: user.usage.active_shares },
                           ].map(metric => (
-                            <div key={metric.label} className="border border-[#2e2833] bg-white px-3 py-2">
-                              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a79aaa]">{metric.label}</div>
+                            <div key={metric.label} className="border border-[#3F3D56] bg-white px-3 py-2">
+                              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8A869C]">{metric.label}</div>
                               <div className="mt-1 text-lg font-black tracking-tight">{metric.value}</div>
                             </div>
                           ))}
@@ -1050,7 +1050,7 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
-                        <div className="text-xs text-[#756978]">
+                        <div className="text-xs text-[#6F6C82]">
                           Last activity: {user.usage.last_activity_at ? formatDate(user.usage.last_activity_at) : 'No tracked activity yet'}
                           {' · '}
                           Total actions: {user.usage.total_actions}
@@ -1058,7 +1058,7 @@ export default function DashboardPage() {
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={actionId === `user-${user.id}` || isCurrentUser}
-                          className="border border-[#2e2833] bg-[#fff3f7] px-3 py-2 text-sm font-semibold text-[#a65372] disabled:opacity-70"
+                          className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
                         >
                           {actionId === `user-${user.id}` ? 'Deleting...' : isCurrentUser ? 'Current admin' : 'Delete user'}
                         </button>
@@ -1067,7 +1067,7 @@ export default function DashboardPage() {
                   );
                 })
               ) : (
-                <div className="border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-6 text-sm text-[#756978]">
+                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
                   No users match your search.
                 </div>
               )}

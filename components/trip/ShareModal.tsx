@@ -17,7 +17,7 @@ type ShareModalProps = {
   onClose: () => void;
 };
 
-const SHARE_BADGE_TEXT = 'Check out my trip and submit your suggestions on TravelMate.';
+const SHARE_BADGE_TEXT = 'Check out my trip on wayflo and send your suggestions.';
 
 function TravelGlobe() {
   return (
@@ -109,6 +109,24 @@ function TravelGlobe() {
   );
 }
 
+function BadgeBrand() {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/12 px-3 py-2 backdrop-blur-sm">
+      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/95 p-1">
+        <Brand asLink={false} compact showWordmark={false} />
+      </div>
+      <div className="min-w-0 leading-none">
+        <div className="text-[13px] font-medium tracking-[-0.03em] text-white">
+          way<span className="text-[#FF6584]">flo</span>
+        </div>
+        <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/65">
+          travel. flow. freedom.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 async function waitForBadgeAssets(element: HTMLElement) {
   await (document.fonts?.ready ?? Promise.resolve());
 
@@ -148,7 +166,7 @@ async function createBadgeFile({
 
   return new File(
     [blob],
-    `travelmate-${destination ? destination.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'trip'}.png`,
+    `wayflo-${destination ? destination.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'trip'}.png`,
     { type: 'image/png' }
   );
 }
@@ -184,7 +202,7 @@ export function ShareModal({
   const badgeRef = useRef<HTMLDivElement>(null);
 
   const shareText = useMemo(
-    () => `${SHARE_BADGE_TEXT} ${destination ? `I'm planning ${destination} with TravelMate.` : ''}`.trim(),
+    () => `${SHARE_BADGE_TEXT} ${destination ? `I'm planning ${destination} with wayflo.` : ''}`.trim(),
     [destination]
   );
 
@@ -246,7 +264,7 @@ export function ShareModal({
 
       if (navigator.share && canShareFiles) {
         await navigator.share({
-          title: `TravelMate trip: ${destination}`,
+          title: `wayflo trip: ${destination}`,
           text: shareText,
           url: shareUrl,
           files: [file],
@@ -292,20 +310,20 @@ export function ShareModal({
           animate={{ y: 0, scale: 1, opacity: 1 }}
           exit={{ y: 28, scale: 0.97, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-          className="flex w-full max-w-[540px] flex-col border border-[#2e2833] bg-white shadow-[0_40px_120px_rgba(46,40,51,0.32)]"
+          className="flex w-full max-w-[540px] flex-col border border-[#3F3D56] bg-white shadow-[0_40px_120px_rgba(46,40,51,0.32)]"
         >
           {/* ── Header ── */}
-          <div className="flex items-center justify-between gap-4 border-b border-[#2e2833] px-5 py-4">
+          <div className="flex items-center justify-between gap-4 border-b border-[#3F3D56] px-5 py-4">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#a79aaa]">Share trip</div>
-              <h3 className="mt-0.5 text-xl font-black tracking-tight text-[#2e2833]">
+              <div className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#8A869C]">Share trip</div>
+              <h3 className="mt-0.5 text-xl font-black tracking-tight text-[#3F3D56]">
                 {destination ? `Share your ${destination} trip` : 'Invite people to your trip'}
               </h3>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 border border-[#2e2833] bg-white p-2 text-[#2e2833] transition hover:bg-[#f5f0f8]"
+              className="shrink-0 border border-[#3F3D56] bg-white p-2 text-[#3F3D56] transition hover:bg-[#F7F6FF]"
               aria-label="Close share modal"
             >
               <X size={16} />
@@ -314,7 +332,7 @@ export function ShareModal({
 
           <div className="space-y-4 p-5">
             {/* ── Badge preview card ── */}
-            <div ref={badgeRef} className="border border-[#2e2833] overflow-hidden bg-white">
+            <div ref={badgeRef} className="border border-[#3F3D56] overflow-hidden bg-white">
               {/* Hero — globe background */}
               <div className="relative h-48 overflow-hidden bg-[#091a2e] sm:h-52">
                 {/* Globe */}
@@ -332,15 +350,13 @@ export function ShareModal({
                   {/* Brand logo + title top-right */}
                   <div className="flex items-center justify-between">
                     <div />
-                    <div className="brightness-0 invert">
-                      <Brand asLink={false} compact showWordmark={true} className="shrink-0" />
-                    </div>
+                    <BadgeBrand />
                   </div>
 
                   {/* Text */}
                   <div>
                     {destination && (
-                      <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[#f6d23c]">
+                      <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[#FF6584]">
                         {destination}
                       </div>
                     )}
@@ -355,16 +371,16 @@ export function ShareModal({
               </div>
 
               {/* URL bar */}
-              <div className="flex items-center gap-3 border-t border-[#2e2833] bg-[#fafaf8] px-4 py-3">
+              <div className="flex items-center gap-3 border-t border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-[#a79aaa]">Public link</div>
-                  <div className="mt-0.5 truncate text-xs font-semibold text-[#2e2833]">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-[#8A869C]">Public link</div>
+                  <div className="mt-0.5 truncate text-xs font-semibold text-[#3F3D56]">
                     {loading || shareLoading ? (
-                      <span className="text-[#a79aaa]">Generating link…</span>
+                      <span className="text-[#8A869C]">Generating link…</span>
                     ) : shareUrl ? (
                       shareUrl
                     ) : (
-                      <span className="text-[#a79aaa]">Link not available</span>
+                      <span className="text-[#8A869C]">Link not available</span>
                     )}
                   </div>
                 </div>
@@ -378,14 +394,14 @@ export function ShareModal({
 
             {/* ── Error banner ── */}
             {error && (
-              <div className="border border-[#c0475f] bg-[#fff3f7] px-4 py-2.5 text-xs font-medium text-[#c0475f]">
+              <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-2.5 text-xs font-medium text-[#C14D72]">
                 {error}
               </div>
             )}
 
             {/* ── Action buttons ── */}
             {statusMessage && (
-              <div className="border border-[#5aa7e8] bg-[#eef7ff] px-4 py-2.5 text-xs font-medium text-[#2e2833]">
+              <div className="border border-[#6C63FF] bg-[#EEEDFE] px-4 py-2.5 text-xs font-medium text-[#3F3D56]">
                 {statusMessage}
               </div>
             )}
@@ -395,7 +411,7 @@ export function ShareModal({
                 type="button"
                 onClick={copyLink}
                 disabled={!shareUrl}
-                className="flex items-center justify-center gap-2 border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fafaf8] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {copied
                   ? <Check size={15} className="text-[#3fa55d]" />
@@ -407,7 +423,7 @@ export function ShareModal({
                 type="button"
                 onClick={shareBadgeImage}
                 disabled={!shareUrl}
-                className="flex items-center justify-center gap-2 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageSquareShare size={15} />
                 {imageLoading ? 'Preparing image...' : 'Share badge'}
@@ -417,7 +433,7 @@ export function ShareModal({
                 type="button"
                 onClick={shareWhatsApp}
                 disabled={!shareUrl}
-                className="col-span-2 flex items-center justify-center gap-2 border border-[#2e2833] bg-[#f6d23c] px-4 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#f4c927] disabled:cursor-not-allowed disabled:opacity-50"
+                className="col-span-2 flex items-center justify-center gap-2 border border-[#3F3D56] bg-[#FF6584] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#FF7B97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ExternalLink size={15} />
                 Share to WhatsApp

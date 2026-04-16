@@ -112,35 +112,33 @@ export function PublicTripShare({
   };
 
   return (
-    <main className="min-h-screen bg-[#fbfaf7] text-[#2e2833]">
+    <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
-        <section className="border border-[#2e2833] bg-white p-5 sm:p-7">
+        <section className="border border-[#3F3D56] bg-white p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
             <Brand href="/" compact />
-            <div className="inline-flex border border-[#2e2833] bg-[#5aa7e8] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
+            <div className="inline-flex border border-[#3F3D56] bg-[#6C63FF] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">
               Trip share
             </div>
           </div>
-          <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">
-            Hey Check out my trip and submit your suggestions on TravelMate
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#756978] sm:text-base">{shareBadge}</p>
+          <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Check out my trip on wayflo</h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base">{shareBadge}</p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="border border-[#2e2833] bg-[#fffdf9] px-4 py-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#a79aaa]">Destination</div>
+            <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Destination</div>
               <div className="mt-2 text-lg font-black">{trip.destination}</div>
             </div>
-            <div className="border border-[#2e2833] bg-[#fffdf9] px-4 py-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#a79aaa]">Duration</div>
+            <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Duration</div>
               <div className="mt-2 text-lg font-black">{trip.duration} days</div>
             </div>
-            <div className="border border-[#2e2833] bg-[#fffdf9] px-4 py-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#a79aaa]">Budget</div>
+            <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Budget</div>
               <div className="mt-2 text-lg font-black">{trip.budget || 'Not set'}</div>
             </div>
-            <div className="border border-[#2e2833] bg-[#fffdf9] px-4 py-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#a79aaa]">Suggestions</div>
+            <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Suggestions</div>
               <div className="mt-2 text-lg font-black">{suggestionsCount} open</div>
             </div>
           </div>
@@ -149,25 +147,25 @@ export function PublicTripShare({
             <button
               type="button"
               onClick={handleCopyShareLink}
-              className="border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23]"
+              className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43]"
             >
               {copyStatus === 'copied' ? 'Copied link' : 'Copy share link'}
             </button>
             <button
               type="button"
               onClick={handleNativeShare}
-              className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fff8e6]"
+              className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FFEAF0]"
             >
               Share on device
             </button>
           </div>
 
           {topHighlights.length > 0 && (
-            <div className="mt-6 border border-[#eadde5] bg-[#fffdf9] p-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Trip highlights</div>
+            <div className="mt-6 border border-[#DDDCE8] bg-[#FBFAFF] p-4">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Trip highlights</div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {topHighlights.map((item: string) => (
-                  <span key={item} className="border border-[#2e2833] bg-white px-3 py-2 text-sm font-medium">
+                  <span key={item} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-medium">
                     {item}
                   </span>
                 ))}
@@ -177,34 +175,34 @@ export function PublicTripShare({
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="border border-[#2e2833] bg-white p-5 sm:p-6">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Send a suggestion</div>
+          <div className="border border-[#3F3D56] bg-white p-5 sm:p-6">
+            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Send a suggestion</div>
             <h2 className="mt-1 text-2xl font-black tracking-tight">Help improve this trip</h2>
-            <p className="mt-2 text-sm leading-6 text-[#756978]">
+            <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
               Leave a practical idea, a better restaurant, a smarter route, or a place to skip.
             </p>
 
             {submitted && (
-              <div className="mt-5 border border-[#5aa7e8] bg-[#eef7ff] px-4 py-3 text-sm font-medium text-[#2e2833]">
+              <div className="mt-5 border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
                 Thanks, your suggestion was sent to the trip owner.
               </div>
             )}
 
             <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                   Your name
                 </label>
                 <input
                   value={guestName}
                   onChange={event => setGuestName(event.target.value)}
                   placeholder="Optional"
-                  className="w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                   Your email
                 </label>
                 <input
@@ -212,12 +210,12 @@ export function PublicTripShare({
                   onChange={event => setGuestEmail(event.target.value)}
                   placeholder="Optional"
                   type="email"
-                  className="w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                   Your suggestion
                 </label>
                 <textarea
@@ -226,12 +224,12 @@ export function PublicTripShare({
                   required
                   rows={5}
                   placeholder="Tell the traveler what you would change or add..."
-                  className="w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa]"
+                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
                 />
               </div>
 
               {error && (
-                <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+                <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
                   {error}
                 </div>
               )}
@@ -239,34 +237,34 @@ export function PublicTripShare({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full border border-[#2e2833] bg-[#2e2833] px-4 py-3 font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? 'Submitting...' : 'Submit suggestion'}
               </button>
             </form>
           </div>
 
-          <div className="border border-[#2e2833] bg-[#fffdf9] p-5 sm:p-6">
+          <div className="border border-[#3F3D56] bg-[#FBFAFF] p-5 sm:p-6">
             <Brand asLink={false} compact className="mb-4" />
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Why this exists</div>
-            <h2 className="mt-1 text-2xl font-black tracking-tight">TravelMate feedback loop</h2>
+            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Why this exists</div>
+            <h2 className="mt-1 text-2xl font-black tracking-tight">Why this share works</h2>
             <div className="mt-4 space-y-3">
               {[
                 'Guests can react with real-world suggestions.',
                 'Owners can read responses back on the trip page.',
                 'The share badge is ready for social posts.',
               ].map(item => (
-                <div key={item} className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-medium text-[#2e2833]">
+                <div key={item} className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-medium text-[#3F3D56]">
                   {item}
                 </div>
               ))}
             </div>
 
-            <div className="mt-5 border border-[#2e2833] bg-white px-4 py-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#a79aaa]">Share title</div>
-              <p className="mt-2 text-sm font-medium text-[#2e2833]">{shareTitle}</p>
-              <div className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#a79aaa]">Share description</div>
-              <p className="mt-2 text-sm leading-6 text-[#756978]">{shareDescription}</p>
+            <div className="mt-5 border border-[#3F3D56] bg-white px-4 py-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Share title</div>
+              <p className="mt-2 text-sm font-medium text-[#3F3D56]">{shareTitle}</p>
+              <div className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Share description</div>
+              <p className="mt-2 text-sm leading-6 text-[#6F6C82]">{shareDescription}</p>
             </div>
           </div>
         </section>

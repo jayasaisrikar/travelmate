@@ -1,4 +1,4 @@
-const DEFAULT_ADMIN_EMAIL = 'admin@travelmate.com';
+const DEFAULT_ADMIN_EMAIL = 'admin@wayflo.app';
 
 function normalizeEmail(value: string | null | undefined) {
   return (value ?? '').trim().toLowerCase();

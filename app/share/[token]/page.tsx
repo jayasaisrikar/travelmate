@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 
   if (!data) {
     return {
-      title: 'Shared trip not found | TravelMate',
+      title: 'Shared trip not found | wayflo',
       description: 'This shared trip link is unavailable or has been removed.',
     };
   }
@@ -106,7 +106,7 @@ export default async function PublicSharePage({
     <PublicTripShare
       shareToken={data.share.token}
       shareUrl={shareUrl}
-      shareBadge="Hey Check out my trip and submit your suggestions on TravelMate."
+      shareBadge="Check out my trip on wayflo and send your suggestions."
       shareTitle={data.preview.title}
       shareDescription={data.preview.description}
       suggestionsCount={data.suggestionsCount}

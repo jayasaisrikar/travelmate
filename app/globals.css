@@ -4,33 +4,25 @@
 
 @layer base {
   :root {
-    --background: 36 100% 98%;
-    --foreground: 276 18% 18%;
+    --background: 0 0% 95%;
+    --foreground: 245 17% 29%;
 
     --card: 0 0% 100%;
-    --card-foreground: 276 18% 18%;
+    --card-foreground: 245 17% 29%;
 
-    --primary: 206 74% 60%;
+    --primary: 244 100% 69%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 48 94% 58%;
+    --secondary: 245 18% 29%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 338 44% 94%;
-    --muted-foreground: 276 10% 42%;
+    --muted: 248 100% 96%;
+    --muted-foreground: 246 11% 47%;
 
-    --border: 330 26% 86%;
-    --input: 330 26% 86%;
+    --border: 240 12% 86%;
+    --input: 240 12% 86%;
 
-    --radius: 0rem;
-  }
-}
-
-@layer base {
-  *,
-  *::before,
-  *::after {
-    border-radius: 0 !important;
+    --radius: 0.875rem;
   }
 
   * {
@@ -38,14 +30,32 @@
   }
 
   html {
-    background: #fbfaf7;
+    background:
+      radial-gradient(circle at top, rgba(108, 99, 255, 0.08), transparent 30%),
+      linear-gradient(180deg, #fbfaff 0%, #f2f2f2 100%);
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     min-height: 100vh;
-    background: #fbfaf7;
+    background:
+      radial-gradient(circle at top left, rgba(108, 99, 255, 0.1), transparent 28%),
+      radial-gradient(circle at top right, rgba(255, 101, 132, 0.08), transparent 22%),
+      #f2f2f2;
     color: hsl(var(--foreground));
+  }
+
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
   }
 
   .leaflet-container {
@@ -53,7 +63,7 @@
   }
 
   ::selection {
-    background: rgba(84, 166, 232, 0.2);
+    background: rgba(108, 99, 255, 0.18);
     color: hsl(var(--foreground));
   }
 }

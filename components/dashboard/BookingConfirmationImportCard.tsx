@@ -19,9 +19,9 @@ function countLabel(count: number, singular: string, plural = `${singular}s`) {
 
 function PreviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-[#2e2833] bg-[#fffdf9] px-4 py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">{label}</div>
-      <div className="mt-1 text-sm font-medium leading-6 text-[#2e2833]">{value}</div>
+    <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{label}</div>
+      <div className="mt-1 text-sm font-medium leading-6 text-[#3F3D56]">{value}</div>
     </div>
   );
 }
@@ -77,8 +77,8 @@ function ConfirmationPreview({ confirmation }: { confirmation: BookingConfirmati
       />
 
       {firstFlight && (
-        <div className="sm:col-span-2 border border-[#2e2833] bg-[#eef7ff] px-4 py-3 text-sm leading-6 text-[#2e2833]">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5aa7e8]">Flight</div>
+        <div className="sm:col-span-2 border border-[#3F3D56] bg-[#EEEDFE] px-4 py-3 text-sm leading-6 text-[#3F3D56]">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6C63FF]">Flight</div>
           {listSummary(
             [
               firstFlight.airline,
@@ -94,8 +94,8 @@ function ConfirmationPreview({ confirmation }: { confirmation: BookingConfirmati
       )}
 
       {firstReservation && (
-        <div className="sm:col-span-2 border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-sm leading-6 text-[#2e2833]">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#a79aaa]">Reservation</div>
+        <div className="sm:col-span-2 border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-sm leading-6 text-[#3F3D56]">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Reservation</div>
           {listSummary(
             [
               firstReservation.kind,
@@ -108,7 +108,7 @@ function ConfirmationPreview({ confirmation }: { confirmation: BookingConfirmati
         </div>
       )}
 
-      <div className="sm:col-span-2 border border-dashed border-[#eadde5] bg-[#fffdf9] px-4 py-3 text-sm leading-6 text-[#756978]">
+      <div className="sm:col-span-2 border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm leading-6 text-[#6F6C82]">
         {confirmation.summary}
       </div>
     </div>
@@ -190,21 +190,21 @@ export function BookingConfirmationImportCard() {
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border border-[#2e2833] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6"
+      className="border border-[#3F3D56] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6"
     >
-      <div className="flex flex-col gap-3 border-b border-[#2e2833] pb-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[#3F3D56] pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 border border-[#2e2833] bg-[#f6d23c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#2e2833]">
+          <div className="inline-flex items-center gap-2 border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#3F3D56]">
             <Sparkles size={14} />
             Booking import
           </div>
           <h2 className="mt-3 text-2xl font-black tracking-tight">Create a trip from a confirmation email</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756978]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6F6C82]">
             Paste a booking confirmation and we’ll extract the destination, dates, stay, flight, and transfer details before creating the trip.
           </p>
         </div>
 
-        <div className="text-sm font-medium text-[#756978]">
+        <div className="text-sm font-medium text-[#6F6C82]">
           {parsedConfirmation ? 'Parsed and ready' : 'Paste email text to begin'}
         </div>
       </div>
@@ -213,32 +213,32 @@ export function BookingConfirmationImportCard() {
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                 Subject
               </label>
               <input
                 value={subject}
                 onChange={event => setSubject(event.target.value)}
                 placeholder="Your booking confirmation"
-                className="w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa] focus:bg-white"
+                className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
                 From
               </label>
               <input
                 value={from}
                 onChange={event => setFrom(event.target.value)}
                 placeholder="noreply@airline.com"
-                className="w-full border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base text-[#2e2833] outline-none placeholder:text-[#a79aaa] focus:bg-white"
+                className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#756978]">
+            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
               Email body
             </label>
             <textarea
@@ -246,7 +246,7 @@ export function BookingConfirmationImportCard() {
               onChange={event => setText(event.target.value)}
               rows={12}
               placeholder="Paste the full confirmation email here"
-              className="w-full resize-y border border-[#2e2833] bg-[#fffdf9] px-4 py-3 text-base leading-7 text-[#2e2833] outline-none placeholder:text-[#a79aaa] focus:bg-white"
+              className="w-full resize-y border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base leading-7 text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
             />
           </div>
 
@@ -254,7 +254,7 @@ export function BookingConfirmationImportCard() {
             <button
               type="submit"
               disabled={loading || !canParse}
-              className="inline-flex items-center justify-center gap-2 border border-[#2e2833] bg-[#2e2833] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1f1b23] disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex items-center justify-center gap-2 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
               Parse confirmation
@@ -264,38 +264,38 @@ export function BookingConfirmationImportCard() {
               type="button"
               onClick={handleImport}
               disabled={loading || !parsedConfirmation}
-              className="border border-[#2e2833] bg-white px-4 py-3 text-sm font-semibold text-[#2e2833] transition hover:bg-[#fffdf9] disabled:cursor-not-allowed disabled:opacity-50"
+              className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Create trip from parsed data
             </button>
           </div>
 
           {status && (
-            <div className="border border-[#5aa7e8] bg-[#eef7ff] px-4 py-3 text-sm font-medium text-[#2e2833]">
+            <div className="border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
               {status}
             </div>
           )}
 
           {parseError && (
-            <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+            <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
               {parseError}
             </div>
           )}
 
           {importError && (
-            <div className="border border-[#a65372] bg-[#fff3f7] px-4 py-3 text-sm font-medium text-[#a65372]">
+            <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
               {importError}
             </div>
           )}
         </div>
 
-        <div className="border border-[#eadde5] bg-[#fffdf9] p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#a79aaa]">Preview</div>
+        <div className="border border-[#DDDCE8] bg-[#FBFAFF] p-4">
+          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Preview</div>
           <div className="mt-3">
             {parsedConfirmation ? (
               <ConfirmationPreview confirmation={parsedConfirmation} />
             ) : (
-              <div className="rounded-[22px] border border-dashed border-[#eadde5] bg-white px-4 py-6 text-sm leading-6 text-[#756978]">
+              <div className="rounded-[22px] border border-dashed border-[#DDDCE8] bg-white px-4 py-6 text-sm leading-6 text-[#6F6C82]">
                 Your extracted destination, dates, stay, and reservation details will appear here after parsing.
               </div>
             )}
