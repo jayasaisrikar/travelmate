@@ -11,6 +11,8 @@ import type { TravelerPreferences } from '@/lib/travel-types';
 const STEPS = ['Destination', 'Trip window', 'Preferences', 'Review'];
 const ARRIVAL_METHODS = ['flight', 'train', 'drive'] as const;
 const ACTIVITY_LEVELS = ['Relaxed', 'Balanced', 'Packed'] as const;
+const BUDGET_PRESETS = ['500', '1000', '1500', '2500'];
+const INTEREST_SUGGESTIONS = ['food', 'museums', 'nature', 'nightlife', 'shopping', 'coffee'];
 const GENERATION_PHASES = [
   'Resolving your destination',
   'Fetching live places and weather',
@@ -196,8 +198,6 @@ export default function OnboardingPage() {
           form.departureDate &&
           form.arrivalTime &&
           form.departureTime &&
-          form.arrivalTransferContext.trim() &&
-          form.departureTransferContext.trim() &&
           form.departureDate >= form.arrivalDate &&
           form.arrivalMethod &&
           (!sameDayTrip || departureMinutes > arrivalMinutes)
@@ -241,6 +241,27 @@ export default function OnboardingPage() {
       .map(interest => interest.trim())
       .filter(Boolean);
   }, [form.interestsText]);
+
+  const stepProgress = ((step + 1) / STEPS.length) * 100;
+
+  const appendInterest = (interest: string) => {
+    setError('');
+    setForm(previous => {
+      const interests = previous.interestsText
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      if (interests.some(item => item.toLowerCase() === interest.toLowerCase())) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        interestsText: [...interests, interest].join(', '),
+      };
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -528,6 +549,26 @@ export default function OnboardingPage() {
       </div>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 104px' }}>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', color: '#8A869C' }}>
+              Step {step + 1} of {STEPS.length}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#6C63FF' }}>{Math.round(stepProgress)}%</div>
+          </div>
+          <div style={{ marginTop: 10, height: 8, borderRadius: 999, background: '#DDDCE8', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${stepProgress}%`,
+                height: '100%',
+                borderRadius: 999,
+                background: 'linear-gradient(90deg, #6C63FF 0%, #FF6584 100%)',
+                transition: 'width .25s ease',
+              }}
+            />
+          </div>
+        </div>
+
         <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
           {STEPS.map((label, index) => (
             <div key={label} style={{ flex: '1 1 140px', minWidth: 120 }}>
@@ -558,14 +599,14 @@ export default function OnboardingPage() {
             isEditMode
               ? [
                   'Update the destination from live search results so we can regenerate the trip with verified place data.',
-                  'Update when you arrive, where the first ride should drop you, and where the last ride should take you.',
+                  'Set your trip window and optional transfer notes so the route starts and ends cleanly.',
                   'Change your interests, budget, and pace. Anything you edit here will be used for the regenerated trip.',
                   'Confirm the updated trip details before we call the regeneration API.',
                 ]
               : [
                   'Select a real destination from live search results so we can generate your trip with verified place data.',
-                  'Tell us when you arrive, where the first ride should drop you, and where the last ride should take you.',
-                  'Choose your interests, budget, and pace with no preset selections.',
+                  'Tell us your trip window and any optional transfer notes that help the route feel right.',
+                  'Choose your interests, budget, and pace with quick presets or your own words.',
                   'Confirm the trip details pulled from your choices before we call the itinerary API.',
                 ]
           )[step]}
@@ -688,30 +729,31 @@ export default function OnboardingPage() {
 
             <div style={{ padding: '14px 16px', border: '1px solid #DDDCE8', background: '#FBFAFF' }}>
               <p style={{ margin: 0, color: '#6F6C82', fontSize: 14, lineHeight: 1.6 }}>
-                We use your arrival and departure times as hard boundaries. The planner should not assume the day starts at 9:00.
+                We use your arrival and departure times as hard boundaries, but the transfer notes are optional. The planner should not assume the day starts at 9:00.
               </p>
             </div>
 
-            <div style={{ border: '1px solid #DDDCE8', background: '#ffffff', padding: 18 }}>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: '#6C63FF', flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8A869C' }}>
-                    Trip Assistant
+              <div style={{ border: '1px solid #DDDCE8', background: '#ffffff', padding: 18 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 12, background: '#6C63FF', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8A869C' }}>
+                      Trip Assistant
+                    </div>
+                    <p style={{ margin: '6px 0 0', color: '#3F3D56', fontSize: 15, lineHeight: 1.6 }}>
+                    Tell us the basics first. Transfer notes help, but they are optional and can be rough.
+                    </p>
+                    <p style={{ margin: '10px 0 0', color: '#6F6C82', fontSize: 13, lineHeight: 1.6 }}>
+                    Your stay is chosen automatically from live lodging options, so these fields only refine the arrival and departure legs.
+                    </p>
                   </div>
-                  <p style={{ margin: '6px 0 0', color: '#3F3D56', fontSize: 15, lineHeight: 1.6 }}>
-                    Where should the first ride drop you off after you arrive, and where should the last ride take you when you leave?
-                  </p>
-                  <p style={{ margin: '10px 0 0', color: '#6F6C82', fontSize: 13, lineHeight: 1.6 }}>
-                    Your stay is chosen automatically from live lodging options. These fields are only for the transfer legs.
-                  </p>
                 </div>
-              </div>
 
               <div style={{ display: 'grid', gap: 14, marginTop: 16 }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                     Arrival drop-off
+                    <span style={{ marginLeft: 6, color: '#8A869C' }}>(optional)</span>
                   </label>
                   <textarea
                     value={form.arrivalTransferContext}
@@ -727,6 +769,7 @@ export default function OnboardingPage() {
                 <div>
                   <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                     Departure pick-up
+                    <span style={{ marginLeft: 6, color: '#8A869C' }}>(optional)</span>
                   </label>
                   <textarea
                     value={form.departureTransferContext}
@@ -761,9 +804,19 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div>
-              <label style={{ display: 'block', marginBottom: 16, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+              <label
+                style={{
+                  display: 'block',
+                  marginBottom: 12,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#6F6C82',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1.1,
+                }}
+              >
                 Interests
               </label>
               <input
@@ -771,16 +824,57 @@ export default function OnboardingPage() {
                 value={form.interestsText}
                 onChange={event => setForm(previous => ({ ...previous, interestsText: event.target.value }))}
                 placeholder="Enter interests separated by commas"
-                style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 16, color: '#3F3D56', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  background: '#ffffff',
+                  border: '1px solid #DDDCE8',
+                  borderRadius: 16,
+                  color: '#3F3D56',
+                  fontSize: 16,
+                  boxSizing: 'border-box',
+                  boxShadow: '0 10px 28px rgba(67,32,79,0.06)',
+                }}
               />
               <p style={{ marginTop: 8, fontSize: 13, color: '#8A869C' }}>
-                Example format: food, museums, beaches, hiking
+                You can type your own interests or tap a suggestion to add it quickly.
               </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                {INTEREST_SUGGESTIONS.map(interest => (
+                  <button
+                    key={interest}
+                    type="button"
+                    onClick={() => appendInterest(interest)}
+                    style={{
+                      border: '1px solid #DDDCE8',
+                      background: '#FBFAFF',
+                      color: '#3F3D56',
+                      borderRadius: 999,
+                      padding: '8px 12px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + {interest}
+                  </button>
+                ))}
+              </div>
             </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#6F6C82',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1.1,
+                  }}
+                >
                   Budget
                 </label>
                 <input
@@ -789,22 +883,81 @@ export default function OnboardingPage() {
                   value={form.budget}
                   onChange={event => setForm(previous => ({ ...previous, budget: event.target.value }))}
                   placeholder="Enter your total trip budget"
-                  style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 16, color: '#3F3D56', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    background: '#ffffff',
+                    border: '1px solid #DDDCE8',
+                    borderRadius: 16,
+                    color: '#3F3D56',
+                    fontSize: 16,
+                    boxSizing: 'border-box',
+                    boxShadow: '0 10px 28px rgba(67,32,79,0.06)',
+                  }}
                 />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                  {BUDGET_PRESETS.map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setForm(previous => ({ ...previous, budget: preset }))}
+                      style={{
+                        border: `1px solid ${form.budget === preset ? '#6C63FF' : '#DDDCE8'}`,
+                        background: form.budget === preset ? '#EEEDFE' : '#FFFFFF',
+                        color: '#3F3D56',
+                        borderRadius: 999,
+                        padding: '8px 12px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ${preset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#6F6C82',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1.1,
+                  }}
+                >
                   Intensity
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8 }}>
+                <div style={{ display: 'grid', gap: 10 }}>
                   {ACTIVITY_LEVELS.map(level => (
                     <button
                       key={level}
+                      type="button"
                       onClick={() => setForm(previous => ({ ...previous, activityIntensity: level }))}
-                      style={{ padding: '12px 4px', borderRadius: 14, border: `2px solid ${form.activityIntensity === level ? '#FF6584' : '#DDDCE8'}`, background: form.activityIntensity === level ? '#FF6584' : '#ffffff', color: form.activityIntensity === level ? '#fff' : '#6F6C82', cursor: 'pointer', fontWeight: 800, fontSize: 12, boxShadow: '0 10px 26px rgba(67,32,79,0.06)' }}
+                      style={{
+                        padding: '14px 14px',
+                        borderRadius: 16,
+                        border: `2px solid ${form.activityIntensity === level ? '#FF6584' : '#DDDCE8'}`,
+                        background: form.activityIntensity === level ? '#FF6584' : '#ffffff',
+                        color: form.activityIntensity === level ? '#fff' : '#6F6C82',
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        textAlign: 'left',
+                        boxShadow: '0 10px 26px rgba(67,32,79,0.06)',
+                      }}
                     >
-                      {level}
+                      <div style={{ fontSize: 14 }}>{level}</div>
+                      <div style={{ marginTop: 4, fontSize: 12, fontWeight: 500, opacity: 0.85 }}>
+                        {level === 'Relaxed'
+                          ? 'More buffer and fewer stops'
+                          : level === 'Balanced'
+                            ? 'A steady pace with room to breathe'
+                            : 'More stops and less downtime'}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -831,6 +984,9 @@ export default function OnboardingPage() {
                 <span style={{ color: '#3F3D56', fontWeight: 700, fontSize: 14, textAlign: 'right', maxWidth: '100%' }}>{value || 'Not set'}</span>
               </div>
             ))}
+            <div style={{ padding: '16px 18px', borderRadius: 18, border: '1px solid #DDDCE8', background: '#FBFAFF', color: '#6F6C82', lineHeight: 1.6, fontSize: 14 }}>
+              This is the last check. After you generate, you can still refine the trip in the saved itinerary view.
+            </div>
           </div>
         )}
 

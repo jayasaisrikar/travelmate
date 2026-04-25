@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 
 import { supabase } from '@/services/supabase';
+import { lookupDestinationPhotoUrl } from '@/services/place-photo';
 import type {
   GeneratedItinerary,
   TripShareRecord,
@@ -15,6 +16,7 @@ export interface TripRow {
   budget: string;
   interests: string[];
   itinerary: GeneratedItinerary;
+  cover_image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,13 +25,14 @@ export function createShareToken() {
   return randomBytes(24).toString('base64url');
 }
 
-export function buildSharePreview(trip: Pick<TripRow, 'destination' | 'duration'>) {
+export async function buildSharePreview(trip: Pick<TripRow, 'destination' | 'duration' | 'cover_image_url'>) {
   const destination = trip.destination.trim();
+  const imageUrl = trip.cover_image_url ?? (await lookupDestinationPhotoUrl(destination));
 
   return {
     title: `${destination} trip on wayflo`,
     description: `Check out my ${trip.duration}-day trip to ${destination} and leave suggestions on wayflo.`,
-    imageUrl: null as string | null,
+    imageUrl,
   };
 }
 
@@ -68,7 +71,7 @@ export async function getTripShareByToken(token: string) {
 }
 
 export async function createOrRefreshTripShare(trip: TripRow, ownerUserId: string) {
-  const preview = buildSharePreview(trip);
+  const preview = await buildSharePreview(trip);
   const token = createShareToken();
   const now = new Date().toISOString();
 

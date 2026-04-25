@@ -48,7 +48,7 @@ async function loadSharePage(token: string) {
         title: share.share_title,
         description: share.share_description,
       }
-    : buildSharePreview(trip as TripRow);
+    : await buildSharePreview(trip as TripRow);
 
   return {
     share,

@@ -19,6 +19,7 @@ export interface Trip {
   budget: string
   interests: string[]
   itinerary: any
+  cover_image_url?: string | null
   created_at: string
   updated_at: string
 }
@@ -48,6 +49,7 @@ async function fetchTripApi<T>(path: string, init?: RequestInit): Promise<T> {
   const accessToken = sessionData.session?.access_token
 
   const response = await fetch(path, {
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

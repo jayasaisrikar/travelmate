@@ -4,6 +4,9 @@ import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { isAdminEmail } from '@/services/admin-access';
 import { loadAdminDashboardOverview } from '@/services/admin-dashboard';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function unauthorizedResponse(message = 'Unauthorized') {
   return NextResponse.json({ error: message }, { status: 401 });
 }

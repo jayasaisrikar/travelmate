@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, RefreshCcw, Save, Sparkles } from 'lucide-react';
 import { regenerateTripItinerarySection, updateTripItinerary, type Trip } from '@/lib/supabase-trips';
 import type { ItineraryDayPlan } from '@/lib/travel-types';
+import { ActivityCard } from '@/components/trip/ActivityCard';
+import { StatusCard } from '@/components/common/StatusCard';
 
 type FlatActivity = {
   dayIndex: number;
@@ -227,12 +229,13 @@ export function TimelineView({
 
   if (dailyPlans.length === 0) {
     return (
-      <section className="mt-8 rounded-[30px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-        <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Itinerary</div>
-        <h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">Day-by-day timeline</h2>
-        <div className="mt-4 rounded-[24px] border border-dashed border-[#DDDCE8] bg-[#FBFAFF] p-5 text-sm leading-6 text-[#6F6C82]">
-          This trip was saved without daily plans. Regenerate the itinerary once the API returns structured activities.
-        </div>
+      <section className="mt-8">
+        <StatusCard
+          eyebrow="Itinerary"
+          title="Day-by-day timeline"
+          description="This trip was saved without daily plans. Open the assistant or regenerate the itinerary so we can rebuild the route with structured activities."
+          tone="primary"
+        />
       </section>
     );
   }
@@ -388,77 +391,30 @@ export function TimelineView({
                     const cost = activity.cost ?? activity.estimated_cost;
 
                     return (
-                      <div
+                      <ActivityCard
                         key={`${dayIndex}-${activityIndex}-${activity.name}`}
-                        className={`border p-4 transition ${
-                          isSelected ? 'border-[#6C63FF] bg-[#EEEDFE]' : 'border-[#DDDCE8] bg-[#FBFAFF]'
-                        }`}
-                      >
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                          <button
-                            type="button"
-                            onClick={() => onSelectActivity(isSelected ? null : flatIndex)}
-                            className="min-w-0 flex-1 text-left"
-                          >
-                            <div className="text-base font-bold text-[#3F3D56]">
-                              {[activity.time, activity.name].filter(Boolean).join(' · ')}
-                            </div>
-                            {activity.category && (
-                              <div className="mt-2 inline-flex bg-[#EEEDFE] px-3 py-1 text-xs font-semibold text-[#6C63FF]">
-                                {activity.category}
-                              </div>
-                            )}
-                            {activity.description && (
-                              <p className="mt-3 text-sm leading-6 text-[#6F6C82]">{activity.description}</p>
-                            )}
-                            {(activity.address || activity.latitude || activity.longitude) && (
-                              <div className="mt-3 border border-[#DDDCE8] bg-white px-3 py-2 text-xs leading-6 text-[#6F6C82]">
-                                {activity.address || 'Address unavailable'}
-                                {activity.latitude && activity.longitude && (
-                                  <span className="ml-2 font-semibold text-[#3F3D56]">
-                                    ({activity.latitude.toFixed(4)}, {activity.longitude.toFixed(4)})
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </button>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            {cost !== undefined && cost !== null && (
-                              <div className="bg-[#FFEAF0] px-3 py-1 text-sm font-bold text-[#FF6584]">
-                                ${cost}
-                              </div>
-                            )}
-                            <button
-                              type="button"
-                              disabled={saving || regenerationLoading}
-                              onClick={() => openClusterRegeneration(dayIndex, activityIndex)}
-                              className="inline-flex items-center gap-1 border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <Sparkles size={14} />
-                              Regenerate cluster
-                            </button>
-                            <button
-                              type="button"
-                              disabled={saving || regenerationLoading || activityIndex === 0}
-                              onClick={() => void moveActivity(dayIndex, activityIndex, -1)}
-                              className="inline-flex items-center gap-1 border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <ChevronUp size={14} />
-                              Up
-                            </button>
-                            <button
-                              type="button"
-                              disabled={saving || regenerationLoading || activityIndex === activities.length - 1}
-                              onClick={() => void moveActivity(dayIndex, activityIndex, 1)}
-                              className="inline-flex items-center gap-1 border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <ChevronDown size={14} />
-                              Down
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                        dayLabel={`Day ${currentDayNumber}`}
+                        time={activity.time}
+                        name={activity.name}
+                        category={activity.category}
+                        description={activity.description}
+                        address={activity.address}
+                        cost={cost}
+                        latitude={activity.latitude}
+                        longitude={activity.longitude}
+                        selected={isSelected}
+                        onSelect={() => onSelectActivity(isSelected ? null : flatIndex)}
+                        onRegenerate={() => openClusterRegeneration(dayIndex, activityIndex)}
+                        onMoveUp={
+                          activityIndex === 0 ? undefined : () => void moveActivity(dayIndex, activityIndex, -1)
+                        }
+                        onMoveDown={
+                          activityIndex === activities.length - 1
+                            ? undefined
+                            : () => void moveActivity(dayIndex, activityIndex, 1)
+                        }
+                        disableActions={saving || regenerationLoading}
+                      />
                     );
                   })
                 ) : (

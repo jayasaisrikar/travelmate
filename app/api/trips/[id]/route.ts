@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { isAdminEmail } from '@/services/admin-access';
+import { lookupDestinationPhotoUrl } from '@/services/place-photo';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { buildPublicShareUrl, buildSharePreview, getTripShareByTripId, type TripRow } from '@/services/trip-sharing';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function formatTripError(error: { message?: string; code?: string } | null | undefined) {
   if (!error) {
@@ -12,6 +16,10 @@ function formatTripError(error: { message?: string; code?: string } | null | und
 
   if (error.code === 'PGRST205') {
     return 'The trips table is missing in Supabase. Apply supabase/migrations/20260411_create_trips.sql first.';
+  }
+
+  if (error.code === '42703' || error.message?.includes('cover_image_url')) {
+    return 'The trips table is missing cover_image_url. Apply supabase/migrations/20260416_add_trip_cover_image_url.sql first.';
   }
 
   return error.message || 'Failed to load trip';
@@ -78,9 +86,15 @@ export async function GET(
     }
 
     const baseUrl = new URL(request.url).origin;
+    const tripWithCover = data
+      ? {
+          ...data,
+          cover_image_url: data.cover_image_url ?? (await lookupDestinationPhotoUrl(data.destination)),
+        }
+      : null;
 
     return NextResponse.json({
-      trip: data ?? null,
+      trip: tripWithCover,
       share: shareData
         ? {
             ...shareData,
@@ -122,6 +136,7 @@ export async function PATCH(
 
     if (destination) {
       updates.destination = destination;
+      updates.cover_image_url = await lookupDestinationPhotoUrl(destination);
     }
 
     if (Number.isInteger(duration) && duration > 0) {
@@ -168,7 +183,7 @@ export async function PATCH(
       return NextResponse.json({ error: error?.message || 'Failed to update trip' }, { status: 500 });
     }
 
-    const preview = buildSharePreview(data as TripRow);
+    const preview = await buildSharePreview(data as TripRow);
     const shareUpdateQuery = supabase
       .from('trip_shares')
       .update({
