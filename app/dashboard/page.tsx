@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 import { Brand } from '@/components/common/Brand';
-import { listTrips, type Trip } from '@/lib/supabase-trips';
+import { deleteTrip, listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 
 interface AdminShare {
@@ -255,6 +255,27 @@ export default function DashboardPage() {
       setError(err instanceof Error ? err.message : 'Failed to load your trips');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteUserTrip = async (id: string, destination: string) => {
+    const confirmed = window.confirm(
+      `Delete "${destination}"? This removes the trip from your dashboard permanently.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setActionId(`user-trip-${id}`);
+      setError('');
+      await deleteTrip(id);
+      setUserTrips(previous => previous.filter(trip => trip.id !== id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete trip');
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -629,6 +650,13 @@ export default function DashboardPage() {
                           className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
                         >
                           Create new
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUserTrip(trip.id, trip.destination)}
+                          disabled={actionId === `user-trip-${trip.id}`}
+                          className="rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
+                        >
+                          {actionId === `user-trip-${trip.id}` ? 'Deleting...' : 'Delete trip'}
                         </button>
                       </div>
                     </div>

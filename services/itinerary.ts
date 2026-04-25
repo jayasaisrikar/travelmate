@@ -266,6 +266,32 @@ function normalizeSearchText(value: string): string {
 
 type PoiCategory = 'food' | 'culture' | 'park' | 'shopping' | 'stay' | 'other';
 
+type PaceIntensity = 'Relaxed' | 'Balanced' | 'Packed';
+
+interface PaceProfile {
+  intensity: PaceIntensity;
+  activityCount: number;
+  maxFoodPerDay: number;
+  preferredCategories: Exclude<PoiCategory, 'stay'>[];
+  restSlots: number;
+}
+
+const GENERIC_ACTIVITY_NAMES: Record<Exclude<PoiCategory, 'stay'>, string[]> = {
+  food: ['Lunch at a local spot', 'Easy meal break', 'Relaxed lunch stop'],
+  culture: ['Museum stop', 'Gallery visit', 'Historic district walk'],
+  park: ['Park break', 'Waterfront walk', 'Garden pause'],
+  shopping: ['Market browse', 'Street stroll', 'Local shop wander'],
+  other: ['Slow neighborhood walk', 'Easy afternoon pause', 'Sunset stroll'],
+};
+
+const GENERIC_ACTIVITY_DESCRIPTIONS: Record<Exclude<PoiCategory, 'stay'>, string[]> = {
+  food: ['Keep the meal simple and unhurried.', 'Pause for a low-key local meal.', 'Take a gentle break for lunch.'],
+  culture: ['Spend a calm stretch exploring a cultural stop.', 'Take your time at a local landmark.', 'Enjoy one anchored stop without rushing.'],
+  park: ['Keep the pace light with a scenic outdoor break.', 'Take an easy walk and reset.', 'Leave room to linger and breathe.'],
+  shopping: ['Browse without making it the whole day.', 'Keep this as a short and casual stop.', 'Move through the area at an easy pace.'],
+  other: ['Leave space for wandering and downtime.', 'Keep the day light and flexible.', 'Use this as a slow reset between anchors.'],
+};
+
 function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
   const normalizedType = normalizeSearchText(poi.type);
   const normalizedName = normalizeSearchText(poi.name);
@@ -403,6 +429,234 @@ function inferPoiCategoryFromActivity(activity: ItineraryActivity): PoiCategory 
   return 'other';
 }
 
+function isFoodInterest(interests: string[] | null | undefined): boolean {
+  return (interests ?? []).some((interest) => {
+    const normalized = interest.toLowerCase();
+    return normalized.includes('food') || normalized.includes('nightlife');
+  });
+}
+
+function getPaceProfile(intensity: string | null | undefined, interests: string[] | null | undefined): PaceProfile {
+  const normalizedIntensity =
+    intensity === 'Relaxed' || intensity === 'Balanced' || intensity === 'Packed'
+      ? intensity
+      : 'Balanced';
+  const wantsFood = isFoodInterest(interests);
+
+  if (normalizedIntensity === 'Relaxed') {
+    return {
+      intensity: 'Relaxed',
+      activityCount: 3,
+      maxFoodPerDay: wantsFood ? 1 : 0,
+      preferredCategories: ['culture', 'park', 'shopping', 'other', 'food'],
+      restSlots: 1,
+    };
+  }
+
+  if (normalizedIntensity === 'Packed') {
+    return {
+      intensity: 'Packed',
+      activityCount: 5,
+      maxFoodPerDay: wantsFood ? 2 : 1,
+      preferredCategories: ['culture', 'shopping', 'park', 'food', 'other'],
+      restSlots: 1,
+    };
+  }
+
+  return {
+    intensity: 'Balanced',
+    activityCount: 4,
+    maxFoodPerDay: wantsFood ? 1 : 1,
+    preferredCategories: ['culture', 'park', 'food', 'shopping', 'other'],
+    restSlots: 1,
+  };
+}
+
+function buildPaceGuidance(profile: PaceProfile): string {
+  if (profile.intensity === 'Relaxed') {
+    return [
+      'Relaxed pacing means 2 or 3 activities max, with real breathing room.',
+      `Do not make the day restaurant-heavy: keep food stops to at most ${profile.maxFoodPerDay}.`,
+      'Prefer scenic, cultural, park, or slow-neighborhood stops over repeated dining stops.',
+      'If live POIs are mostly food, use generic slow-paced activities instead of forcing restaurants.',
+    ].join(' ');
+  }
+
+  if (profile.intensity === 'Packed') {
+    return [
+      'Packed pacing means a fuller day, but still avoid repeating the same venue type over and over.',
+      `Keep food stops to at most ${profile.maxFoodPerDay} and spread the rest across culture, shopping, park, or other anchors.`,
+      'If the destination is sparse, mix in short rest or stroll blocks instead of back-to-back meals.',
+    ].join(' ');
+  }
+
+  return [
+    'Balanced pacing should mix anchors and breathing room.',
+    `Keep food stops to at most ${profile.maxFoodPerDay} and make sure the day is not all restaurants.`,
+    'Prefer a mix of culture, park, shopping, and one meal stop if useful.',
+  ].join(' ');
+}
+
+function createGenericActivity(
+  category: Exclude<PoiCategory, 'stay'>,
+  destination: DestinationSearchResult,
+  dayIndex: number,
+  activityIndex: number
+): Pick<ItineraryActivity, 'name' | 'description' | 'category'> {
+  const nameOptions = GENERIC_ACTIVITY_NAMES[category];
+  const descriptionOptions = GENERIC_ACTIVITY_DESCRIPTIONS[category];
+  const name = nameOptions[(dayIndex + activityIndex) % nameOptions.length];
+  const description = descriptionOptions[(dayIndex * 2 + activityIndex) % descriptionOptions.length];
+
+  return {
+    name: `${name} in ${destination.name}`,
+    description,
+    category,
+  };
+}
+
+function bucketPoisByCategory(pois: PointOfInterest[]) {
+  const buckets = new Map<Exclude<PoiCategory, 'stay'>, PointOfInterest[]>();
+
+  for (const category of ['food', 'culture', 'park', 'shopping', 'other'] as const) {
+    buckets.set(category, []);
+  }
+
+  for (const poi of pois) {
+    const category = inferPoiCategoryFromPoi(poi);
+
+    if (category === 'stay') {
+      continue;
+    }
+
+    const bucket = buckets.get(category as Exclude<PoiCategory, 'stay'>);
+
+    if (bucket) {
+      bucket.push(poi);
+    }
+  }
+
+  return buckets;
+}
+
+function pickPoiFromBucket(
+  buckets: Map<Exclude<PoiCategory, 'stay'>, PointOfInterest[]>,
+  category: Exclude<PoiCategory, 'stay'>,
+  usedPoiKeys: Set<string>
+): PointOfInterest | null {
+  const bucket = buckets.get(category);
+
+  if (!bucket) {
+    return null;
+  }
+
+  while (bucket.length > 0) {
+    const candidate = bucket.shift() as PointOfInterest;
+    const key = `${candidate.name.toLowerCase()}-${candidate.latitude.toFixed(4)}-${candidate.longitude.toFixed(4)}`;
+
+    if (usedPoiKeys.has(key)) {
+      continue;
+    }
+
+    usedPoiKeys.add(key);
+    return candidate;
+  }
+
+  return null;
+}
+
+function selectSlotCategories(profile: PaceProfile): Exclude<PoiCategory, 'stay'>[] {
+  const slots: Exclude<PoiCategory, 'stay'>[] = [];
+  let foodCount = 0;
+
+  for (const category of profile.preferredCategories) {
+    if (slots.length >= profile.activityCount) {
+      break;
+    }
+
+    if (category === 'food') {
+      if (foodCount >= profile.maxFoodPerDay) {
+        continue;
+      }
+
+      foodCount += 1;
+    }
+
+    slots.push(category);
+  }
+
+  while (slots.length < profile.activityCount) {
+    slots.push(slots.length % 2 === 0 ? 'other' : 'park');
+  }
+
+  return slots.slice(0, profile.activityCount);
+}
+
+function rebalanceDailyPlansForPace(
+  dailyPlans: ItineraryDayPlan[],
+  destination: DestinationSearchResult,
+  request: ItineraryGenerationInput
+): ItineraryDayPlan[] {
+  const profile = getPaceProfile(request.activityIntensity, request.interests ?? []);
+  const wantsFood = isFoodInterest(request.interests ?? []);
+  const maxFoodPerDay = profile.intensity === 'Relaxed' && !wantsFood ? 0 : profile.maxFoodPerDay;
+
+  return dailyPlans.map((dayPlan, dayIndex) => {
+    const seenNames = new Set<string>();
+    let foodCount = 0;
+
+    const activities = dayPlan.activities
+      .slice(0, profile.activityCount)
+      .map((activity, activityIndex) => {
+        const category = inferPoiCategoryFromActivity(activity);
+        const normalizedName = normalizeSearchText(activity.name);
+        const duplicateName = seenNames.has(normalizedName);
+        const isFoodActivity = category === 'food';
+        const shouldReplace = duplicateName || (isFoodActivity && foodCount >= maxFoodPerDay);
+
+        if (!shouldReplace) {
+          seenNames.add(normalizedName);
+
+          if (isFoodActivity) {
+            foodCount += 1;
+          }
+
+          return { ...activity };
+        }
+
+        const fallbackCategory =
+          profile.preferredCategories[(dayIndex + activityIndex) % profile.preferredCategories.length] ?? 'other';
+        const replacementCategory =
+          fallbackCategory === 'food' && foodCount >= maxFoodPerDay
+            ? profile.preferredCategories.find((candidate) => candidate !== 'food') ?? 'other'
+            : fallbackCategory;
+
+        const generic = createGenericActivity(replacementCategory, destination, dayIndex, activityIndex);
+
+        if (replacementCategory === 'food') {
+          foodCount += 1;
+        }
+
+        seenNames.add(normalizeSearchText(generic.name));
+
+        return {
+          ...activity,
+          ...generic,
+          latitude: null,
+          longitude: null,
+          address: activity.address ?? destination.address ?? destination.name,
+        };
+      });
+
+    return {
+      ...dayPlan,
+      activities,
+      restSlots: dayPlan.restSlots ?? [{ time: '14:00', duration: profile.restSlots === 1 ? '45 minutes' : '30 minutes' }],
+      intensity: profile.intensity,
+    };
+  });
+}
+
 function getPoiSector(destination: DestinationSearchResult, poi: PointOfInterest): number {
   const latDelta = poi.latitude - destination.latitude;
   const lonDelta = poi.longitude - destination.longitude;
@@ -450,16 +704,19 @@ function scorePoiForActivity(activity: ItineraryActivity, poi: PointOfInterest):
 function attachPoiCoordinates(
   dailyPlans: ItineraryDayPlan[],
   pois: PointOfInterest[],
-  destination: DestinationSearchResult
+  destination: DestinationSearchResult,
+  options?: {
+    maxFoodPerDay?: number;
+  }
 ): ItineraryDayPlan[] {
   const coordinatePois = pois.filter((poi) => hasCoordinates(poi));
   const usedPoiIndices = new Set<number>();
   const globalSectorCounts = new Map<number, number>();
+  const maxFoodCount = options?.maxFoodPerDay ?? 1;
 
   return dailyPlans.map((dayPlan) => {
     const daySectorCounts = new Map<number, number>();
     let dayFoodCount = 0;
-    const maxFoodCount = 1;
 
     return {
       ...dayPlan,
@@ -881,54 +1138,74 @@ function buildFallbackDailyPlans(input: {
   pois: PointOfInterest[];
   duration: number;
   request: ItineraryGenerationInput;
+  profile: PaceProfile;
 }): ItineraryDayPlan[] {
+  const buckets = bucketPoisByCategory(input.pois);
+  const usedPoiKeys = new Set<string>();
   const plans: ItineraryDayPlan[] = [];
-  const defaultIntensities: Array<'Relaxed' | 'Balanced' | 'Packed'> = ['Balanced', 'Balanced', 'Relaxed'];
+  const slotCategories = selectSlotCategories(input.profile);
 
   for (let dayIndex = 0; dayIndex < input.duration; dayIndex += 1) {
-    const start = dayIndex * 3;
-    const dayPois = input.pois.slice(start, start + 3);
-    const fallbackPoiPool = dayPois.length > 0 ? dayPois : input.pois.slice(0, 3);
     const activities: ItineraryActivity[] = [];
 
-    const templates = fallbackPoiPool.length > 0 ? fallbackPoiPool : [null, null, null];
+    slotCategories.forEach((slotCategory, activityIndex) => {
+      const time =
+        input.profile.intensity === 'Relaxed'
+          ? ['09:30', '13:00', '16:30'][activityIndex] ?? `${10 + activityIndex * 2}:00`
+          : ['09:00', '12:00', '15:30', '18:00', '20:00'][activityIndex] ?? `${9 + activityIndex * 2}:00`;
+      const poi = pickPoiFromBucket(buckets, slotCategory, usedPoiKeys);
 
-    templates.slice(0, 3).forEach((poi, activityIndex) => {
-      const time = ['09:00', '12:30', '15:30'][activityIndex] ?? `${9 + activityIndex * 2}:00`;
-      const name = poi?.name ?? [
-        `Explore ${input.destination.name}`,
-        `Lunch and reset`,
-        `Easy evening around ${input.destination.name}`,
-      ][activityIndex];
-      const category = poi?.type ?? ['Sightseeing', 'Dining', 'Leisure'][activityIndex];
-      const description = poi
-        ? `Spend time at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`
-        : activityIndex === 1
-          ? 'Pause for a relaxed lunch and recharge.'
-          : `Keep the day light and enjoy ${input.destination.name}.`;
+      if (poi) {
+        const poiCategory = inferPoiCategoryFromPoi(poi);
+        activities.push({
+          time,
+          name: poi.name,
+          description:
+            poiCategory === 'food'
+              ? `Keep the meal simple and easy at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`
+              : `Spend a calm stretch at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`,
+          duration: activityIndex === 0 ? 90 : 75,
+          cost: poiCategory === 'food' ? 20 : 0,
+          estimated_cost: poiCategory === 'food' ? 20 : 0,
+          category: poiCategory,
+          latitude: poi.latitude,
+          longitude: poi.longitude,
+          address: poi.address ?? input.destination.address ?? input.destination.name,
+        });
+        return;
+      }
 
       activities.push({
         time,
-        name,
-        description,
+        ...createGenericActivity(slotCategory, input.destination, dayIndex, activityIndex),
         duration: activityIndex === 0 ? 90 : 75,
-        cost: activityIndex === 1 ? 20 : 0,
-        estimated_cost: activityIndex === 1 ? 20 : 0,
-        category,
-        latitude: poi?.latitude ?? input.destination.latitude ?? null,
-        longitude: poi?.longitude ?? input.destination.longitude ?? null,
-        address: poi?.address ?? input.destination.address ?? input.destination.name,
+        cost: slotCategory === 'food' ? 20 : 0,
+        estimated_cost: slotCategory === 'food' ? 20 : 0,
+        latitude: input.destination.latitude ?? null,
+        longitude: input.destination.longitude ?? null,
+        address: input.destination.address ?? input.destination.name,
       });
     });
 
     plans.push({
       day: dayIndex + 1,
       date: `Day ${dayIndex + 1}`,
-      theme: dayIndex === 0 ? `Start in ${input.destination.name}` : `${input.destination.name} at your pace`,
+      theme:
+        input.profile.intensity === 'Relaxed'
+          ? dayIndex === 0
+            ? `Ease into ${input.destination.name}`
+            : `${input.destination.name} at a slower pace`
+          : dayIndex === 0
+            ? `Start in ${input.destination.name}`
+            : `${input.destination.name} at your pace`,
       activities,
-      restSlots: [{ time: '14:30', duration: '45 minutes' }],
-      totalActiveHours: 5,
-      intensity: defaultIntensities[dayIndex] ?? 'Balanced',
+      restSlots:
+        input.profile.intensity === 'Relaxed'
+          ? [{ time: '14:30', duration: '60 minutes' }]
+          : [{ time: '14:30', duration: '45 minutes' }],
+      totalActiveHours:
+        input.profile.intensity === 'Relaxed' ? 4.5 : input.profile.intensity === 'Packed' ? 7 : 5.5,
+      intensity: input.profile.intensity,
     });
   }
 
@@ -943,12 +1220,14 @@ function buildFallbackItinerary(input: {
   pois: PointOfInterest[];
   duration: number;
   stay: TravelStay | null;
+  profile: PaceProfile;
 }): GeneratedItinerary {
   const dailyPlans = buildFallbackDailyPlans({
     destination: input.destination,
     pois: input.pois,
     duration: input.duration,
     request: input.request,
+    profile: input.profile,
   });
   const estimatedCost =
     typeof input.request.budget === 'number' && Number.isFinite(input.request.budget)
@@ -1007,6 +1286,7 @@ function buildItineraryPrompt(input: {
   pois: PointOfInterest[];
   stayOptions: PointOfInterest[];
   duration: number;
+  profile: PaceProfile;
 }): string {
   const interestList = input.request.interests?.filter(Boolean).join(', ') || 'No interests provided';
   const dietaryRestrictions =
@@ -1014,9 +1294,9 @@ function buildItineraryPrompt(input: {
   const weatherSummary = input.weather
     ? `${input.weather.description}, ${input.weather.temperature}C, feels like ${input.weather.feelsLike}C, wind ${input.weather.windSpeed} km/h`
     : 'Weather unavailable';
-  const activityCap =
-    input.duration > 7 ? 'Keep each day to 2 or 3 activities maximum.' : 'Keep each day to 3 or 4 activities maximum.';
+  const activityCap = `Keep each day to at most ${input.profile.activityCount} activities.`;
   const confirmationSummary = buildConfirmationContext(input.request.confirmation);
+  const paceGuidance = buildPaceGuidance(input.profile);
 
   return `
 You are generating a production travel itinerary as strict JSON.
@@ -1037,6 +1317,7 @@ Trip request:
 - dietary_restrictions: ${dietaryRestrictions}
 - weather_snapshot: ${weatherSummary}
 - booking_confirmation_context: ${confirmationSummary}
+- pace_profile: ${input.profile.intensity}
 
 Live POIs for this destination:
 ${buildPoiContext(input.pois)}
@@ -1048,7 +1329,7 @@ Rules:
 - Use only POI names from the live POI list for named activities.
 - Do not invent attractions, restaurants, or destination names.
 - Do not ask the user for a hotel or lodging preference. Choose the stay from live stay options only.
-- If a day needs lighter pacing, add generic transit/rest/free-time entries, but all venue-specific entries must come from the POI list.
+- ${paceGuidance}
 - Keep activities geographically plausible.
 - Treat arrival_time as the earliest possible start on day 1.
 - Do not place any activity before arrival_time on the first day.
@@ -1064,7 +1345,8 @@ Rules:
 - Return one itinerary covering all ${input.duration} days.
 - All costs must be numeric or null.
 - All coordinates must come from the POI list when the activity is a venue.
-- Keep food or restaurant stops to at most two per day when other live POIs are available.
+- Avoid repeating the same venue type across the whole trip unless the destination genuinely lacks variety.
+- If the itinerary is relaxed, do not turn every day into restaurant stops; use scenic, cultural, park, or neighborhood activities for most of the plan.
 - Spread the trip across different neighborhoods or city sectors instead of clustering all stops in one area.
 - ${activityCap}
 - Keep each activity description to one short sentence.
@@ -1126,6 +1408,7 @@ export async function generateItineraryFromLiveData(
   }
 
   const duration = normalizeDuration(request);
+  const paceProfile = getPaceProfile(request.activityIntensity, request.interests ?? []);
   const fastMode = duration <= 2;
   const hasCoordinates =
     typeof request.latitude === 'number' && typeof request.longitude === 'number';
@@ -1208,6 +1491,7 @@ export async function generateItineraryFromLiveData(
         pois: prioritizedPois,
         stayOptions: prioritizedStayCandidates,
         duration,
+        profile: paceProfile,
       }),
       {
         maxTokens,
@@ -1222,7 +1506,14 @@ export async function generateItineraryFromLiveData(
       throw new Error('Kimi 2.5 did not return any itinerary days');
     }
 
-    const dailyPlans = attachPoiCoordinates(normalizeDayPlans(payload.dailyPlans, destination), prioritizedPois, destination);
+    const rebalancePlans = rebalanceDailyPlansForPace(
+      normalizeDayPlans(payload.dailyPlans, destination),
+      destination,
+      request
+    );
+    const dailyPlans = attachPoiCoordinates(rebalancePlans, prioritizedPois, destination, {
+      maxFoodPerDay: paceProfile.maxFoodPerDay,
+    });
     const totalEstimatedCost = payload.totalEstimatedCost ?? null;
     const budgetBreakdown = normalizeBudgetBreakdown(payload.budgetBreakdown, totalEstimatedCost);
     const stay = normalizeStay(payload.stay, prioritizedStayCandidates[0] ?? null, request);
@@ -1262,6 +1553,7 @@ export async function generateItineraryFromLiveData(
       pois: prioritizedPois,
       duration,
       stay,
+      profile: paceProfile,
     });
   }
 }
