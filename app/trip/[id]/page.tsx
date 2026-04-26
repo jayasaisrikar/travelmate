@@ -6,8 +6,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { Brand } from '@/components/common/Brand';
+import { StatusCard } from '@/components/common/StatusCard';
 import ItineraryChat from '@/components/ItineraryChat';
-import { MapComponent } from '@/components/MapComponent';
+import { MapView } from '@/components/trip/MapView';
+import { BudgetBreakdown } from '@/components/trip/BudgetBreakdown';
 import { TimelineView } from '@/components/trip/TimelineView';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
@@ -207,6 +209,10 @@ export default function TripDetailsPage() {
   const destinationCoordinates = useMemo(() => getDestinationCoordinates(trip?.itinerary), [trip]);
   const stay = useMemo(() => getStay(trip?.itinerary), [trip]);
   const mapActivities = useMemo(() => getFlatActivities(dailyPlans), [dailyPlans]);
+  const budgetBreakdown = useMemo(
+    () => trip?.itinerary?.budgetBreakdown ?? trip?.itinerary?.budget_breakdown ?? null,
+    [trip]
+  );
 
   const scrollToMap = () => {
     mapSectionRef.current?.scrollIntoView({
@@ -302,9 +308,14 @@ export default function TripDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] text-[#3F3D56]">
-        <div className="rounded-[28px] border border-[#DDDCE8] bg-white px-6 py-5 shadow-[0_20px_70px_rgba(46,40,51,0.12)]">
-          Loading trip...
+      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] px-4 text-[#3F3D56]">
+        <div className="w-full max-w-xl">
+          <StatusCard
+            tone="neutral"
+            eyebrow="Trip"
+            title="Loading your trip"
+            description="We’re pulling in the itinerary, map stops, and share state so the page opens with the latest details."
+          />
         </div>
       </div>
     );
@@ -319,17 +330,21 @@ export default function TripDetailsPage() {
           </div>
         </nav>
 
-        <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6">
-          <h1 className="mb-4 text-3xl font-black tracking-tight sm:text-5xl">Trip not found</h1>
-          <p className="mb-8 text-[#6F6C82]">
-            {error || 'The requested trip is unavailable. It may have been deleted or not saved correctly.'}
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-block rounded-full bg-[#3F3D56] px-6 py-3 font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
-          >
-            Back to Dashboard
-          </Link>
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <StatusCard
+            tone="warning"
+            eyebrow="Trip not found"
+            title="We couldn’t load this trip"
+            description={error || 'The requested trip is unavailable. It may have been deleted or not saved correctly.'}
+            actions={
+              <Link
+                href="/dashboard"
+                className="rounded-full bg-[#3F3D56] px-6 py-3 font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
+              >
+                Back to Dashboard
+              </Link>
+            }
+          />
         </div>
       </main>
     );
@@ -356,24 +371,6 @@ export default function TripDetailsPage() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Brand href="/" compact />
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsChatOpen(true)}
-              className="rounded-full bg-[#3F3D56] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(46,40,51,0.18)] transition hover:translate-y-[-1px]"
-            >
-              Ask assistant
-            </button>
-            <Link
-              href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
-              className="rounded-full border border-[#6C63FF] bg-[#EEEDFE] px-4 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#E6E4FF]"
-            >
-              Edit trip
-            </Link>
-            <button
-              onClick={() => setIsShareOpen(true)}
-              className="rounded-full border border-[#3F3D56] bg-white px-4 py-2 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF]"
-            >
-              Share trip
-            </button>
             <Link href="/dashboard" className="text-sm font-medium text-[#6F6C82] transition hover:text-[#3F3D56]">
               Back to Trips
             </Link>
@@ -447,74 +444,34 @@ export default function TripDetailsPage() {
           </div>
         </motion.section>
 
+        <section className="mt-6">
+          <BudgetBreakdown breakdown={budgetBreakdown} total={totalEstimatedCost} />
+        </section>
+
         {error && (
           <div className="mt-6 rounded-2xl border border-[#f0d7de] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
             {error}
           </div>
         )}
 
-        <section
-          ref={mapSectionRef}
-          className="relative z-0 mt-8 grid gap-6 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch"
-        >
-          <MapComponent
-            activities={mapActivities}
-            destination={trip.destination}
-            destinationCoordinates={destinationCoordinates}
-            stay={stay}
-            selectedActivityIndex={selectedStopIndex}
-            focusStayTrigger={focusStayTrigger}
-          />
-
-          <div className="flex h-full flex-col rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:h-[360px] lg:min-h-0">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Location guide</div>
-            <h2 className="mt-1 text-2xl font-black tracking-tight">Places in order</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
-              The numbers on the map match the order below, so first-time users can quickly see where each stop sits.
-            </p>
-
-            <div className="mt-5 flex-1 min-h-0 space-y-3 overflow-y-auto pr-2">
-              {mapActivities.length > 0 ? (
-                mapActivities.map((activity, index) => (
-                  <button
-                    key={`${activity.day}-${activity.activityIndex}-${activity.name}`}
-                    type="button"
-                    onClick={() => {
-                      setSelectedStopIndex(index);
-                      scrollToMap();
-                    }}
-                    className={`w-full rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(46,40,51,0.08)] ${
-                      selectedStopIndex === index
-                        ? 'border-[#6C63FF] bg-[#EEEDFE]'
-                        : 'border-[#DDDCE8] bg-[#FBFAFF]'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#3F3D56] text-sm font-black text-white">
-                        {index + 1}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-[#3F3D56]">
-                          Day {activity.day} · {activity.time} · {activity.name}
-                        </div>
-                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
-                          {activity.category}
-                        </div>
-                        <div className="mt-1 text-sm leading-6 text-[#6F6C82]">
-                          {activity.address || 'No address provided'}
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="rounded-[22px] border border-[#DDDCE8] bg-[#FBFAFF] p-4 text-sm leading-6 text-[#6F6C82]">
-                  This itinerary does not have geocoded stops yet. The trip details are still available below.
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+        <MapView
+          mapSectionRef={mapSectionRef}
+          activities={mapActivities}
+          destination={trip.destination}
+          destinationCoordinates={destinationCoordinates}
+          stay={stay}
+          selectedActivityIndex={selectedStopIndex}
+          focusStayTrigger={focusStayTrigger}
+          onSelectActivity={index => {
+            setSelectedStopIndex(index);
+            scrollToMap();
+          }}
+          onOpenStayRetry={() => setIsStayRetryOpen(true)}
+          onFocusStay={() => {
+            setFocusStayTrigger(current => current + 1);
+            scrollToMap();
+          }}
+        />
 
         <section className="mt-8">
           <div className="grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
@@ -670,7 +627,7 @@ export default function TripDetailsPage() {
                 onClick={() => setIsGuestSuggestionsOpen(true)}
                 className="mt-5 w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43]"
               >
-                Click to expand
+                Review all suggestions
               </button>
             </div>
           </div>

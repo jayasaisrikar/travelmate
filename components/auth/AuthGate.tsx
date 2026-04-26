@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import { StatusCard } from '@/components/common/StatusCard';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -87,9 +88,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] text-[#3F3D56]">
-        <div className="rounded-none border border-[#3F3D56] bg-white px-6 py-5 shadow-none">
-          Checking your account...
+      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] px-4 text-[#3F3D56]">
+        <div className="w-full max-w-lg">
+          <StatusCard
+            tone="primary"
+            eyebrow="Account"
+            title="Checking your account"
+            description="We’re verifying your session and email status before loading the dashboard."
+          />
         </div>
       </div>
     );

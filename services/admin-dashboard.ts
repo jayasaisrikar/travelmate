@@ -1,4 +1,5 @@
 import { buildPublicShareUrl } from '@/services/trip-sharing';
+import { lookupDestinationPhotoUrl } from '@/services/place-photo';
 import { supabaseAdmin } from '@/services/supabase-admin';
 
 type ProfileRow = {
@@ -17,6 +18,7 @@ type TripRow = {
   duration: number;
   budget: string;
   interests: string[];
+  cover_image_url: string | null;
   itinerary: unknown;
   created_at: string;
   updated_at: string;
@@ -63,6 +65,7 @@ export interface AdminDashboardTrip {
   duration: number;
   budget: string;
   interests: string[];
+  cover_image_url: string | null;
   created_at: string;
   updated_at: string;
   owner_email: string | null;
@@ -269,40 +272,44 @@ export async function loadAdminDashboardOverview(baseUrl: string): Promise<Admin
     usage.last_activity_at = touchLatest(usage.last_activity_at, share.created_at);
   }
 
-  const tripsOverview: AdminDashboardTrip[] = tripRows.map(trip => {
-    const ownerProfile = trip.user_id ? profileById.get(trip.user_id) ?? null : null;
-    const share = trip.id ? shareByTripId.get(trip.id) ?? null : null;
+  const tripsOverview: AdminDashboardTrip[] = await Promise.all(
+    tripRows.map(async trip => {
+      const ownerProfile = trip.user_id ? profileById.get(trip.user_id) ?? null : null;
+      const share = trip.id ? shareByTripId.get(trip.id) ?? null : null;
+      const coverImageUrl = trip.cover_image_url ?? (await lookupDestinationPhotoUrl(trip.destination));
 
-    return {
-      id: trip.id,
-      destination: trip.destination,
-      duration: trip.duration,
-      budget: trip.budget,
-      interests: trip.interests,
-      created_at: trip.created_at,
-      updated_at: trip.updated_at,
-      owner_email: ownerProfile?.email ?? null,
-      owner_name: ownerProfile?.full_name ?? null,
-      share: share
-        ? {
-            id: share.id,
-            trip_id: share.trip_id,
-            destination: trip.destination,
-            owner_email: ownerProfile?.email ?? null,
-            share_title: share.share_title,
-            share_description: share.share_description,
-            share_image_url: share.share_image_url,
-            token: share.token,
-            share_url: createShareUrl(baseUrl, share.token),
-            revoked_at: share.revoked_at,
-            created_at: share.created_at,
-            updated_at: share.updated_at,
-            suggestions_count: suggestionsCountByShareId.get(share.id) ?? 0,
-          }
-        : null,
-      suggestions_count: suggestionsCountByTripId.get(trip.id) ?? 0,
-    };
-  });
+      return {
+        id: trip.id,
+        destination: trip.destination,
+        duration: trip.duration,
+        budget: trip.budget,
+        interests: trip.interests,
+        cover_image_url: coverImageUrl,
+        created_at: trip.created_at,
+        updated_at: trip.updated_at,
+        owner_email: ownerProfile?.email ?? null,
+        owner_name: ownerProfile?.full_name ?? null,
+        share: share
+          ? {
+              id: share.id,
+              trip_id: share.trip_id,
+              destination: trip.destination,
+              owner_email: ownerProfile?.email ?? null,
+              share_title: share.share_title,
+              share_description: share.share_description,
+              share_image_url: share.share_image_url,
+              token: share.token,
+              share_url: createShareUrl(baseUrl, share.token),
+              revoked_at: share.revoked_at,
+              created_at: share.created_at,
+              updated_at: share.updated_at,
+              suggestions_count: suggestionsCountByShareId.get(share.id) ?? 0,
+            }
+          : null,
+        suggestions_count: suggestionsCountByTripId.get(trip.id) ?? 0,
+      };
+    })
+  );
 
   const sharesOverview: AdminDashboardShare[] = shareRows.map(share => {
     const ownerProfile = share.owner_user_id ? profileById.get(share.owner_user_id) ?? null : null;

@@ -129,6 +129,18 @@ function buildTripContext(trip: TripRow, itinerary: GeneratedItinerary): string 
   ].join('\n- ');
 }
 
+function buildPaceGuidance(intensity: string | null | undefined): string {
+  if (intensity === 'Relaxed') {
+    return 'Keep the day slow, use at most one food stop, and favor scenic, cultural, or neighborhood activities over restaurant-heavy plans.';
+  }
+
+  if (intensity === 'Packed') {
+    return 'Keep the day fuller, but still vary categories and avoid turning the whole day into repeated meal stops.';
+  }
+
+  return 'Mix anchors with breathing room, keep food to one stop if possible, and avoid repeating the same venue type back to back.';
+}
+
 function buildDayPayloadContext(day: ItineraryDayPlan): string {
   return [
     `day: ${day.day}`,
@@ -161,11 +173,15 @@ Target day to regenerate:
 User instruction:
 - ${input.instruction.trim()}
 
+Pace guidance:
+- ${buildPaceGuidance(input.day.intensity ?? null)}
+
 Rules:
 - Regenerate only the target day.
 - Keep the rest of the trip unchanged in the calling app.
 - Do not change the trip destination, total duration, or overall tone.
 - Keep venue-specific names grounded in the live itinerary context and destination.
+- Do not replace a relaxed day with repeated restaurant stops.
 - Return a coherent day with sensible pacing.
 - Keep all costs numeric or null.
 - Keep each activity description to one short sentence.
@@ -220,12 +236,16 @@ ${selected.map((activity, index) => `${index + 1}. ${formatActivity(activity)}`)
 User instruction:
 - ${input.instruction.trim()}
 
+Pace guidance:
+- ${buildPaceGuidance(input.day.intensity ?? null)}
+
 Rules:
 - Regenerate only this selected cluster.
 - Return the same number of activities as the selected cluster.
 - Keep the surrounding day structure stable and preserve the original time ordering.
 - Do not change the trip destination or the rest of the itinerary.
 - Use venue-specific names that fit the existing trip context.
+- Do not make the replacement cluster restaurant-heavy when the day is relaxed.
 - Keep all costs numeric or null.
 - Keep each activity description to one short sentence.
 

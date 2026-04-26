@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { lookupDestinationPhotoUrl } from '@/services/place-photo';
 import { buildPublicShareUrl, createOrRefreshTripShare } from '@/services/trip-sharing';
 import { saveTravelerPreferences } from '@/services/traveler-preferences';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function summarizeTripBody(body: unknown) {
   if (!body || typeof body !== 'object') {
@@ -32,6 +36,10 @@ function formatTripError(error: { message?: string; code?: string } | null | und
 
   if (error.code === 'PGRST205') {
     return 'The trips table is missing in Supabase. Apply supabase/migrations/20260411_create_trips.sql first.';
+  }
+
+  if (error.code === '42703' || error.message?.includes('cover_image_url')) {
+    return 'The trips table is missing cover_image_url. Apply supabase/migrations/20260416_add_trip_cover_image_url.sql first.';
   }
 
   return error.message || 'Failed to save trip';
@@ -63,7 +71,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ trips: data ?? [] });
+    const trips = await Promise.all(
+      (data ?? []).map(async trip => ({
+        ...trip,
+        cover_image_url: trip.cover_image_url ?? (await lookupDestinationPhotoUrl(trip.destination)),
+      }))
+    );
+
+    return NextResponse.json({ trips });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to load trips' },
@@ -83,6 +98,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const now = new Date().toISOString();
     const preferences = body.preferences ?? null;
+    const coverImageUrl = typeof body.destination === 'string'
+      ? await lookupDestinationPhotoUrl(body.destination)
+      : null;
 
     const { data, error } = await supabase
       .from('trips')
@@ -94,6 +112,7 @@ export async function POST(request: NextRequest) {
         budget: body.budget,
         interests: body.interests,
         itinerary: body.itinerary,
+        cover_image_url: coverImageUrl,
         created_at: now,
         updated_at: now,
       })

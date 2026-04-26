@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 import { Brand } from '@/components/common/Brand';
-import { listTrips, type Trip } from '@/lib/supabase-trips';
+import { deleteTrip, listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
-
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'admin@wayflo.app').trim().toLowerCase();
 
 interface AdminShare {
   id: string;
@@ -32,6 +30,7 @@ interface AdminTrip {
   duration: number;
   budget: string;
   interests: string[];
+  cover_image_url: string | null;
   created_at: string;
   updated_at: string;
   owner_email: string | null;
@@ -114,6 +113,13 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatDateCompact(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value));
+}
+
 function shorten(value: string, length = 120) {
   return value.length > length ? `${value.slice(0, length - 1)}…` : value;
 }
@@ -122,6 +128,52 @@ function chipClass(active: boolean) {
   return active
     ? 'border border-[#3F3D56] bg-[#def4d8] text-[#3F3D56]'
     : 'border border-[#3F3D56] bg-[#FFF0F4] text-[#C14D72]';
+}
+
+function TripCardCover({
+  destination,
+  meta,
+  rightLabel,
+}: {
+  destination: string;
+  meta: string;
+  rightLabel: string;
+}) {
+  return (
+    <div className="relative h-40 overflow-hidden rounded-none border-b border-[#D5D1DE] bg-[linear-gradient(135deg,#6C63FF_0%,#FF6584_55%,#3F3D56_100%)] sm:h-44">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.28),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.08),transparent_16%),linear-gradient(180deg,rgba(255,255,255,0.12),rgba(0,0,0,0.06))]" />
+      <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
+      <div className="relative z-10 flex h-full flex-col justify-between p-4 text-white sm:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <span className="inline-flex border border-white/18 bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+            {meta}
+          </span>
+          <span className="inline-flex border border-white/16 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/92">
+            {rightLabel}
+          </span>
+        </div>
+
+        <div className="flex items-end gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-white/18 bg-white/94 text-lg font-black text-[#3F3D56]">
+            {destination
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map(part => part[0]?.toUpperCase() ?? '')
+              .join('') || 'TR'}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/74">
+              Saved trip
+            </div>
+            <h3 className="truncate text-[1.15rem] font-black tracking-[-0.03em] sm:text-[1.45rem]">
+              {destination}
+            </h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 async function fetchAdminOverview() {
@@ -175,6 +227,7 @@ export default function DashboardPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [dashboardMode, setDashboardMode] = useState<'checking' | 'admin' | 'user'>('checking');
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [userQuery, setUserQuery] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -205,36 +258,78 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteUserTrip = async (id: string, destination: string) => {
+    const confirmed = window.confirm(
+      `Delete "${destination}"? This removes the trip from your dashboard permanently.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setActionId(`user-trip-${id}`);
+      setError('');
+      await deleteTrip(id);
+      setUserTrips(previous => previous.filter(trip => trip.id !== id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete trip');
+    } finally {
+      setActionId(null);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
     const loadCurrentUserAndOverview = async () => {
-      const { data } = await getSupabaseBrowser().auth.getUser();
+      try {
+        const supabase = getSupabaseBrowser();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
 
-      if (!mounted) {
-        return;
+        if (!accessToken) {
+          router.replace('/login?next=/dashboard');
+          return;
+        }
+
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        const payload = await response.json().catch(() => null);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (!response.ok || !payload?.user) {
+          router.replace('/login?next=/dashboard');
+          return;
+        }
+
+        setCurrentUserId(payload.user.id);
+        setOverview(null);
+        setUserTrips([]);
+        setIsAdminUser(Boolean(payload.isAdmin));
+        setDashboardMode(payload.isAdmin ? 'admin' : 'user');
+
+        if (payload.isAdmin) {
+          await loadOverview();
+          return;
+        }
+
+        await loadUserTrips();
+      } catch (err: unknown) {
+        if (!mounted) {
+          return;
+        }
+
+        setError(err instanceof Error ? err.message : 'Failed to load your dashboard');
+        setLoading(false);
       }
-
-      const user = data.user;
-
-      if (!user) {
-        router.replace('/login?next=/dashboard');
-        return;
-      }
-
-      const isAdminLogin = user.email?.trim().toLowerCase() === ADMIN_EMAIL;
-
-      setIsAdminUser(isAdminLogin);
-      setOverview(null);
-      setUserTrips([]);
-      setCurrentUserId(user.id);
-
-      if (isAdminLogin) {
-        await loadOverview();
-        return;
-      }
-
-      await loadUserTrips();
     };
 
     void loadCurrentUserAndOverview();
@@ -409,7 +504,13 @@ export default function DashboardPage() {
               transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
               className="h-5 w-5 border-2 border-[#6C63FF] border-t-transparent"
             />
-            <span className="text-sm font-semibold sm:text-base">Loading admin dashboard...</span>
+            <span className="text-sm font-semibold sm:text-base">
+              {dashboardMode === 'admin'
+                ? 'Loading admin dashboard...'
+                : dashboardMode === 'user'
+                  ? 'Loading your dashboard...'
+                  : 'Checking your dashboard access...'}
+            </span>
           </div>
         </div>
       </div>
@@ -522,32 +623,42 @@ export default function DashboardPage() {
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               {userTrips.length > 0 ? (
                 userTrips.map(trip => (
-                  <article key={trip.id} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-black tracking-tight">{trip.destination}</h3>
-                        <p className="mt-1 text-sm text-[#6F6C82]">
-                          {trip.duration} days · {trip.budget || 'Budget not set'}
-                        </p>
-                      </div>
-                      <div className="text-right text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
-                        {new Date(trip.updated_at).toLocaleDateString()}
-                      </div>
-                    </div>
+                  <article
+                    key={trip.id}
+                    className="overflow-hidden rounded-none border border-[#D5D1DE] bg-white shadow-[0_16px_32px_rgba(63,61,86,0.08)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(63,61,86,0.12)]"
+                  >
+                    <TripCardCover
+                      destination={trip.destination}
+                      meta={`${trip.duration} days`}
+                      rightLabel={formatDateCompact(trip.updated_at)}
+                    />
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        onClick={() => router.push(`/trip/${trip.id}`)}
-                        className="border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
-                      >
-                        Open trip
-                      </button>
-                      <button
-                        onClick={() => router.push('/dashboard/onboarding')}
-                        className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
-                      >
-                        Create new
-                      </button>
+                    <div className="p-4 sm:p-5">
+                      <p className="text-sm leading-6 text-[#6F6C82]">
+                        {trip.budget || 'Budget not set'} · Saved {formatDateCompact(trip.updated_at)}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => router.push(`/trip/${trip.id}`)}
+                          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
+                        >
+                          Open trip
+                        </button>
+                        <button
+                          onClick={() => router.push('/dashboard/onboarding')}
+                          className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+                        >
+                          Create new
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUserTrip(trip.id, trip.destination)}
+                          disabled={actionId === `user-trip-${trip.id}`}
+                          className="rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
+                        >
+                          {actionId === `user-trip-${trip.id}` ? 'Deleting...' : 'Delete trip'}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))
@@ -599,11 +710,11 @@ export default function DashboardPage() {
               Admin only
             </div>
             <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Manage every wayflo surface from one place.</h1>
-            <p className="max-w-3xl text-sm leading-7 text-[#6F6C82] sm:text-base">
-              Trips, public shares, guest suggestions, and profile data all sit behind this panel.
-              Only <span className="font-semibold text-[#3F3D56]">{ADMIN_EMAIL}</span> can enter it.
-            </p>
-          </div>
+              <p className="max-w-3xl text-sm leading-7 text-[#6F6C82] sm:text-base">
+                Trips, public shares, guest suggestions, and profile data all sit behind this panel.
+                Only a verified admin account can enter it.
+              </p>
+            </div>
 
           {overview && (
             <div className="grid gap-3 sm:grid-cols-3">
@@ -754,78 +865,83 @@ export default function DashboardPage() {
             <div className="mt-5 space-y-4">
               {overview?.trips.length ? (
                 overview.trips.map(trip => (
-                  <article key={trip.id} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-black tracking-tight">{trip.destination}</h3>
-                          <span className={chipClass(Boolean(trip.share && !trip.share.revoked_at)) + ' px-2 py-1 text-[11px] font-bold uppercase tracking-[0.16em]'}>
-                            {trip.share && !trip.share.revoked_at ? 'Shared' : 'Private'}
-                          </span>
+                  <article
+                    key={trip.id}
+                    className="overflow-hidden rounded-none border border-[#D5D1DE] bg-white shadow-[0_16px_32px_rgba(63,61,86,0.08)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(63,61,86,0.12)]"
+                  >
+                    <TripCardCover
+                      destination={trip.destination}
+                      meta={trip.share && !trip.share.revoked_at ? 'Shared trip' : 'Private trip'}
+                      rightLabel={`${trip.suggestions_count} sugg.`}
+                    />
+
+                    <div className="p-4 sm:p-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm leading-6 text-[#6F6C82]">
+                            {trip.duration} days · {trip.owner_email || 'Unknown owner'}
+                            {trip.owner_name ? ` · ${trip.owner_name}` : ''}
+                          </p>
+                          <p className="mt-1 text-xs text-[#8A869C]">
+                            Created {formatDate(trip.created_at)} · Updated {formatDate(trip.updated_at)}
+                          </p>
                         </div>
-                        <p className="mt-1 text-sm text-[#6F6C82]">
-                          {trip.duration} days · {trip.owner_email || 'Unknown owner'}{trip.owner_name ? ` · ${trip.owner_name}` : ''}
-                        </p>
-                        <p className="mt-1 text-xs text-[#8A869C]">
-                          Created {formatDate(trip.created_at)} · Updated {formatDate(trip.updated_at)}
-                        </p>
+
+                        <div className="rounded-full border border-[#DDDCE8] bg-[#FBFAFF] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
+                          {trip.suggestions_count} suggestion{trip.suggestions_count === 1 ? '' : 's'}
+                        </div>
                       </div>
 
-                      <div className="text-right">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Suggestions</div>
-                        <div className="text-2xl font-black tracking-tight">{trip.suggestions_count}</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <button
-                        onClick={() => router.push(`/trip/${trip.id}`)}
-                        className="border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
-                      >
-                        Open trip
-                      </button>
-                      {trip.share?.share_url && (
-                        <a
-                          href={trip.share.share_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => router.push(`/trip/${trip.id}`)}
+                          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
                         >
-                          Open share
-                        </a>
-                      )}
-                      <button
-                        onClick={() => handleDeleteTrip(trip.id)}
-                        disabled={actionId === `trip-${trip.id}`}
-                        className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
-                      >
-                        {actionId === `trip-${trip.id}` ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </div>
-
-                    {trip.share && (
-                      <div className="mt-4 border border-dashed border-[#DDDCE8] bg-white px-4 py-3 text-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">
-                              Share link
-                            </div>
-                            <p className="mt-1 text-[#3F3D56]">
-                              {trip.share.revoked_at ? 'Revoked' : trip.share.share_url}
-                            </p>
-                          </div>
-                          {!trip.share.revoked_at && (
-                            <button
-                              onClick={() => handleRevokeShare(trip.share!.id)}
-                              disabled={actionId === `share-${trip.share.id}`}
-                              className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
-                            >
-                              {actionId === `share-${trip.share.id}` ? 'Revoking...' : 'Revoke share'}
-                            </button>
-                          )}
-                        </div>
+                          Open trip
+                        </button>
+                        {trip.share?.share_url && (
+                          <a
+                            href={trip.share.share_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+                          >
+                            Open share
+                          </a>
+                        )}
+                        <button
+                          onClick={() => handleDeleteTrip(trip.id)}
+                          disabled={actionId === `trip-${trip.id}`}
+                          className="rounded-xl border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
+                        >
+                          {actionId === `trip-${trip.id}` ? 'Deleting...' : 'Delete'}
+                        </button>
                       </div>
-                    )}
+
+                      {trip.share && (
+                        <div className="mt-4 rounded-2xl border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">
+                                Share link
+                              </div>
+                              <p className="mt-1 truncate text-[#3F3D56]">
+                                {trip.share.revoked_at ? 'Revoked' : trip.share.share_url}
+                              </p>
+                            </div>
+                            {!trip.share.revoked_at && (
+                              <button
+                                onClick={() => handleRevokeShare(trip.share!.id)}
+                                disabled={actionId === `share-${trip.share.id}`}
+                                className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
+                              >
+                                {actionId === `share-${trip.share.id}` ? 'Revoking...' : 'Revoke share'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </article>
                 ))
               ) : (

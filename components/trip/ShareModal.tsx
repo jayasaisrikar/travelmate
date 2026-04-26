@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Copy, ExternalLink, MessageSquareShare, X } from 'lucide-react';
-import { toBlob as elementToBlob } from 'html-to-image';
 import { createTripShare } from '@/lib/supabase-trips';
-import { Brand } from '@/components/common/Brand';
+import { BadgeGlobeCanvas, createBadgeGifFile } from '@/components/trip/BadgeGlobe';
 
 type ShareModalProps = {
   tripId: string;
@@ -19,155 +18,15 @@ type ShareModalProps = {
 
 const SHARE_BADGE_TEXT = 'Check out my trip on wayflo and send your suggestions.';
 
-function TravelGlobe() {
-  return (
-    <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full drop-shadow-2xl">
-      <defs>
-        <radialGradient id="sg-ocean" cx="34%" cy="28%" r="72%">
-          <stop offset="0%" stopColor="#c2e8f8" />
-          <stop offset="22%" stopColor="#60b8e0" />
-          <stop offset="52%" stopColor="#1e75b0" />
-          <stop offset="100%" stopColor="#083858" />
-        </radialGradient>
-        <radialGradient id="sg-shine" cx="30%" cy="22%" r="52%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.6)" />
-          <stop offset="55%" stopColor="rgba(255,255,255,0.07)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </radialGradient>
-        <radialGradient id="sg-rim" cx="50%" cy="50%" r="50%">
-          <stop offset="85%" stopColor="rgba(255,255,255,0)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0.18)" />
-        </radialGradient>
-        <clipPath id="sg-clip">
-          <circle cx="120" cy="120" r="117" />
-        </clipPath>
-      </defs>
-
-      {/* Ocean base */}
-      <circle cx="120" cy="120" r="117" fill="url(#sg-ocean)" />
-
-      {/* Latitude & longitude grid */}
-      <g clipPath="url(#sg-clip)" fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="0.75">
-        {/* Equator */}
-        <line x1="3" y1="120" x2="237" y2="120" />
-        {/* Latitude parallels */}
-        <ellipse cx="120" cy="88"  rx="102" ry="19" />
-        <ellipse cx="120" cy="56"  rx="70"  ry="12" />
-        <ellipse cx="120" cy="24"  rx="28"  ry="5"  />
-        <ellipse cx="120" cy="152" rx="102" ry="19" />
-        <ellipse cx="120" cy="184" rx="70"  ry="12" />
-        <ellipse cx="120" cy="216" rx="28"  ry="5"  />
-        {/* Longitude meridians */}
-        <ellipse cx="120" cy="120" rx="38"  ry="117" />
-        <ellipse cx="120" cy="120" rx="74"  ry="117" />
-        <ellipse cx="120" cy="120" rx="101" ry="117" />
-      </g>
-
-      {/* Continents */}
-      <g clipPath="url(#sg-clip)">
-        {/* North America */}
-        <path
-          fill="rgba(52,158,74,0.86)"
-          d="M38 70 C44 58 60 50 78 54 C92 57 102 67 106 79 C110 89 107 101 101 110
-             C94 120 83 126 71 128 C59 130 48 124 41 114 C34 104 32 92 36 81 Z"
-        />
-        {/* Central America tail */}
-        <path fill="rgba(46,140,65,0.76)" d="M68 130 C73 124 80 126 84 133 C87 139 85 148 80 154 C74 160 65 161 60 156 C55 150 55 141 59 136 Z" />
-        {/* Europe */}
-        <path
-          fill="rgba(66,168,84,0.84)"
-          d="M130 58 C138 50 152 48 161 54 C169 59 172 69 169 78 C166 86 157 92 148 93
-             C139 94 131 88 128 80 C125 72 126 63 130 58 Z"
-        />
-        {/* Africa */}
-        <path
-          fill="rgba(78,172,90,0.82)"
-          d="M134 100 C142 93 155 94 162 103 C169 111 168 124 162 133
-             C155 142 143 145 135 139 C127 133 125 120 127 110 C129 104 131 101 134 100 Z"
-        />
-        {/* Asia */}
-        <path
-          fill="rgba(62,162,80,0.84)"
-          d="M162 50 C174 41 194 39 207 46 C218 52 223 64 220 75
-             C217 85 207 93 195 95 C183 97 170 91 163 81 C157 73 156 60 162 50 Z"
-        />
-        {/* Australia */}
-        <path
-          fill="rgba(72,162,86,0.80)"
-          d="M192 150 C201 143 215 144 222 152 C229 159 229 171 223 179
-             C217 187 204 189 195 184 C186 179 183 167 186 158 C187 153 189 151 192 150 Z"
-        />
-      </g>
-
-      {/* Specular shine */}
-      <circle cx="120" cy="120" r="117" fill="url(#sg-shine)" />
-      {/* Rim light */}
-      <circle cx="120" cy="120" r="117" fill="url(#sg-rim)" />
-      {/* Outer border */}
-      <circle cx="120" cy="120" r="117" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 function BadgeBrand() {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/12 px-3 py-2 backdrop-blur-sm">
-      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/95 p-1">
-        <Brand asLink={false} compact showWordmark={false} />
-      </div>
+    <div className="inline-flex items-center rounded-2xl border border-white/14 bg-[#091a2e]/80 px-3 py-2 shadow-[0_12px_28px_rgba(8,15,31,0.18)] backdrop-blur-sm">
       <div className="min-w-0 leading-none">
-        <div className="text-[13px] font-medium tracking-[-0.03em] text-white">
+        <div className="text-[13px] font-semibold tracking-[-0.03em] text-white">
           way<span className="text-[#FF6584]">flo</span>
-        </div>
-        <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-white/65">
-          travel. flow. freedom.
         </div>
       </div>
     </div>
-  );
-}
-
-async function waitForBadgeAssets(element: HTMLElement) {
-  await (document.fonts?.ready ?? Promise.resolve());
-
-  const images = Array.from(element.querySelectorAll('img'));
-  await Promise.all(
-    images.map((image) => {
-      if (image.complete) {
-        return Promise.resolve();
-      }
-
-      return new Promise<void>((resolve) => {
-        image.addEventListener('load', () => resolve(), { once: true });
-        image.addEventListener('error', () => resolve(), { once: true });
-      });
-    })
-  );
-}
-
-async function createBadgeFile({
-  element,
-  destination,
-}: {
-  element: HTMLElement;
-  destination: string;
-}) {
-  await waitForBadgeAssets(element);
-
-  const blob = await elementToBlob(element, {
-    cacheBust: true,
-    backgroundColor: '#ffffff',
-    pixelRatio: 2,
-  });
-
-  if (!blob) {
-    throw new Error('Failed to render share image.');
-  }
-
-  return new File(
-    [blob],
-    `wayflo-${destination ? destination.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'trip'}.png`,
-    { type: 'image/png' }
   );
 }
 
@@ -187,19 +46,16 @@ export function ShareModal({
   tripId,
   destination,
   shareUrl: initialShareUrl = '',
-  shareToken: initialShareToken = '',
   shareLoading = false,
   isOpen,
   onClose,
 }: ShareModalProps) {
   const [shareUrl, setShareUrl] = useState(initialShareUrl);
-  const [shareToken, setShareToken] = useState(initialShareToken);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [imageLoading, setImageLoading] = useState(false);
+  const [gifLoading, setGifLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
-  const badgeRef = useRef<HTMLDivElement>(null);
 
   const shareText = useMemo(
     () => `${SHARE_BADGE_TEXT} ${destination ? `I'm planning ${destination} with wayflo.` : ''}`.trim(),
@@ -208,8 +64,7 @@ export function ShareModal({
 
   useEffect(() => {
     if (initialShareUrl) setShareUrl(initialShareUrl);
-    if (initialShareToken) setShareToken(initialShareToken);
-  }, [initialShareToken, initialShareUrl]);
+  }, [initialShareUrl]);
 
   useEffect(() => {
     if (!isOpen || shareUrl || loading) return;
@@ -224,7 +79,6 @@ export function ShareModal({
         const data = await createTripShare(tripId);
         if (!mounted) return;
         setShareUrl(data.shareUrl);
-        setShareToken(data.shareToken);
       } catch (err: unknown) {
         if (!mounted) return;
         setError(err instanceof Error ? err.message : 'Failed to create share link');
@@ -244,17 +98,18 @@ export function ShareModal({
     setTimeout(() => setCopied(false), 2200);
   };
 
-  const shareBadgeImage = async () => {
-    if (!shareUrl || imageLoading || !badgeRef.current) return;
+  const shareBadgeGif = async () => {
+    if (!shareUrl || gifLoading) return;
 
-    setImageLoading(true);
+    setGifLoading(true);
     setStatusMessage('');
     setError('');
 
     try {
-      const file = await createBadgeFile({
-        element: badgeRef.current,
+      const file = await createBadgeGifFile({
         destination,
+        shareText,
+        shareUrl,
       });
 
       const canShareFiles =
@@ -269,16 +124,16 @@ export function ShareModal({
           url: shareUrl,
           files: [file],
         });
-        setStatusMessage('Badge image ready to share.');
+        setStatusMessage('Animated GIF ready to share.');
         return;
       }
 
       downloadFile(file);
-      setStatusMessage('Badge image downloaded.');
+      setStatusMessage('Animated GIF downloaded.');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create share image');
+      setError(err instanceof Error ? err.message : 'Failed to create animated badge');
     } finally {
-      setImageLoading(false);
+      setGifLoading(false);
       window.setTimeout(() => setStatusMessage(''), 2400);
     }
   };
@@ -332,12 +187,12 @@ export function ShareModal({
 
           <div className="space-y-4 p-5">
             {/* ── Badge preview card ── */}
-            <div ref={badgeRef} className="border border-[#3F3D56] overflow-hidden bg-white">
+            <div className="overflow-hidden border border-[#3F3D56] bg-white">
               {/* Hero — globe background */}
               <div className="relative h-48 overflow-hidden bg-[#091a2e] sm:h-52">
                 {/* Globe */}
                 <div className="absolute right-[-48px] top-1/2 h-[300px] w-[300px] -translate-y-1/2 sm:right-[-36px]">
-                  <TravelGlobe />
+                  <BadgeGlobeCanvas className="h-full w-full" />
                 </div>
 
                 {/* Left-to-right fade so text stays readable */}
@@ -362,9 +217,6 @@ export function ShareModal({
                     )}
                     <p className="max-w-[58%] text-[15px] font-black leading-snug text-white">
                       {SHARE_BADGE_TEXT}
-                    </p>
-                    <p className="mt-1.5 max-w-[52%] text-[11px] leading-relaxed text-white/50">
-                      Tap the link to view the itinerary &amp; drop suggestions.
                     </p>
                   </div>
                 </div>
@@ -421,12 +273,12 @@ export function ShareModal({
 
               <button
                 type="button"
-                onClick={shareBadgeImage}
+                onClick={shareBadgeGif}
                 disabled={!shareUrl}
                 className="flex items-center justify-center gap-2 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageSquareShare size={15} />
-                {imageLoading ? 'Preparing image...' : 'Share badge'}
+                {gifLoading ? 'Preparing GIF...' : 'Share GIF'}
               </button>
 
               <button

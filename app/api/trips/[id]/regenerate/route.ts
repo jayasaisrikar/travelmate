@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { isAdminEmail } from '@/services/admin-access';
+import { lookupDestinationPhotoUrl } from '@/services/place-photo';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { generateItineraryFromLiveData } from '@/services/itinerary';
@@ -17,6 +18,10 @@ function unauthorizedResponse(message = 'Unauthorized') {
 function formatTripError(error: { message?: string; code?: string } | null | undefined) {
   if (!error) {
     return 'Failed to update trip';
+  }
+
+  if (error.code === '42703' || error.message?.includes('cover_image_url')) {
+    return 'The trips table is missing cover_image_url. Apply supabase/migrations/20260416_add_trip_cover_image_url.sql first.';
   }
 
   return error.message || 'Failed to update trip';
@@ -190,6 +195,7 @@ export async function POST(
           budget: budget || String(body?.budget ?? ''),
           interests,
           itinerary: generated,
+          cover_image_url: await lookupDestinationPhotoUrl(destination),
           updated_at: now,
         })
         .eq('id', id);
@@ -209,7 +215,7 @@ export async function POST(
         return NextResponse.json({ error: updateError?.message || 'Failed to update trip' }, { status: 500 });
       }
 
-      const preview = buildSharePreview(updatedTrip as TripRow);
+      const preview = await buildSharePreview(updatedTrip as TripRow);
       const shareUpdateQuery = supabase
         .from('trip_shares')
         .update({
@@ -296,6 +302,7 @@ export async function POST(
         budget: trip.budget,
         interests: Array.isArray(trip.interests) ? trip.interests : [],
         itinerary,
+        cover_image_url: trip.cover_image_url ?? null,
         created_at: trip.created_at,
         updated_at: trip.updated_at,
       },
