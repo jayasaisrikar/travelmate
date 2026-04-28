@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { Brand } from '@/components/common/Brand';
 import { confirmSignupVerificationToken } from '@/services/signup-verification';
 
+const E2E_TEST_MODE = process.env.E2E_TEST_MODE === '1';
+
 type SearchParams = {
   token?: string;
 };
@@ -24,7 +26,7 @@ export default async function VerifyEmailPage({
     const result = await confirmSignupVerificationToken(token);
 
     if (result.status === 'confirmed' || result.status === 'already_used') {
-      redirect('/login?message=verify-email');
+      redirect(E2E_TEST_MODE ? '/login?message=verify-email&e2e=verified' : '/login?message=verify-email');
     }
   }
 

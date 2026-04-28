@@ -4,6 +4,14 @@ import { supabaseAdmin } from '@/services/supabase-admin';
 
 import { createSignupVerificationLink } from '@/services/signup-verification';
 
+const E2E_TEST_MODE = process.env.E2E_TEST_MODE === '1';
+
+type SignupEmailResult = {
+  email: string;
+  redirectTo: string;
+  verificationLink?: string | null;
+};
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -68,7 +76,17 @@ function buildRecoveryTemplate(email: string, actionLink: string) {
 export async function sendSignupConfirmationEmail(input: {
   email: string;
   password: string;
-}) {
+}): Promise<SignupEmailResult> {
+  if (E2E_TEST_MODE) {
+    const verificationLink = await createSignupVerificationLink('e2e-user', input.email);
+
+    return {
+      email: input.email,
+      redirectTo: buildAppUrl('/login?message=verify-email'),
+      verificationLink,
+    };
+  }
+
   const { data: createdUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
     email: input.email,
     password: input.password,
@@ -102,6 +120,7 @@ export async function sendSignupConfirmationEmail(input: {
   return {
     email: input.email,
     redirectTo: buildAppUrl('/login?message=verify-email'),
+    verificationLink: null,
   };
 }
 
