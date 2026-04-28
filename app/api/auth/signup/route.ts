@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Check your email to confirm your account.',
       redirectTo: result.redirectTo,
+      verificationLink: result.verificationLink,
     });
   } catch (error) {
     return NextResponse.json(
