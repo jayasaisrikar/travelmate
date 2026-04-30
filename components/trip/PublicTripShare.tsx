@@ -124,7 +124,7 @@ export function PublicTripShare({
           <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">Check out my trip on wayflo</h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base">{shareBadge}</p>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Destination</div>
               <div className="mt-2 text-lg font-black">{trip.destination}</div>
@@ -132,10 +132,6 @@ export function PublicTripShare({
             <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Duration</div>
               <div className="mt-2 text-lg font-black">{trip.duration} days</div>
-            </div>
-            <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Budget</div>
-              <div className="mt-2 text-lg font-black">{trip.budget || 'Not set'}</div>
             </div>
             <div className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Suggestions</div>
