@@ -1275,6 +1275,13 @@ function buildFallbackItinerary(input: {
       pois: input.pois,
       stayCandidates: input.stayCandidates,
       confirmation: input.request.confirmation ?? null,
+      tripWindow: {
+        arrivalDate: input.request.arrivalDate ?? null,
+        departureDate: input.request.departureDate ?? null,
+        arrivalTime: input.request.arrivalTime ?? null,
+        departureTime: input.request.departureTime ?? null,
+        timezone: input.request.confirmation?.tripWindow.timezone ?? null,
+      },
     },
   };
 }
@@ -1539,6 +1546,13 @@ export async function generateItineraryFromLiveData(
         pois,
         stayCandidates: stayCandidatesRaw,
         confirmation: request.confirmation ?? null,
+        tripWindow: {
+          arrivalDate: request.arrivalDate ?? null,
+          departureDate: request.departureDate ?? null,
+          arrivalTime: request.arrivalTime ?? null,
+          departureTime: request.departureTime ?? null,
+          timezone: request.confirmation?.tripWindow.timezone ?? null,
+        },
       },
     };
   } catch (error) {

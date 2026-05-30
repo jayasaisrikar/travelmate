@@ -12,6 +12,7 @@ import ItineraryChat from '@/components/ItineraryChat';
 import { MapView } from '@/components/trip/MapView';
 import { BudgetBreakdown } from '@/components/trip/BudgetBreakdown';
 import { TimelineView } from '@/components/trip/TimelineView';
+import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
 import type { TripSuggestion } from '@/lib/travel-types';
@@ -650,6 +651,8 @@ export default function TripDetailsPage() {
           onSelectActivity={setSelectedStopIndex}
           onTripUpdated={updatedTrip => setTrip(updatedTrip)}
         />
+
+        <CompanionStrip destination={trip.destination} />
 
         <button
           onClick={() => setIsChatOpen(true)}

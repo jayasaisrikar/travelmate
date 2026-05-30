@@ -334,41 +334,50 @@ export function TimelineView({
               key={`${currentDayNumber}-${day.theme ?? 'day'}`}
               className="overflow-hidden rounded-2xl border border-[#DDDCE8] bg-white shadow-sm transition-shadow hover:shadow-md"
             >
-              {/* Day header row — always visible, click to toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  const next = new Set(expandedDays);
-                  if (isOpen) next.delete(dayIndex);
-                  else next.add(dayIndex);
-                  setExpandedDays(next);
-                }}
-                className="flex w-full items-center gap-4 p-4 text-left sm:p-5"
-              >
-                {/* Day badge */}
-                <span className="shrink-0 rounded-xl bg-[#6C63FF] px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
-                  Day {currentDayNumber}
-                </span>
+              {/* Day header row — always visible, click the summary to toggle */}
+              <div className="flex w-full items-center gap-2 p-4 sm:p-5">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => {
+                    const next = new Set(expandedDays);
+                    if (isOpen) next.delete(dayIndex);
+                    else next.add(dayIndex);
+                    setExpandedDays(next);
+                  }}
+                  className="flex min-w-0 flex-1 items-center gap-4 text-left"
+                >
+                  {/* Day badge */}
+                  <span className="shrink-0 rounded-xl bg-[#6C63FF] px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
+                    Day {currentDayNumber}
+                  </span>
 
-                {/* Theme + meta */}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold text-[#1A1726]">
-                    {day.theme || `Day ${currentDayNumber}`}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[#8A869C]">
-                    {activities.length} stops
-                    {firstTime && lastTime ? ` · ${firstTime} → ${lastTime}` : ''}
-                    {day.date ? ` · ${day.date}` : ''}
-                    {totalCost > 0 ? ` · ~$${totalCost}` : ''}
-                    {day.intensity ? ` · ${day.intensity}` : ''}
-                  </p>
-                </div>
+                  {/* Theme + meta */}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-bold text-[#1A1726]">
+                      {day.theme || `Day ${currentDayNumber}`}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-[#8A869C]">
+                      {activities.length} stops
+                      {firstTime && lastTime ? ` · ${firstTime} → ${lastTime}` : ''}
+                      {day.date ? ` · ${day.date}` : ''}
+                      {totalCost > 0 ? ` · ~$${totalCost}` : ''}
+                      {day.intensity ? ` · ${day.intensity}` : ''}
+                    </span>
+                  </span>
+
+                  {/* Chevron toggle indicator */}
+                  <motion.span
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="shrink-0 text-[#8A869C]"
+                  >
+                    <ChevronDown size={18} />
+                  </motion.span>
+                </button>
 
                 {/* Reorder + regenerate — compact icon buttons */}
-                <div
-                  className="flex shrink-0 items-center gap-1"
-                  onClick={e => e.stopPropagation()}
-                >
+                <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     title="Move day up"
@@ -397,16 +406,7 @@ export function TimelineView({
                     <RefreshCcw size={15} />
                   </button>
                 </div>
-
-                {/* Chevron toggle indicator */}
-                <motion.span
-                  animate={{ rotate: isOpen ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="shrink-0 text-[#8A869C]"
-                >
-                  <ChevronDown size={18} />
-                </motion.span>
-              </button>
+              </div>
 
               {/* Collapsible activity list */}
               <AnimatePresence initial={false}>

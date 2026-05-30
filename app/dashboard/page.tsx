@@ -39,6 +39,8 @@ import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { BookingConfirmationImportCard } from '@/components/dashboard/BookingConfirmationImportCard';
+import { CompanionStrip } from '@/components/social/CompanionStrip';
+import { SocialProfileSettings } from '@/components/social/SocialProfileSettings';
 
 interface AdminShare {
   id: string;
@@ -128,14 +130,15 @@ interface AdminOverview {
   profiles: AdminProfile[];
 }
 
-type DashboardTab = 'overview' | 'trips' | 'shares' | 'suggestions' | 'users';
+type DashboardTab = 'overview' | 'trips' | 'shares' | 'suggestions' | 'users' | 'social';
 
 const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string; icon: any }> = [
-  { id: 'overview', label: 'Overview', description: 'Summary', icon: Activity },
-  { id: 'trips', label: 'Trips', description: 'Manage', icon: Compass },
-  { id: 'shares', label: 'Shares', description: 'Revoke', icon: Share2 },
-  { id: 'suggestions', label: 'Suggestions', description: 'Moderate', icon: MailCheck },
-  { id: 'users', label: 'Users', description: 'Activity', icon: Users },
+  { id: 'overview',     label: 'Overview',    description: 'Summary',   icon: Activity  },
+  { id: 'trips',        label: 'Trips',       description: 'Manage',    icon: Compass   },
+  { id: 'shares',       label: 'Shares',      description: 'Revoke',    icon: Share2    },
+  { id: 'suggestions',  label: 'Suggestions', description: 'Moderate',  icon: MailCheck },
+  { id: 'users',        label: 'Users',       description: 'Activity',  icon: Users     },
+  { id: 'social',       label: 'Social',      description: 'Profile',   icon: Heart     },
 ];
 
 function formatDate(value: string) {
@@ -587,6 +590,24 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/community')}
+                aria-label="Community settings"
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                <Heart className="h-4 w-4 text-[#FF6584]" />
+                <span className="hidden md:inline">Community</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/explore')}
+                aria-label="Find travelers"
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#6C63FF] shadow-sm transition hover:bg-[#F4F3FF]"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Find travelers</span>
+              </button>
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -777,6 +798,9 @@ export default function DashboardPage() {
           <section className="mt-12">
             <BookingConfirmationImportCard />
           </section>
+
+          {/* Social companions */}
+          <CompanionStrip />
         </div>
       </main>
     );
@@ -801,6 +825,24 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/community')}
+              aria-label="Community settings"
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <Heart className="h-4 w-4 text-[#FF6584]" />
+              <span className="hidden md:inline">Community</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/explore')}
+              aria-label="Find travelers"
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#6C63FF] shadow-sm transition hover:bg-[#F4F3FF]"
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Find travelers</span>
+            </button>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -1363,10 +1405,29 @@ export default function DashboardPage() {
                 </div>
               </motion.div>
             )}
+
+            {activeTab === 'social' && (
+              <motion.div
+                key="social"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-6"
+              >
+                <div className="mb-6">
+                  <h2 className="text-2xl font-black tracking-tight text-[#1A1726]">Traveler profile</h2>
+                  <p className="mt-1 text-sm text-[#6F6C82]">
+                    Control how other wayflo travelers see you on the explore page.
+                  </p>
+                </div>
+                <div className="max-w-lg">
+                  <SocialProfileSettings />
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
     </main>
   );
 }
-

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Compass, MapPinned, Sparkles, Waves } from 'lucide-react';
+import { ArrowRight, Compass, MapPinned, Sparkles, Users, Waves } from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
 import { Footer } from '@/components/common/Footer';
 
@@ -214,6 +214,98 @@ export default function Home() {
               <p className="mt-2 text-sm leading-6 text-white/90">
                 The itinerary stays tied to your actual timing so the whole route feels usable, not over-promised.
               </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Social / Explore feature highlight ─────────────── */}
+      <section className="px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            {...fadeInUp}
+            className="overflow-hidden rounded-[34px] border border-[#D8D4F2] bg-[#3F3D56] p-5 shadow-[0_24px_80px_rgba(63,61,86,0.18)] sm:p-8"
+          >
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+              {/* Left copy */}
+              <div className="space-y-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
+                  <Users className="h-3.5 w-3.5" />
+                  New — Wayflo Social
+                </div>
+                <h2 className="text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">
+                  Find travelers heading
+                  <span className="block text-[#A89CFF]"> to the same place.</span>
+                </h2>
+                <p className="text-sm leading-7 text-white/70">
+                  See who else is planning a trip to your destination. Wave to connect,
+                  join a trip room, and plan the route together — or just share notes.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.35)] transition hover:bg-[#5a52d5]"
+                  >
+                    Join the community
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/explore"
+                    className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Browse travelers
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right visual — feature cards */}
+              <div className="space-y-3">
+                {[
+                  {
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
+                        <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+                        <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+                        <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+                        <path d="M6 14a4 4 0 0 0 4 4h4a6 6 0 0 0 6-6v-1a2 2 0 0 0-4 0" />
+                      </svg>
+                    ),
+                    label: 'Wave to connect',
+                    body: 'Anonymous one-tap interest — only visible if both sides wave back.',
+                  },
+                  {
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                        <line x1="9" y1="3" x2="9" y2="18" />
+                        <line x1="15" y1="6" x2="15" y2="21" />
+                      </svg>
+                    ),
+                    label: 'Trip rooms',
+                    body: 'Start a shared planning space for up to 6 travelers going the same way.',
+                  },
+                  {
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    ),
+                    label: 'Privacy first',
+                    body: 'Nothing is public until you opt in. Exact dates are never shared.',
+                  },
+                ].map(item => (
+                  <div key={item.label} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">{item.label}</p>
+                      <p className="mt-0.5 text-sm leading-6 text-white/60">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
