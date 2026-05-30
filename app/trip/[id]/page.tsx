@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { Brand } from '@/components/common/Brand';
+import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
 import { StatusCard } from '@/components/common/StatusCard';
 import ItineraryChat from '@/components/ItineraryChat';
 import { MapView } from '@/components/trip/MapView';
@@ -17,7 +18,7 @@ import type { TripSuggestion } from '@/lib/travel-types';
 
 export const dynamicParams = true;
 
-function getDailyPlans(itinerary: any): any[] {
+function getDailyPlans(itinerary: Record<string, any>): any[] {
   if (Array.isArray(itinerary?.dailyPlans)) {
     return itinerary.dailyPlans;
   }
@@ -29,7 +30,7 @@ function getDailyPlans(itinerary: any): any[] {
   return [];
 }
 
-function getTotalEstimatedCost(itinerary: any): string | null {
+function getTotalEstimatedCost(itinerary: Record<string, any>): string | null {
   const rawValue = itinerary?.totalEstimatedCost ?? itinerary?.total_estimated_cost;
 
   if (typeof rawValue === 'number' || typeof rawValue === 'string') {
@@ -39,7 +40,7 @@ function getTotalEstimatedCost(itinerary: any): string | null {
   return null;
 }
 
-function getDestinationCoordinates(itinerary: any) {
+function getDestinationCoordinates(itinerary: Record<string, any>) {
   const destination = itinerary?.sourceData?.destination;
 
   if (
@@ -56,7 +57,7 @@ function getDestinationCoordinates(itinerary: any) {
   return null;
 }
 
-function getStay(itinerary: any) {
+function getStay(itinerary: Record<string, any>) {
   const stay = itinerary?.stay;
 
   if (
@@ -384,60 +385,67 @@ export default function TripDetailsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
         >
-            <div className="rounded-[32px] border border-[#DDDCE8] bg-white p-6 shadow-[0_18px_60px_rgba(46,40,51,0.07)] sm:p-8">
-              <div className="inline-flex rounded-full bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#3F3D56]">
-                Saved trip
-              </div>
-              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl">
-              {trip.destination}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base">
-                A trip built from live destination data, your trip window, and the places we can actually map.
-              </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => setIsChatOpen(true)}
-                className="rounded-full bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(90,167,232,0.22)] transition hover:translate-y-[-1px]"
-              >
-                Open Trip Assistant
-              </button>
-              <Link
-                href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
-                className="rounded-full border border-[#6C63FF] bg-[#EEEDFE] px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#E6E4FF]"
-              >
-                Edit trip
-              </Link>
-              <button
-                onClick={() => setIsShareOpen(true)}
-                className="rounded-full border border-[#3F3D56] bg-white px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF]"
-              >
-                Share trip
-              </button>
-              <Link
-                href="/dashboard"
-                className="rounded-full border border-[#DDDCE8] bg-[#FBFAFF] px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:border-[#6C63FF] hover:text-[#6C63FF]"
-              >
-                Back to Dashboard
-              </Link>
+          <div className="relative overflow-hidden group rounded-[32px] border border-slate-200 shadow-[0_24px_50px_rgba(108,99,255,0.08)] flex flex-col justify-between min-h-[360px]">
+            <div className="absolute inset-0 z-0 scale-105 transition-transform duration-700 group-hover:scale-100">
+              <DestinationPhotoCover destination={trip.destination} className="h-full w-full" />
             </div>
-            <p className="mt-4 text-sm leading-6 text-[#6F6C82]">
-              Want to adjust the trip after it’s created? Update the destination, duration, budget, or interests and we’ll keep the saved share preview aligned.
-            </p>
+            <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/60 to-slate-950/20 pointer-events-none" />
+            <div className="absolute inset-0 z-10 ring-1 ring-inset ring-white/10 pointer-events-none" />
+
+            <div className="relative z-20 p-6 sm:p-8 flex flex-col h-full justify-end text-white">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/60 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#FF6584] border border-white/10 shadow-sm">
+                  Saved trip
+                </span>
+                <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+                  {trip.destination}
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  A trip built from live destination data, your trip window, and the places we can actually map.
+                </p>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  onClick={() => setIsChatOpen(true)}
+                  className="rounded-2xl bg-[#6C63FF] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#6C63FF]/30 hover:bg-[#5b54e7] transition-all"
+                >
+                  Open Trip Assistant
+                </button>
+                <Link
+                  href={`/dashboard/onboarding?tripId=${encodeURIComponent(trip.id)}`}
+                  className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
+                >
+                  Edit trip
+                </Link>
+                <button
+                  onClick={() => setIsShareOpen(true)}
+                  className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
+                >
+                  Share trip
+                </button>
+                <Link
+                  href="/dashboard"
+                  className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
+                >
+                  Back to Dashboard
+                </Link>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Duration</div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-[#3F3D56]">{trip.duration} days</div>
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Duration</div>
+              <div className="mt-2 text-2xl font-black text-slate-950">{trip.duration} days</div>
             </div>
-            <div className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Map stops</div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-[#6C63FF]">{mapActivities.length}</div>
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Map stops</div>
+              <div className="mt-2 text-2xl font-black text-[#6C63FF]">{mapActivities.length}</div>
             </div>
-            <div className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Estimated cost</div>
-              <div className="mt-2 text-2xl font-black tracking-tight text-[#FF6584]">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Estimated cost</div>
+              <div className="mt-2 text-2xl font-black text-[#FF6584]">
                 {totalEstimatedCost ? `$${totalEstimatedCost}` : 'Not set'}
               </div>
             </div>
