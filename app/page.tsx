@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Compass, MapPinned, Sparkles, Waves } from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
+import { Footer } from '@/components/common/Footer';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 18 },
@@ -365,22 +366,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <footer className="border-t border-white/60 px-4 py-8 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-[#6F6C82] sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Brand href="/" compact className="shrink-0" />
-            <p>© 2026 wayflo</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/dashboard" className="transition hover:text-[#3F3D56]">
-              Dashboard
-            </Link>
-            <Link href="/dashboard/onboarding" className="transition hover:text-[#3F3D56]">
-              New trip
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

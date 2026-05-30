@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+type ModelProvider = 'gemini' | 'nvidia';
+
 type NvidiaChatRole = 'user' | 'assistant' | 'system';
 
 interface NvidiaChatMessage {
@@ -15,8 +17,22 @@ interface NvidiaChatCompletionResponse {
   }>;
 }
 
-const NVIDIA_CHAT_MODEL = 'moonshotai/kimi-k2-instruct-0905';
+const DEFAULT_NVIDIA_CHAT_MODEL = 'moonshotai/kimi-k2-instruct-0905';
+const DEFAULT_NVIDIA_CHAT_ENDPOINT = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const GEMINI_JSON_MODEL = 'gemini-2.5-flash-lite';
+
+function hasNvidiaConfig() {
+  return Boolean(process.env.NVIDIA_API_KEY || process.env.NVIDIA_KIMI_API_KEY);
+}
+
+function hasGeminiConfig() {
+  return Boolean(process.env.GEMINI_API_KEY);
+}
+
+function formatProviderError(provider: ModelProvider, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return `${provider}: ${message}`;
+}
 
 function getNvidiaConfig() {
   const apiKey = process.env.NVIDIA_API_KEY || process.env.NVIDIA_KIMI_API_KEY;
@@ -25,7 +41,11 @@ function getNvidiaConfig() {
     throw new Error('NVIDIA_API_KEY or NVIDIA_KIMI_API_KEY is not configured');
   }
 
-  return { apiKey, model: NVIDIA_CHAT_MODEL };
+  return {
+    apiKey,
+    endpoint: process.env.NVIDIA_API_URL || DEFAULT_NVIDIA_CHAT_ENDPOINT,
+    model: process.env.NVIDIA_MODEL || DEFAULT_NVIDIA_CHAT_MODEL,
+  };
 }
 
 function getGeminiConfig() {
@@ -77,12 +97,12 @@ async function callNvidia(
   maxTokens = 3000,
   timeoutMs = 18_000
 ): Promise<string> {
-  const { apiKey, model } = getNvidiaConfig();
+  const { apiKey, endpoint, model } = getNvidiaConfig();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,7 +121,10 @@ async function callNvidia(
     });
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
-      throw new Error(`NVIDIA request failed with status ${response.status}${errorText ? `: ${errorText}` : ''}`);
+      const detail = errorText ? `: ${errorText}` : '';
+      throw new Error(
+        `NVIDIA request failed with status ${response.status} for model ${model} at ${endpoint}${detail}`
+      );
     }
 
     const data = (await response.json()) as NvidiaChatCompletionResponse;
@@ -115,6 +138,51 @@ async function callNvidia(
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new Error(`NVIDIA request timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callGeminiText(
+  prompt: string,
+  maxTokens = 3000,
+  timeoutMs = 12_000,
+  temperature = 0.4
+): Promise<string> {
+  const { apiKey, model } = getGeminiConfig();
+  const client = new GoogleGenerativeAI(apiKey);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const generativeModel = client.getGenerativeModel({
+      model,
+      generationConfig: {
+        temperature,
+        topP: 0.8,
+        maxOutputTokens: maxTokens,
+      },
+    });
+
+    const response = await generativeModel.generateContent(prompt, {
+      signal: controller.signal,
+      timeout: timeoutMs,
+      apiVersion: 'v1beta',
+    });
+
+    const text = response.response.text().trim();
+
+    if (!text) {
+      throw new Error('Gemini returned an empty response');
+    }
+
+    return text;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Gemini request timed out after ${Math.round(timeoutMs / 1000)}s`);
     }
 
     throw error;
@@ -184,6 +252,8 @@ export async function generateJson<T>(
   const repairMaxTokens = options?.repairMaxTokens ?? Math.max(900, Math.floor(maxTokens / 2));
   const skipRepair = options?.skipRepair ?? false;
   const timeoutMs = options?.timeoutMs ?? 18_000;
+  const repairPrompt = (payload: string) =>
+    `Fix the following JSON so it is valid. Preserve the structure and data exactly. Return only valid JSON with no markdown.\n\n${payload}`;
   const messages: NvidiaChatMessage[] = [
     {
       role: 'user',
@@ -192,22 +262,42 @@ export async function generateJson<T>(
   ];
 
   const geminiPrompt = `${prompt}\n\nReturn valid JSON only. Do not wrap the response in markdown.`;
-  let text: string;
+  let text: string | null = null;
+  let sourceProvider: ModelProvider | null = null;
+  const generationErrors: string[] = [];
 
-  try {
-    text = await callGeminiJson(
-      geminiPrompt,
-      maxTokens,
-      Math.min(timeoutMs, 12_000),
-      options?.responseSchema
-    );
-  } catch (geminiError) {
-    if (!process.env.GEMINI_API_KEY) {
-      text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
-    } else {
-      console.warn('[gemini] Gemini JSON generation failed, falling back to NVIDIA', geminiError);
-      text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
+  if (hasGeminiConfig()) {
+    try {
+      text = await callGeminiJson(
+        geminiPrompt,
+        maxTokens,
+        Math.min(timeoutMs, 12_000),
+        options?.responseSchema
+      );
+      sourceProvider = 'gemini';
+    } catch (error) {
+      generationErrors.push(formatProviderError('gemini', error));
+      console.warn('[gemini] Gemini JSON generation failed, evaluating fallbacks', error);
     }
+  }
+
+  if (!sourceProvider && hasNvidiaConfig()) {
+    try {
+      text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
+      sourceProvider = 'nvidia';
+    } catch (error) {
+      generationErrors.push(formatProviderError('nvidia', error));
+    }
+  }
+
+  if (!sourceProvider) {
+    throw new Error(
+      `No AI provider could generate JSON. ${generationErrors.length ? generationErrors.join(' | ') : 'No providers are configured.'}`
+    );
+  }
+
+  if (!text) {
+    throw new Error(`Provider ${sourceProvider} did not return a response body`);
   }
 
   try {
@@ -219,29 +309,65 @@ export async function generateJson<T>(
       );
     }
 
-    const repairText = await callNvidia(
-      [
-        {
-          role: 'user',
-          content: `Fix the following JSON so it is valid. Preserve the structure and data exactly. Return only valid JSON with no markdown.\n\n${text}`,
-        },
-      ],
-      0,
-      true,
-      repairMaxTokens,
-      Math.max(6_000, Math.floor(repairMaxTokens * 8))
-    );
+    const repairErrors: string[] = [];
+    const repairTimeoutMs = Math.max(6_000, Math.floor(repairMaxTokens * 8));
 
-    try {
-      return JSON.parse(extractLikelyJson(repairText)) as T;
-    } catch (repairError) {
-      throw new Error(
-        `Kimi 2.5 returned invalid JSON. First parse error: ${primaryError instanceof Error ? primaryError.message : 'unknown'}. Repair parse error: ${repairError instanceof Error ? repairError.message : 'unknown'}`
-      );
+    if (hasGeminiConfig()) {
+      try {
+        const repairText = await callGeminiJson(
+          repairPrompt(text),
+          repairMaxTokens,
+          Math.min(repairTimeoutMs, 12_000),
+          options?.responseSchema
+        );
+
+        return JSON.parse(extractLikelyJson(repairText)) as T;
+      } catch (error) {
+        repairErrors.push(formatProviderError('gemini', error));
+      }
     }
+
+    if (hasNvidiaConfig()) {
+      try {
+        const repairText = await callNvidia(
+          [{ role: 'user', content: repairPrompt(text) }],
+          0,
+          true,
+          repairMaxTokens,
+          repairTimeoutMs
+        );
+
+        return JSON.parse(extractLikelyJson(repairText)) as T;
+      } catch (error) {
+        repairErrors.push(formatProviderError('nvidia', error));
+      }
+    }
+
+    throw new Error(
+      `Unable to repair invalid JSON from ${sourceProvider}. First parse error: ${primaryError instanceof Error ? primaryError.message : 'unknown'}. Repair attempts failed: ${repairErrors.join(' | ') || 'no repair providers available'}`
+    );
   }
 }
 
 export async function generateText(prompt: string): Promise<string> {
-  return callNvidia([{ role: 'user', content: prompt }], 0.4);
+  const errors: string[] = [];
+
+  if (hasNvidiaConfig()) {
+    try {
+      return await callNvidia([{ role: 'user', content: prompt }], 0.4);
+    } catch (error) {
+      errors.push(formatProviderError('nvidia', error));
+      console.warn('[gemini] NVIDIA text generation failed, evaluating Gemini fallback', error);
+    }
+  }
+
+  if (hasGeminiConfig()) {
+    try {
+      return await callGeminiText(prompt);
+    } catch (error) {
+      errors.push(formatProviderError('gemini', error));
+    }
+  }
+
+  throw new Error(`No AI provider could generate text. ${errors.join(' | ') || 'No providers are configured.'}`);
 }

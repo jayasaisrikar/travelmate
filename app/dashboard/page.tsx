@@ -1,12 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Compass, 
+  Calendar, 
+  ChevronRight, 
+  Plus, 
+  LogOut, 
+  Trash2, 
+  Share2, 
+  Search, 
+  Users, 
+  Check, 
+  Settings, 
+  Activity, 
+  FileText, 
+  Sparkles, 
+  RefreshCw, 
+  SlidersHorizontal, 
+  ShieldAlert, 
+  ExternalLink,
+  MailCheck, 
+  ShieldCheck,
+  MapPin,
+  Clock,
+  Heart,
+  Undo2,
+  Lock,
+  Unlock,
+  AlertCircle
+} from 'lucide-react';
 
 import { Brand } from '@/components/common/Brand';
 import { deleteTrip, listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { BookingConfirmationImportCard } from '@/components/dashboard/BookingConfirmationImportCard';
 
 interface AdminShare {
   id: string;
@@ -98,12 +130,12 @@ interface AdminOverview {
 
 type DashboardTab = 'overview' | 'trips' | 'shares' | 'suggestions' | 'users';
 
-const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string }> = [
-  { id: 'overview', label: 'Overview', description: 'Summary' },
-  { id: 'trips', label: 'Trips', description: 'Manage' },
-  { id: 'shares', label: 'Shares', description: 'Revoke' },
-  { id: 'suggestions', label: 'Suggestions', description: 'Moderate' },
-  { id: 'users', label: 'Users', description: 'Activity' },
+const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string; icon: any }> = [
+  { id: 'overview', label: 'Overview', description: 'Summary', icon: Activity },
+  { id: 'trips', label: 'Trips', description: 'Manage', icon: Compass },
+  { id: 'shares', label: 'Shares', description: 'Revoke', icon: Share2 },
+  { id: 'suggestions', label: 'Suggestions', description: 'Moderate', icon: MailCheck },
+  { id: 'users', label: 'Users', description: 'Activity', icon: Users },
 ];
 
 function formatDate(value: string) {
@@ -126,8 +158,8 @@ function shorten(value: string, length = 120) {
 
 function chipClass(active: boolean) {
   return active
-    ? 'border border-[#3F3D56] bg-[#def4d8] text-[#3F3D56]'
-    : 'border border-[#3F3D56] bg-[#FFF0F4] text-[#C14D72]';
+    ? 'border border-emerald-100 bg-emerald-500/15 text-emerald-600 font-bold'
+    : 'border border-rose-100 bg-rose-500/15 text-rose-600 font-bold';
 }
 
 function TripCardCover({
@@ -140,21 +172,25 @@ function TripCardCover({
   rightLabel: string;
 }) {
   return (
-    <div className="relative h-40 overflow-hidden rounded-none border-b border-[#D5D1DE] bg-[linear-gradient(135deg,#6C63FF_0%,#FF6584_55%,#3F3D56_100%)] sm:h-44">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.28),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.08),transparent_16%),linear-gradient(180deg,rgba(255,255,255,0.12),rgba(0,0,0,0.06))]" />
-      <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
-      <div className="relative z-10 flex h-full flex-col justify-between p-4 text-white sm:p-5">
+    <div className="relative h-48 overflow-hidden rounded-t-[28px] sm:h-56">
+      <div className="absolute inset-0 z-0 scale-105 transition-transform duration-700 group-hover:scale-100">
+        <DestinationPhotoCover destination={destination} className="h-full w-full" />
+      </div>
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-slate-900/10 pointer-events-none" />
+      <div className="absolute inset-0 z-10 ring-1 ring-inset ring-white/10 pointer-events-none" />
+
+      <div className="relative z-20 flex h-full flex-col justify-between p-5 sm:p-6 text-white">
         <div className="flex items-start justify-between gap-3">
-          <span className="inline-flex border border-white/18 bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+          <span className="inline-flex rounded-full bg-slate-900/60 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white border border-white/20 shadow-sm">
             {meta}
           </span>
-          <span className="inline-flex border border-white/16 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/92">
+          <span className="inline-flex rounded-full bg-slate-900/60 backdrop-blur-md px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/90 border border-white/5 shadow-sm">
             {rightLabel}
           </span>
         </div>
 
-        <div className="flex items-end gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-white/18 bg-white/94 text-lg font-black text-[#3F3D56]">
+        <div className="flex items-end gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-white text-2xl font-black text-[#6C63FF] shadow-xl shadow-black/40 backdrop-blur-sm transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300">
             {destination
               .split(/\s+/)
               .filter(Boolean)
@@ -162,11 +198,11 @@ function TripCardCover({
               .map(part => part[0]?.toUpperCase() ?? '')
               .join('') || 'TR'}
           </div>
-          <div className="min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/74">
-              Saved trip
-            </div>
-            <h3 className="truncate text-[1.15rem] font-black tracking-[-0.03em] sm:text-[1.45rem]">
+          <div className="min-w-0 pb-1">
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#FF6584] block mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              Destination
+            </span>
+            <h3 className="truncate text-2xl font-black text-white tracking-tight drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] group-hover:text-pink-100 transition-colors duration-200">
               {destination}
             </h3>
           </div>
@@ -231,17 +267,20 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [userQuery, setUserQuery] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [refreshSpin, setRefreshSpin] = useState(false);
 
   const loadOverview = async () => {
     try {
       setError('');
       setLoading(true);
+      setRefreshSpin(true);
       const data = await fetchAdminOverview();
       setOverview(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load admin dashboard');
     } finally {
       setLoading(false);
+      setTimeout(() => setRefreshSpin(false), 500);
     }
   };
 
@@ -249,12 +288,14 @@ export default function DashboardPage() {
     try {
       setError('');
       setLoading(true);
+      setRefreshSpin(true);
       const trips = await listTrips();
       setUserTrips(trips);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load your trips');
     } finally {
       setLoading(false);
+      setTimeout(() => setRefreshSpin(false), 500);
     }
   };
 
@@ -446,25 +487,26 @@ export default function DashboardPage() {
     router.replace('/login');
   };
 
-  const filteredUsers = (overview?.users ?? []).filter(user => {
-    const query = userQuery.trim().toLowerCase();
+  const filteredUsers = useMemo(() => {
+    return (overview?.users ?? []).filter(user => {
+      const query = userQuery.trim().toLowerCase();
 
-    if (!query) {
-      return true;
-    }
+      if (!query) {
+        return true;
+      }
 
-    const searchable = [
-      user.email,
-      user.full_name,
-      user.role,
-      String(user.usage.trips_created),
-      String(user.usage.shares_created),
-      String(user.usage.suggestions_received),
-    ]
-      .filter((value): value is string => Boolean(value));
+      const searchable = [
+        user.email,
+        user.full_name,
+        user.role,
+        String(user.usage.trips_created),
+        String(user.usage.shares_created),
+        String(user.usage.suggestions_received),
+      ].filter((value): value is string => Boolean(value));
 
-    return searchable.some(value => value.toLowerCase().includes(query));
-  });
+      return searchable.some(value => value.toLowerCase().includes(query));
+    });
+  }, [overview?.users, userQuery]);
 
   const selectableUserIds = filteredUsers.filter(user => user.id !== currentUserId).map(user => user.id);
   const selectedVisibleUserIds = selectableUserIds.filter(id => selectedUserIds.includes(id));
@@ -496,22 +538,28 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] px-4 text-[#3F3D56]">
-        <div className="border border-[#3F3D56] bg-white px-5 py-4">
-          <div className="flex items-center gap-3">
+      <div className="relative flex min-h-screen items-center justify-center bg-slate-50 px-4 text-[#3F3D56] overflow-hidden">
+        {/* Background blobs */}
+        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-[#6C63FF]/10 blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#FF6584]/80 blur-[120px] opacity-10 pointer-events-none" />
+        
+        <div className="relative rounded-[32px] border border-slate-200/50 bg-white/70 backdrop-blur-xl p-8 shadow-[0_32px_64px_rgba(108,99,255,0.08)] text-center max-w-sm">
+          <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#6C63FF]/10 text-[#6C63FF]">
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
-              className="h-5 w-5 border-2 border-[#6C63FF] border-t-transparent"
+              transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+              className="absolute inset-0 rounded-full border-4 border-[#6C63FF]/20 border-t-[#6C63FF]"
             />
-            <span className="text-sm font-semibold sm:text-base">
-              {dashboardMode === 'admin'
-                ? 'Loading admin dashboard...'
-                : dashboardMode === 'user'
-                  ? 'Loading your dashboard...'
-                  : 'Checking your dashboard access...'}
-            </span>
+            <Sparkles className="h-6 w-6 animate-pulse" />
           </div>
+          <h2 className="text-lg font-black text-slate-900 tracking-tight">Syncing Wayflo</h2>
+          <p className="mt-2 text-xs text-[#6F6C82] leading-relaxed">
+            {dashboardMode === 'admin'
+              ? 'Loading admin overview control systems...'
+              : dashboardMode === 'user'
+                ? 'Securing your itineraries and bookings...'
+                : 'Resolving account access clearance...'}
+          </p>
         </div>
       </div>
     );
@@ -521,153 +569,213 @@ export default function DashboardPage() {
     const latestTrip = userTrips[0] ?? null;
 
     return (
-      <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
-        <div className="border-b border-[#3F3D56] bg-[#FBFAFF]">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+      <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-12">
+        {/* Colorful flowing vector blobs to make UI look organic & high-end */}
+        <div className="absolute -top-40 right-10 h-[500px] w-[#500px] rounded-full bg-gradient-to-tr from-[#6C63FF]/5 to-[#FF6584]/5 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-10 -left-20 h-[400px] w-[#400px] rounded-full bg-[#6C63FF]/3 blur-[100px] pointer-events-none" />
+
+        {/* Global Nav-Bar */}
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/70 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-4">
-              <Brand href="/" compact className="shrink-0" />
-              <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Dashboard</div>
-                <div className="text-lg font-black tracking-tight">Your wayflo trips</div>
+              <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
+              <div className="hidden h-6 w-[1px] bg-slate-200 sm:block" />
+              <div className="hidden sm:block">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Dashboard</div>
+                <div className="text-sm font-black tracking-tight text-slate-800">Your Wayflo Trips</div>
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => router.push('/dashboard/onboarding')}
-                className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#6C63FF] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-[#6C63FF]/20 hover:bg-[#5b54e7] transition-all"
               >
-                New trip
-              </button>
+                <Plus className="h-4 w-4" />
+                <span>New trip</span>
+              </motion.button>
               <button
                 onClick={handleSignOut}
-                className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm"
               >
-                Sign out
+                <LogOut className="h-4 w-4 text-slate-400" />
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <div className="grid gap-4 border border-[#3F3D56] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="space-y-4">
-              <div className="inline-flex border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
-                Welcome back
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            {/* Elegant Welcome Hero Card */}
+            <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_24px_50px_rgba(108,99,255,0.03)] backdrop-blur-md flex flex-col justify-between">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.04] pointer-events-none">
+                <Compass className="h-48 w-44" />
               </div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-                Plan, reopen, and edit your trips from one place.
-              </h1>
-              <p className="max-w-3xl text-sm leading-7 text-[#6F6C82] sm:text-base">
-                Start a new itinerary when you are ready, or jump back into an existing one to edit the destination, budget, and trip details.
-              </p>
+              <div className="relative z-10">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#FF6584]">
+                  <Sparkles className="h-3 w-3" />
+                  Welcome back
+                </span>
+                <h1 className="mt-4 text-3xl font-black text-slate-900 tracking-tight sm:text-5xl leading-[1.12]">
+                  Plan, reopen, and edit your trips from one place.
+                </h1>
+                <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#6F6C82] sm:text-base">
+                  Start a new AI-guided itinerary when you are ready, or jump back into a saved journey to customize destinations, budgets, and schedules.
+                </p>
+              </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button
+              <div className="mt-8 flex flex-wrap gap-3 relative z-10">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => router.push('/dashboard/onboarding')}
-                  className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white"
+                  className="rounded-2xl bg-neutral-900 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-neutral-900/10 hover:bg-neutral-800 transition-all"
                 >
-                  {latestTrip ? 'Create another trip' : 'Create your first trip'}
-                </button>
+                  {latestTrip ? 'Create another trip' : 'Plan your first trip'}
+                </motion.button>
                 {latestTrip && (
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => router.push(`/trip/${latestTrip.id}`)}
-                    className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
+                    className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 hover:border-slate-300 shadow-sm"
                   >
                     Open latest trip
-                  </button>
+                  </motion.button>
                 )}
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Trips</div>
-                <div className="mt-2 text-2xl font-black tracking-tight text-[#3F3D56]">{userTrips.length}</div>
+            {/* Quick Metrics Grid */}
+            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-center">
+                <div className="absolute right-4 bottom-2 text-slate-100 font-extrabold text-7xl select-none opacity-40">
+                  {userTrips.length}
+                </div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Trips planned</div>
+                <div className="relative mt-2 text-3xl font-black text-slate-950">{userTrips.length}</div>
               </div>
-              <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Latest</div>
-                <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
-                  {latestTrip ? latestTrip.destination : 'No trips yet'}
+              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Latest target</div>
+                <div className="mt-2 flex items-center gap-1.5 font-bold text-[#3F3D56] truncate">
+                  <MapPin className="h-4 w-4 shrink-0 text-[#6C63FF]" />
+                  <span className="truncate text-slate-900">{latestTrip ? latestTrip.destination : 'No active trips'}</span>
                 </div>
               </div>
-              <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Next step</div>
-                <div className="mt-2 text-sm font-semibold text-[#3F3D56]">
-                  {latestTrip ? 'Open or edit a saved trip' : 'Start by creating a trip'}
+              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Next Action</div>
+                <div className="mt-2 text-xs font-semibold text-slate-600">
+                  {latestTrip ? 'Review recommendations or export' : 'Run the AI generation onboarding'}
                 </div>
               </div>
             </div>
           </div>
 
           {error && (
-            <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
-              {error}
+            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm font-semibold text-rose-600 shadow-sm">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
+          {/* Trips Directory Grid Section */}
+          <section className="mt-10">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-5">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Your trips</div>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">Saved itineraries</h2>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Saved plans</span>
+                <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight sm:text-3xl">Your travel logs</h2>
               </div>
               <button
                 onClick={loadUserTrips}
-                className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+                className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
               >
-                Refresh
+                <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
               </button>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
               {userTrips.length > 0 ? (
                 userTrips.map(trip => (
-                  <article
+                  <motion.article
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
                     key={trip.id}
-                    className="overflow-hidden rounded-none border border-[#D5D1DE] bg-white shadow-[0_16px_32px_rgba(63,61,86,0.08)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(63,61,86,0.12)]"
+                    className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(108,99,255,0.08)] flex flex-col h-full"
                   >
                     <TripCardCover
                       destination={trip.destination}
-                      meta={`${trip.duration} days`}
-                      rightLabel={formatDateCompact(trip.updated_at)}
+                      meta={trip.duration ? `${trip.duration} Days` : 'Trip'}
+                      rightLabel={`Saved ${formatDateCompact(trip.updated_at)}`}
                     />
 
-                    <div className="p-4 sm:p-5">
-                      <p className="text-sm leading-6 text-[#6F6C82]">
-                        {trip.budget || 'Budget not set'} · Saved {formatDateCompact(trip.updated_at)}
-                      </p>
+                    <div className="flex flex-col flex-1 p-5 sm:p-6 bg-white/60 backdrop-blur-3xl">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-[#6F6C82] mb-6">
+                        <span className="font-semibold text-[#6C63FF] bg-[#6C63FF]/10 text-[11px] rounded-full px-3 py-1 font-mono ring-1 ring-[#6C63FF]/20">
+                          {trip.budget || 'Custom budget'}
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="inline-flex items-center gap-1.5 font-medium text-slate-500">
+                          <Clock className="h-3.5 w-3.5 text-slate-400" />
+                          Updated {formatDateCompact(trip.updated_at)}
+                        </span>
+                      </div>
 
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <button
+                      <div className="flex flex-wrap items-center gap-2.5 mt-auto">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => router.push(`/trip/${trip.id}`)}
-                          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
+                          className="flex-1 min-w-[120px] rounded-xl bg-[#6C63FF] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#6C63FF]/25 hover:bg-[#5b54e7] transition-all flex items-center justify-center gap-1.5"
                         >
-                          Open trip
-                        </button>
-                        <button
+                          <Compass className="h-4 w-4" />
+                          Open
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => router.push('/dashboard/onboarding')}
-                          className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+                          className="flex-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-all text-center"
                         >
-                          Create new
-                        </button>
+                          New
+                        </motion.button>
                         <button
                           onClick={() => handleDeleteUserTrip(trip.id, trip.destination)}
                           disabled={actionId === `user-trip-${trip.id}`}
-                          className="rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
+                          className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
                         >
-                          {actionId === `user-trip-${trip.id}` ? 'Deleting...' : 'Delete trip'}
+                          {actionId === `user-trip-${trip.id}` ? '...' : 'Del'}
                         </button>
                       </div>
                     </div>
-                  </article>
+                  </motion.article>
                 ))
               ) : (
-                <div className="border border-dashed border-[#3F3D56] bg-[#FBFAFF] p-6 text-sm leading-7 text-[#6F6C82] lg:col-span-2">
-                  You do not have any saved trips yet. Start a new trip to build your first itinerary.
+                <div className="rounded-[28px] border-2 border-dashed border-slate-200 bg-white p-8 text-center md:col-span-2 py-12">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6C63FF]/10 text-[#6C63FF] mb-4">
+                    <Compass className="h-6 w-6 animate-pulse" />
+                  </div>
+                  <h3 className="text-base font-black text-slate-800 tracking-tight">No itineraries created yet</h3>
+                  <p className="mt-2 text-xs text-[#6F6C82] max-w-sm mx-auto leading-relaxed">
+                    Ready to build your dream schedule? Press the button below to feed the AI generator.
+                  </p>
+                  <button
+                    onClick={() => router.push('/dashboard/onboarding')}
+                    className="mt-5 rounded-2xl bg-[#6C63FF] px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-[#5b54e7]"
+                  >
+                    Build first trip
+                  </button>
                 </div>
               )}
             </div>
+          </section>
+
+          {/* Booking Conf. Wrapper */}
+          <section className="mt-12">
+            <BookingConfirmationImportCard />
           </section>
         </div>
       </main>
@@ -675,59 +783,78 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
-      <div className="border-b border-[#3F3D56] bg-[#FBFAFF]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+    <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-16">
+      {/* Dynamic ambient vector glows */}
+      <div className="absolute -top-40 left-1/3 h-[600px] w-[600px] rounded-full bg-[#6C63FF]/3 blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-0 h-[500px] w-[500px] rounded-full bg-[#FF6584]/3 blur-[120px] pointer-events-none" />
+
+      {/* Modern sticky glass header */}
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/70 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Brand href="/" compact className="shrink-0" />
-            <div>
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Admin</div>
-              <div className="text-lg font-black tracking-tight">wayflo control center</div>
+            <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
+            <div className="hidden h-6 w-[1px] bg-slate-200 sm:block" />
+            <div className="hidden sm:block">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6584]">Wayflo HQ</div>
+              <div className="text-sm font-black tracking-tight text-slate-800">Control Center</div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/dashboard/onboarding')}
-              className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#6C63FF] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-[#6C63FF]/20 hover:bg-[#5b54e7] transition-all"
             >
-              New trip
-            </button>
+              <Plus className="h-4 w-4" />
+              <span>New trip</span>
+            </motion.button>
             <button
               onClick={handleSignOut}
-              className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]"
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm animate-fade-in"
             >
-              Sign out
+              <LogOut className="h-4 w-4 text-slate-400" />
+              <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid gap-4 border border-[#3F3D56] bg-white p-5 sm:p-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-4">
-            <div className="inline-flex border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]">
-              Admin only
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
+        {/* Welcome Dashboard Banner */}
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_24px_50px_rgba(108,99,255,0.03)] backdrop-blur-md flex flex-col justify-between">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+              <SlidersHorizontal className="h-48 w-44" />
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Manage every wayflo surface from one place.</h1>
-              <p className="max-w-3xl text-sm leading-7 text-[#6F6C82] sm:text-base">
-                Trips, public shares, guest suggestions, and profile data all sit behind this panel.
-                Only a verified admin account can enter it.
+            <div className="relative z-10">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#6C63FF]">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Admin Console
+              </span>
+              <h1 className="mt-4 text-3xl font-black text-slate-900 tracking-tight sm:text-5xl leading-[1.12]">
+                Manage every Wayflo surface from one place.
+              </h1>
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#6F6C82] sm:text-base">
+                Trips, public shares, guest suggestions, and profile data all sit behind this secure management area. Only accounts holding trusted roles have access.
               </p>
             </div>
+          </div>
 
+          {/* Glowing Metrics Grid Header */}
           {overview && (
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {[
-                { label: 'Trips', value: overview.stats.trips.toString(), color: '#6C63FF' },
-                { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#FF6584' },
-                { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#FF6584' },
-                { label: 'Users', value: overview.stats.users.toString(), color: '#3F3D56' },
-                { label: 'Confirmed', value: overview.stats.confirmedUsers.toString(), color: '#15a15f' },
-                { label: 'Profiles', value: overview.profiles.length.toString(), color: '#C14D72' },
+                { label: 'Trips planned', value: overview.stats.trips.toString(), color: '#6C63FF', bg: 'bg-[#6C63FF]/5', border: 'border-[#6C63FF]/10' },
+                { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#FF6584', bg: 'bg-[#FF6584]/5', border: 'border-[#FF6584]/10' },
+                { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#FF6B6B', bg: 'bg-rose-50', border: 'border-rose-100' },
+                { label: 'Users total', value: overview.stats.users.toString(), color: '#3F3D56', bg: 'bg-slate-50', border: 'border-slate-100' },
+                { label: 'Confirmed emails', value: overview.stats.confirmedUsers.toString(), color: '#10B981', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+                { label: 'User profiles', value: overview.profiles.length.toString(), color: '#A855F7', bg: 'bg-purple-50', border: 'border-purple-100' },
               ].map(card => (
-                <div key={card.label} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
+                <div key={card.label} className={`flex flex-col justify-center rounded-[24px] border ${card.border} ${card.bg} p-4 shadow-sm hover:shadow-md transition-all`}>
+                  <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
                   <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
                     {card.value}
                   </div>
@@ -738,459 +865,508 @@ export default function DashboardPage() {
         </div>
 
         {error && (
-          <div className="mt-4 border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
-            {error}
+          <div className="mt-6 flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm font-semibold text-rose-600 shadow-sm animate-shake">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
-        <div className="mt-6 flex flex-wrap gap-2 border-b border-[#3F3D56] pb-4">
-          {DASHBOARD_TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={
-                activeTab === tab.id
-                  ? 'border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white'
-                  : 'border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56]'
-              }
-            >
-              <span className="block text-[11px] uppercase tracking-[0.18em] opacity-70">{tab.description}</span>
-              <span className="block">{tab.label}</span>
-            </button>
-          ))}
+
+        {/* Premium Active Tab Bar */}
+        <div className="mt-10 border-b border-slate-200">
+          <div className="flex flex-wrap gap-2 pb-px overflow-x-auto scrollbar-none">
+            {DASHBOARD_TABS.map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className="relative px-5 py-4 pb-4 text-left transition-all outline-none"
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeAdminTabLine"
+                      className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-[#6C63FF]"
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <span className={`block text-[9px] font-bold uppercase tracking-[0.18em] ${isActive ? 'text-[#6C63FF]' : 'text-slate-400'}`}>
+                    {tab.description}
+                  </span>
+                  <span className={`block mt-1 text-sm font-black tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-600 hover:text-slate-900'}`}>
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {activeTab === 'overview' && (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <section className="border border-[#3F3D56] bg-white p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Overview</div>
-                  <h2 className="mt-1 text-2xl font-black tracking-tight">Activity summary</h2>
-                </div>
-                <button
-                  onClick={loadOverview}
-                  className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56]"
-                >
-                  Refresh
-                </button>
-              </div>
+        {/* Tab Panel Renderers */}
+        <div className="mt-8">
+          <AnimatePresence mode="wait">
+            {activeTab === 'overview' && (
+              <motion.div
+                key="tab-overview"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]"
+              >
+                <div className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Overview</span>
+                      <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight">Active operations summary</h2>
+                    </div>
+                    <button
+                      onClick={loadOverview}
+                      className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
+                    >
+                      <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                    </button>
+                  </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {overview &&
-                  [
-                    { label: 'Trips', value: overview.stats.trips.toString(), color: '#6C63FF' },
-                    { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#FF6584' },
-                    { label: 'Suggestions', value: overview.stats.suggestions.toString(), color: '#FF6584' },
-                    { label: 'Users', value: overview.stats.users.toString(), color: '#3F3D56' },
-                    { label: 'Confirmed', value: overview.stats.confirmedUsers.toString(), color: '#15a15f' },
-                    { label: 'Profiles', value: overview.profiles.length.toString(), color: '#C14D72' },
-                  ].map(card => (
-                    <div key={card.label} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
-                      <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
-                        {card.value}
+                  <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Recent trips</h3>
+                      <div className="mt-3.5 space-y-2.5">
+                        {(overview?.trips ?? []).slice(0, 3).map(trip => (
+                          <div key={trip.id} className="rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 text-xs shadow-sm hover:border-slate-200 transition-colors">
+                            <div className="font-bold text-slate-800 truncate">{trip.destination}</div>
+                            <div className="mt-0.5 text-[#8A869C] font-mono truncate">{trip.owner_email || 'No email'}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-              </div>
 
-              <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#8A869C]">Recent trips</h3>
-                  <div className="mt-3 space-y-3">
-                    {(overview?.trips ?? []).slice(0, 3).map(trip => (
-                      <div key={trip.id} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm">
-                        <div className="font-semibold">{trip.destination}</div>
-                        <div className="text-xs text-[#6F6C82]">{trip.owner_email || 'Unknown owner'}</div>
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Recent shares</h3>
+                      <div className="mt-3.5 space-y-2.5">
+                        {(overview?.shares ?? []).slice(0, 3).map(share => (
+                          <div key={share.id} className="rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 text-xs shadow-sm hover:border-slate-200 transition-colors">
+                            <div className="font-bold text-slate-800 truncate">{share.destination}</div>
+                            <span className={`inline-flex mt-1 items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800`}>
+                              {share.revoked_at ? 'Revoked' : 'Live link'}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Recent users</h3>
+                      <div className="mt-3.5 space-y-2.5">
+                        {(overview?.users ?? []).slice(0, 3).map(user => (
+                          <div key={user.id} className="rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 text-xs shadow-sm hover:border-slate-200 transition-colors">
+                            <div className="font-bold text-slate-800 truncate">{user.email || 'No email'}</div>
+                            <div className="mt-0.5 text-indigo-600 font-bold">{user.usage.total_actions} actions</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#8A869C]">Recent shares</h3>
-                  <div className="mt-3 space-y-3">
-                    {(overview?.shares ?? []).slice(0, 3).map(share => (
-                      <div key={share.id} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm">
-                        <div className="font-semibold">{share.destination}</div>
-                        <div className="text-xs text-[#6F6C82]">{share.revoked_at ? 'Revoked' : 'Live'}</div>
-                      </div>
-                    ))}
+                <div className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Shortcuts</span>
+                    <h2 className="mt-0.5 text-xl font-black text-slate-900 tracking-tight">HQ management guides</h2>
+                    <p className="mt-4 text-xs leading-relaxed text-[#6F6C82]">
+                      Use the active tabs to manage system operations. You can revoke shares instantly, filter registered users, bulk-delete spammers, or prune orphan itineraries.
+                    </p>
+                    <p className="mt-3 text-xs leading-relaxed text-[#6F6C82]">
+                      Usage metrics are generated inside real-time app metadata hooks, allowing server security to run without slowing query times.
+                    </p>
+                  </div>
+                  <div className="mt-6 border-t border-slate-100 pt-5 flex items-center justify-between text-xs font-semibold text-[#6C63FF]">
+                    <span>Secure shell connected</span>
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   </div>
                 </div>
+              </motion.div>
+            )}
 
-                <div className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                  <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#8A869C]">Recent users</h3>
-                  <div className="mt-3 space-y-3">
-                    {(overview?.users ?? []).slice(0, 3).map(user => (
-                      <div key={user.id} className="border border-[#3F3D56] bg-white px-3 py-2 text-sm">
-                        <div className="font-semibold">{user.email || 'No email'}</div>
-                        <div className="text-xs text-[#6F6C82]">{user.usage.total_actions} actions</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="border border-[#3F3D56] bg-white p-5 sm:p-6">
-              <div className="border-b border-[#3F3D56] pb-4">
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Need a shortcut?</div>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">Jump into a management tab</h2>
-              </div>
-
-              <div className="mt-5 space-y-3 text-sm leading-7 text-[#6F6C82]">
-                <p>Use Trips to delete an itinerary, Shares to revoke a public link, Suggestions to moderate feedback, and Users to inspect activity.</p>
-                <p>The dashboard now uses existing app data for usage tracking, so you can see who’s active without adding extra tables.</p>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {activeTab === 'trips' && (
-          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Trips</div>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">All trips</h2>
-              </div>
-              <button
-                onClick={loadOverview}
-                className="border border-[#3F3D56] bg-[#FBFAFF] px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+            {activeTab === 'trips' && (
+              <motion.div
+                key="tab-trips"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
               >
-                Refresh
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              {overview?.trips.length ? (
-                overview.trips.map(trip => (
-                  <article
-                    key={trip.id}
-                    className="overflow-hidden rounded-none border border-[#D5D1DE] bg-white shadow-[0_16px_32px_rgba(63,61,86,0.08)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(63,61,86,0.12)]"
+                <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">All records</span>
+                    <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight">Active trips catalog</h2>
+                  </div>
+                  <button
+                    onClick={loadOverview}
+                    className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
                   >
-                    <TripCardCover
-                      destination={trip.destination}
-                      meta={trip.share && !trip.share.revoked_at ? 'Shared trip' : 'Private trip'}
-                      rightLabel={`${trip.suggestions_count} sugg.`}
-                    />
+                    <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                  </button>
+                </div>
 
-                    <div className="p-4 sm:p-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm leading-6 text-[#6F6C82]">
-                            {trip.duration} days · {trip.owner_email || 'Unknown owner'}
-                            {trip.owner_name ? ` · ${trip.owner_name}` : ''}
-                          </p>
-                          <p className="mt-1 text-xs text-[#8A869C]">
-                            Created {formatDate(trip.created_at)} · Updated {formatDate(trip.updated_at)}
-                          </p>
+                <div className="mt-8 grid gap-6 md:grid-cols-2">
+                  {overview?.trips.length ? (
+                    overview.trips.map(trip => (
+                      <motion.article
+                        key={trip.id}
+                        className="group overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl flex flex-col h-full"
+                      >
+                        <TripCardCover
+                          destination={trip.destination}
+                          meta={trip.share && !trip.share.revoked_at ? 'Public Shared' : 'Private'}
+                          rightLabel={`${trip.suggestions_count} recommendations`}
+                        />
+
+                        <div className="flex flex-col flex-1 p-5 sm:p-6 bg-white/60 backdrop-blur-3xl">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-5">
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium leading-6 text-slate-500">
+                                <span className="font-extrabold text-slate-700 bg-slate-100 rounded-full px-2.5 py-0.5">{trip.duration} Days</span>
+                                <span className="mx-2 text-slate-300">•</span>
+                                <span className="font-semibold text-slate-800">{trip.owner_email || 'Unknown owner'}</span>
+                                {trip.owner_name ? ` (${trip.owner_name})` : ''}
+                              </p>
+                              <p className="mt-2 text-[10px] uppercase font-bold tracking-widest text-[#8A869C]">
+                                Created {formatDate(trip.created_at)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-auto flex flex-wrap gap-2 text-xs">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => router.push(`/trip/${trip.id}`)}
+                              className="flex-1 min-w-[100px] rounded-xl bg-[#6C63FF] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#6C63FF]/25 hover:bg-[#5b54e7] transition-all flex items-center justify-center gap-1.5"
+                            >
+                              <Compass className="h-4 w-4" />
+                              Open
+                            </motion.button>
+                            {trip.share?.share_url && (
+                              <a
+                                href={trip.share.share_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-none flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-all"
+                              >
+                                View Share
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleDeleteTrip(trip.id)}
+                              disabled={actionId === `trip-${trip.id}`}
+                              className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
+                            >
+                              {actionId === `trip-${trip.id}` ? '...' : 'Del'}
+                            </button>
+                          </div>
+
+                          {trip.share && (
+                            <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-[#FBFAFF] p-4 text-xs">
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#8A869C]">
+                                    Live deployment url
+                                  </div>
+                                  <p className="mt-1 truncate font-mono text-slate-600">
+                                    {trip.share.revoked_at ? 'REVOKED/INACTIVE' : trip.share.share_url}
+                                  </p>
+                                </div>
+                                {!trip.share.revoked_at && (
+                                  <button
+                                    onClick={() => handleRevokeShare(trip.share!.id)}
+                                    disabled={actionId === `share-${trip.share.id}`}
+                                    className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-800 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+                                  >
+                                    {actionId === `share-${trip.share.id}` ? 'Revoking...' : 'Revoke URL'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.article>
+                    ))
+                  ) : (
+                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-[#FBFAFF] px-4 py-12 text-center text-xs text-[#6F6C82] col-span-2">
+                      No matching trips found in database search.
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'shares' && (
+              <motion.div
+                key="tab-shares"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
+              >
+                <div className="border-b border-slate-100 pb-5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Shares</span>
+                  <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight">Active public deployments</h2>
+                </div>
+
+                <div className="mt-8 space-y-4">
+                  {overview?.shares.length ? (
+                    overview.shares.map(share => (
+                      <div key={share.id} className="rounded-2xl border border-slate-100 bg-[#FBFAFF] p-5 shadow-sm flex flex-col justify-between sm:flex-row sm:items-center gap-4">
+                        <div>
+                          <div className="font-bold text-slate-900 text-sm">{share.destination}</div>
+                          <div className="text-xs text-[#6F6C82] mt-1">
+                            Uploaded by <span className="font-semibold">{share.owner_email || 'Unknown'}</span> · {formatDate(share.created_at)}
+                          </div>
+                          <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-white border border-slate-200/60 rounded-full px-2.5 py-0.5">
+                            {share.suggestions_count} suggestion{share.suggestions_count === 1 ? '' : 's'}
+                          </div>
                         </div>
 
-                        <div className="rounded-full border border-[#DDDCE8] bg-[#FBFAFF] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
-                          {trip.suggestions_count} suggestion{trip.suggestions_count === 1 ? '' : 's'}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <button
-                          onClick={() => router.push(`/trip/${trip.id}`)}
-                          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-3 py-2 text-sm font-semibold text-white"
-                        >
-                          Open trip
-                        </button>
-                        {trip.share?.share_url && (
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className={`${share.revoked_at ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-800'} rounded-full px-3 py-1 text-[9px] font-extrabold uppercase tracking-wider`}>
+                            {share.revoked_at ? 'Revoked' : 'Live'}
+                          </span>
                           <a
-                            href={trip.share.share_url}
+                            href={share.share_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50"
                           >
                             Open share
                           </a>
-                        )}
-                        <button
-                          onClick={() => handleDeleteTrip(trip.id)}
-                          disabled={actionId === `trip-${trip.id}`}
-                          className="rounded-xl border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
-                        >
-                          {actionId === `trip-${trip.id}` ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
-
-                      {trip.share && (
-                        <div className="mt-4 rounded-2xl border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm">
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">
-                                Share link
-                              </div>
-                              <p className="mt-1 truncate text-[#3F3D56]">
-                                {trip.share.revoked_at ? 'Revoked' : trip.share.share_url}
-                              </p>
-                            </div>
-                            {!trip.share.revoked_at && (
-                              <button
-                                onClick={() => handleRevokeShare(trip.share!.id)}
-                                disabled={actionId === `share-${trip.share.id}`}
-                                className="rounded-xl border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
-                              >
-                                {actionId === `share-${trip.share.id}` ? 'Revoking...' : 'Revoke share'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
-                  No trips yet.
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'shares' && (
-          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
-            <div className="border-b border-[#3F3D56] pb-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Shares</div>
-              <h2 className="mt-1 text-2xl font-black tracking-tight">Public links</h2>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {overview?.shares.length ? (
-                overview.shares.map(share => (
-                  <div key={share.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-[#3F3D56]">{share.destination}</div>
-                        <div className="text-xs text-[#6F6C82]">
-                          {share.owner_email || 'Unknown owner'} · {formatDate(share.created_at)}
-                        </div>
-                        <div className="mt-1 text-xs text-[#8A869C]">
-                          {share.suggestions_count} suggestion{share.suggestions_count === 1 ? '' : 's'}
+                          {!share.revoked_at && (
+                            <button
+                              onClick={() => handleRevokeShare(share.id)}
+                              disabled={actionId === `share-${share.id}`}
+                              className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                            >
+                              {actionId === `share-${share.id}` ? 'Revoking...' : 'Revoke link'}
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <span className={chipClass(!share.revoked_at) + ' px-2 py-1 text-[11px] font-bold uppercase tracking-[0.16em]'}>
-                        {share.revoked_at ? 'Revoked' : 'Live'}
-                      </span>
+                    ))
+                  ) : (
+                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-[#FBFAFF] py-12 text-center text-xs text-[#6F6C82]">
+                      No active deployment hashes found inside the schema database.
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <a
-                        href={share.share_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56]"
-                      >
-                        Open share
-                      </a>
-                      {!share.revoked_at && (
-                        <button
-                          onClick={() => handleRevokeShare(share.id)}
-                          disabled={actionId === `share-${share.id}`}
-                          className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
-                        >
-                          {actionId === `share-${share.id}` ? 'Revoking...' : 'Revoke'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
-                  No shares yet.
+                  )}
                 </div>
-              )}
-            </div>
-          </section>
-        )}
+              </motion.div>
+            )}
 
-        {activeTab === 'suggestions' && (
-          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
-            <div className="border-b border-[#3F3D56] pb-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Suggestions</div>
-              <h2 className="mt-1 text-2xl font-black tracking-tight">Guest feedback</h2>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {overview?.suggestions.length ? (
-                overview.suggestions.map(suggestion => (
-                  <div key={suggestion.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-[#3F3D56]">{suggestion.destination}</div>
-                        <div className="text-xs text-[#6F6C82]">
-                          {suggestion.guest_name || 'A guest'}
-                          {suggestion.guest_email ? ` · ${suggestion.guest_email}` : ''}
-                        </div>
-                      </div>
-                      <div className="text-xs text-[#8A869C]">{formatDate(suggestion.created_at)}</div>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-[#3F3D56]">{shorten(suggestion.message, 180)}</p>
-                    <div className="mt-3">
-                      <button
-                        onClick={() => handleDeleteSuggestion(suggestion.id)}
-                        disabled={actionId === `suggestion-${suggestion.id}`}
-                        className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
-                      >
-                        {actionId === `suggestion-${suggestion.id}` ? 'Deleting...' : 'Delete suggestion'}
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
-                  No suggestions yet.
+            {activeTab === 'suggestions' && (
+              <motion.div
+                key="tab-suggestions"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
+              >
+                <div className="border-b border-slate-100 pb-5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">suggestions</span>
+                  <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight">Guest suggestions feed</h2>
                 </div>
-              )}
-            </div>
-          </section>
-        )}
 
-        {activeTab === 'users' && (
-          <section className="mt-6 border border-[#3F3D56] bg-white p-5 sm:p-6">
-            <div className="border-b border-[#3F3D56] pb-4">
-              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Users</div>
-              <h2 className="mt-1 text-2xl font-black tracking-tight">Manage accounts and usage</h2>
-            </div>
-
-            <div className="mt-5 grid gap-4 sm:grid-cols-3">
-              {overview &&
-                [
-                  { label: 'Trips created', value: overview.users.reduce((sum, user) => sum + user.usage.trips_created, 0), color: '#6C63FF' },
-                  { label: 'Shares created', value: overview.users.reduce((sum, user) => sum + user.usage.shares_created, 0), color: '#FF6584' },
-                  { label: 'Suggestions received', value: overview.users.reduce((sum, user) => sum + user.usage.suggestions_received, 0), color: '#FF6584' },
-                ].map(card => (
-                  <div key={card.label} className="border border-[#3F3D56] bg-[#FBFAFF] p-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
-                    <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
-                      {card.value}
-                    </div>
-                  </div>
-                ))}
-            </div>
-
-            <div className="mt-5">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
-                Search users
-              </label>
-              <input
-                value={userQuery}
-                onChange={event => setUserQuery(event.target.value)}
-                placeholder="Search by email, name, role, or usage count"
-                className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
-              />
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 border border-[#3F3D56] bg-[#FBFAFF] p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm font-medium text-[#3F3D56]">
-                {selectedUserIds.length > 0
-                  ? `${selectedUserIds.length} user${selectedUserIds.length === 1 ? '' : 's'} selected`
-                  : 'No users selected'}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={toggleVisibleUsers}
-                  disabled={selectableUserIds.length === 0}
-                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
-                >
-                  {allVisibleSelected ? 'Unselect visible' : someVisibleSelected ? 'Select visible' : 'Select visible'}
-                </button>
-                <button
-                  onClick={() => setSelectedUserIds([])}
-                  disabled={selectedUserIds.length === 0}
-                  className="border border-[#3F3D56] bg-white px-3 py-2 text-sm font-semibold text-[#3F3D56] disabled:opacity-70"
-                >
-                  Clear selection
-                </button>
-                <button
-                  onClick={handleBulkDeleteUsers}
-                  disabled={selectedUserIds.filter(id => id !== currentUserId).length === 0 || actionId === 'bulk-users'}
-                  className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
-                >
-                  {actionId === 'bulk-users' ? 'Deleting selected...' : 'Delete selected'}
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {filteredUsers.length ? (
-                filteredUsers.map(user => {
-                  const isCurrentUser = currentUserId === user.id;
-                  const isSelected = selectedUserIds.includes(user.id);
-
-                  return (
-                    <div key={user.id} className="border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            disabled={isCurrentUser}
-                            onChange={() => toggleUserSelection(user.id)}
-                            className="mt-1 h-4 w-4 border-[#3F3D56] text-[#3F3D56] accent-[#3F3D56]"
-                          />
+                <div className="mt-8 space-y-4">
+                  {overview?.suggestions.length ? (
+                    overview.suggestions.map(suggestion => (
+                      <div key={suggestion.id} className="rounded-2xl border border-slate-100 bg-[#FBFAFF] p-5 shadow-xs">
+                        <div className="flex items-start justify-between gap-3">
                           <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="font-semibold text-[#3F3D56]">{user.email || 'No email'}</div>
-                            <span className={chipClass(Boolean(user.email_confirmed_at)) + ' px-2 py-1 text-[11px] font-bold uppercase tracking-[0.16em]'}>
-                              {user.email_confirmed_at ? 'Confirmed' : 'Unconfirmed'}
-                            </span>
-                          </div>
-                          <div className="text-xs text-[#6F6C82]">
-                            {user.full_name || 'No profile name'} · {user.role || 'authenticated'}
-                          </div>
-                          <div className="mt-2 text-xs text-[#8A869C]">
-                            Joined {formatDate(user.created_at)}
-                            {user.last_sign_in_at ? ` · Last sign in ${formatDate(user.last_sign_in_at)}` : ''}
-                          </div>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-2 sm:grid-cols-2 lg:w-[420px]">
-                          {[
-                            { label: 'Trips', value: user.usage.trips_created },
-                            { label: 'Shares', value: user.usage.shares_created },
-                            { label: 'Suggestions', value: user.usage.suggestions_received },
-                            { label: 'Active shares', value: user.usage.active_shares },
-                          ].map(metric => (
-                            <div key={metric.label} className="border border-[#3F3D56] bg-white px-3 py-2">
-                              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#8A869C]">{metric.label}</div>
-                              <div className="mt-1 text-lg font-black tracking-tight">{metric.value}</div>
+                            <div className="font-bold text-slate-900 text-sm">{suggestion.destination}</div>
+                            <div className="text-xs text-[#6F6C82] mt-1">
+                              From <span className="font-semibold">{suggestion.guest_name || 'Anonymous Guest'}</span>
+                              {suggestion.guest_email ? ` (${suggestion.guest_email})` : ''}
                             </div>
-                          ))}
+                          </div>
+                          <div className="text-[10px] font-mono text-[#8A869C]">{formatDate(suggestion.created_at)}</div>
+                        </div>
+                        <p className="mt-3 text-xs leading-relaxed text-[#3F3D56] bg-white border border-slate-100 rounded-xl p-3.5 italic">
+                          "{shorten(suggestion.message, 180)}"
+                        </p>
+                        <div className="mt-3.5 text-right">
+                          <button
+                            onClick={() => handleDeleteSuggestion(suggestion.id)}
+                            disabled={actionId === `suggestion-${suggestion.id}`}
+                            className="rounded-xl bg-rose-50 px-3.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                          >
+                            {actionId === `suggestion-${suggestion.id}` ? 'Deleting...' : 'Prune feedback'}
+                          </button>
                         </div>
                       </div>
-
-                      <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
-                        <div className="text-xs text-[#6F6C82]">
-                          Last activity: {user.usage.last_activity_at ? formatDate(user.usage.last_activity_at) : 'No tracked activity yet'}
-                          {' · '}
-                          Total actions: {user.usage.total_actions}
-                        </div>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={actionId === `user-${user.id}` || isCurrentUser}
-                          className="border border-[#3F3D56] bg-[#FFF0F4] px-3 py-2 text-sm font-semibold text-[#C14D72] disabled:opacity-70"
-                        >
-                          {actionId === `user-${user.id}` ? 'Deleting...' : isCurrentUser ? 'Current admin' : 'Delete user'}
-                        </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-[#FBFAFF] py-12 text-center text-xs text-[#6F6C82]">
+                      No recommendations or feedback notes from guest shares are available.
                     </div>
-                  );
-                })
-              ) : (
-                <div className="border border-dashed border-[#DDDCE8] bg-[#FBFAFF] px-4 py-6 text-sm text-[#6F6C82]">
-                  No users match your search.
+                  )}
                 </div>
-              )}
-            </div>
-          </section>
-        )}
+              </motion.div>
+            )}
+
+            {activeTab === 'users' && (
+              <motion.div
+                key="tab-users"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
+              >
+                <div className="border-b border-slate-100 pb-5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">accounts</span>
+                  <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight">Manage registered profiles</h2>
+                </div>
+
+                {/* Big System Total Indicators */}
+                <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                  {overview &&
+                    [
+                      { label: 'Total trips logged', value: overview.users.reduce((sum, user) => sum + user.usage.trips_created, 0), color: '#6C63FF', bg: 'bg-[#6C63FF]/5', border: 'border-[#6C63FF]/10' },
+                      { label: 'Total shares logged', value: overview.users.reduce((sum, user) => sum + user.usage.shares_created, 0), color: '#FF6584', bg: 'bg-[#FF6584]/5', border: 'border-[#FF6584]/10' },
+                      { label: 'Total feedback received', value: overview.users.reduce((sum, user) => sum + user.usage.suggestions_received, 0), color: '#FF6584', bg: 'bg-[#FF6584]/5', border: 'border-[#FF6584]/10' },
+                    ].map(card => (
+                      <div key={card.label} className={`rounded-2xl border ${card.border} ${card.bg} p-4`}>
+                        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8A869C]">{card.label}</div>
+                        <div className="mt-2.5 text-2xl font-black tracking-tight" style={{ color: card.color }}>
+                          {card.value}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Secure Search Bar */}
+                <div className="mt-8">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+                    Inspect and search accounts
+                  </label>
+                  <div className="relative">
+                    <input
+                      value={userQuery}
+                      onChange={event => setUserQuery(event.target.value)}
+                      placeholder="Search accounts catalog by email, name, role, tags or activity..."
+                      className="w-full rounded-2xl border border-slate-200 bg-[#FBFAFF] pl-4 pr-10 py-3.5 text-sm text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:bg-white transition-all shadow-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Bulk Handling Deck */}
+                <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-[#FBFAFF] p-4 sm:flex-row sm:items-center sm:justify-between shadow-xs">
+                  <div className="text-xs font-bold text-[#6F6C82]">
+                    {selectedUserIds.length > 0
+                      ? `${selectedUserIds.length} user record${selectedUserIds.length === 1 ? '' : 's'} highlighted`
+                      : 'Highlight records below to invoke bulk modifiers'}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={toggleVisibleUsers}
+                      disabled={selectableUserIds.length === 0}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {allVisibleSelected ? 'Unselect page' : 'Select page'}
+                    </button>
+                    <button
+                      onClick={() => setSelectedUserIds([])}
+                      disabled={selectedUserIds.length === 0}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Clear Selection
+                    </button>
+                    <button
+                      onClick={handleBulkDeleteUsers}
+                      disabled={selectedUserIds.filter(id => id !== currentUserId).length === 0 || actionId === 'bulk-users'}
+                      className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                    >
+                      {actionId === 'bulk-users' ? 'Pruning visible selections...' : 'Bulk Prune Highlighted'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Profile Directory Feed */}
+                <div className="mt-6 space-y-4">
+                  {filteredUsers.length ? (
+                    filteredUsers.map(user => {
+                      const isCurrentUser = currentUserId === user.id;
+                      const isSelected = selectedUserIds.includes(user.id);
+
+                      return (
+                        <div key={user.id} className="rounded-2xl border border-slate-100 bg-[#FBFAFF] p-5 shadow-xs">
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={isCurrentUser}
+                                onChange={() => toggleUserSelection(user.id)}
+                                className="mt-1 h-4.5 w-4.5 rounded-md border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF]"
+                              />
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-bold text-slate-900 text-sm">{user.email || 'No email registered'}</span>
+                                  <span className={`${user.email_confirmed_at ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600'} rounded-full px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide`}>
+                                    {user.email_confirmed_at ? 'Verified' : 'Unconfirmed'}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-[#6F6C82] mt-0.5">
+                                  {user.full_name || 'No custom display name set'} · <span className="font-mono bg-slate-100 px-1.5 py-0.2 rounded text-slate-700">{user.role || 'authenticated'}</span>
+                                </div>
+                                <div className="mt-2 text-[10px] font-mono text-[#8A869C]">
+                                  Since {formatDate(user.created_at)}
+                                  {user.last_sign_in_at ? ` · Last active session ${formatDate(user.last_sign_in_at)}` : ''}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Stat indicators for each profile */}
+                            <div className="grid gap-2 grid-cols-2 lg:w-[420px]">
+                              {[
+                                { label: 'Trips built', value: user.usage.trips_created, color: 'text-[#6C63FF]' },
+                                { label: 'Shares launched', value: user.usage.shares_created, color: 'text-slate-800' },
+                                { label: 'Guest reviews', value: user.usage.suggestions_received, color: 'text-[#FF6584]' },
+                                { label: 'Active shares', value: user.usage.active_shares, color: 'text-slate-800' },
+                              ].map(metric => (
+                                <div key={metric.label} className="rounded-xl border border-slate-100 bg-white px-3.5 py-2">
+                                  <div className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{metric.label}</div>
+                                  <div className={`mt-0.5 text-base font-black ${metric.color}`}>{metric.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-4 border-t border-slate-100/60 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+                            <div className="text-[11px] text-[#6F6C82]">
+                              Activity: {user.usage.last_activity_at ? formatDate(user.usage.last_activity_at) : 'No sessions tracked yet'}
+                              {' · '}
+                              Total API calls: <span className="font-bold text-slate-800">{user.usage.total_actions}</span>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={actionId === `user-${user.id}` || isCurrentUser}
+                              className="rounded-xl bg-[#FFF0F4] px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+                            >
+                              {actionId === `user-${user.id}` ? 'Pruning...' : isCurrentUser ? 'Active Superuser' : 'Prune client record'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-[#FBFAFF] py-12 text-center text-xs text-[#6F6C82]">
+                      No traveler metadata tracks match your selection filters.
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </main>
   );
 }
+
