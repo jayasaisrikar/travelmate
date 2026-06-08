@@ -210,6 +210,7 @@ export interface GeneratedItinerary {
     pois: PointOfInterest[];
     stayCandidates: PointOfInterest[];
     confirmation?: BookingConfirmationExtraction | null;
+    tripWindow?: BookingConfirmationWindow;
   };
 }
 

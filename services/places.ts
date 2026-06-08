@@ -6,6 +6,20 @@ const destinationSearchCache = new Map<string, { expiresAt: number; results: Des
 const poiCache = new Map<string, { expiresAt: number; results: PointOfInterest[] }>();
 const reverseDestinationCache = new Map<string, { expiresAt: number; result: DestinationSearchResult }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const DEFAULT_OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+] as const;
+
+function getOverpassEndpoints() {
+  const configured = (process.env.OVERPASS_API_URL || '')
+    .split(',')
+    .map(endpoint => endpoint.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([...configured, ...DEFAULT_OVERPASS_ENDPOINTS]));
+}
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = 8000) {
   const controller = new AbortController();
@@ -114,29 +128,51 @@ async function fetchOverpassPoisForTypes(options: {
     );
     out body center;
   `;
+  const requestBody = new URLSearchParams({ data: query }).toString();
+  let lastError: Error | null = null;
 
-  const response = await fetchWithTimeout(
-    'https://overpass-api.de/api/interpreter',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ data: query }),
-      next: { revalidate: 300 },
-    },
-    options.timeoutMs
-  );
+  for (const endpoint of getOverpassEndpoints()) {
+    try {
+      const response = await fetchWithTimeout(
+        endpoint,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json, text/plain;q=0.9, */*;q=0.8',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'User-Agent': 'wayflo/1.0 (support@wayflo.app)',
+          },
+          body: requestBody,
+          cache: 'no-store',
+        },
+        options.timeoutMs
+      );
 
-  if (!response.ok) {
-    throw new Error(`POI fetch failed with status ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        lastError = new Error(
+          `POI fetch failed with status ${response.status} from ${endpoint}${errorText ? `: ${errorText.slice(0, 180)}` : ''}`
+        );
+        continue;
+      }
+
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        const responseText = await response.text().catch(() => '');
+        lastError = new Error(
+          `POI fetch returned a non-JSON response from ${endpoint}${responseText ? `: ${responseText.slice(0, 180)}` : ''}`
+        );
+        continue;
+      }
+
+      const data = (await response.json()) as { elements?: Array<Record<string, unknown>> };
+      return parsePointOfInterestElements(data.elements ?? []);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
   }
 
-  const contentType = response.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
-    throw new Error('POI fetch returned a non-JSON response');
-  }
-
-  const data = (await response.json()) as { elements?: Array<Record<string, unknown>> };
-  return parsePointOfInterestElements(data.elements ?? []);
+  throw lastError ?? new Error('POI fetch failed for all Overpass endpoints');
 }
 
 export async function searchDestinations(query: string): Promise<DestinationSearchResult[]> {
@@ -627,7 +663,7 @@ export async function fetchPointsOfInterest(options: {
   const unique = new Map<string, PointOfInterest>();
 
   const timeoutMs = options.timeoutMs ?? 12_000;
-  const typeGroups = chunkTypes(options.types, 1);
+  const typeGroups = chunkTypes(options.types, 3);
 
   for (const typeGroup of typeGroups) {
     try {

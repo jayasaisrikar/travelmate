@@ -84,6 +84,7 @@ function tripToForm(trip: Awaited<ReturnType<typeof loadTrip>>['trip'], preferen
   const itinerary = trip.itinerary ?? {};
   const destinationSource = itinerary?.sourceData?.destination;
   const confirmation = itinerary?.sourceData?.confirmation;
+  const tripWindow = itinerary?.sourceData?.tripWindow;
   const arrivalTransfer = Array.isArray(itinerary?.transfers)
     ? itinerary.transfers.find((transfer: { kind?: string; from?: string | null }) => transfer.kind === 'arrival')
     : null;
@@ -117,18 +118,22 @@ function tripToForm(trip: Awaited<ReturnType<typeof loadTrip>>['trip'], preferen
     longitude: typeof destinationSource?.longitude === 'number' ? destinationSource.longitude : null,
     arrivalDate:
       itinerary?.stay?.checkInDate ||
+      tripWindow?.arrivalDate ||
       confirmation?.tripWindow?.arrivalDate ||
       '',
     departureDate:
       itinerary?.stay?.checkOutDate ||
+      tripWindow?.departureDate ||
       confirmation?.tripWindow?.departureDate ||
       '',
     arrivalTime:
       itinerary?.stay?.checkInTime ||
+      tripWindow?.arrivalTime ||
       confirmation?.tripWindow?.arrivalTime ||
       '',
     departureTime:
       itinerary?.stay?.checkOutTime ||
+      tripWindow?.departureTime ||
       confirmation?.tripWindow?.departureTime ||
       '',
     arrivalTransferContext:

@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Compass, MapPinned, Sparkles, Waves } from 'lucide-react';
+import { ArrowRight, Compass, MapPinned, Sparkles, Users, Waves } from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
+import { Footer } from '@/components/common/Footer';
+import { listDestinationPulses, type DestinationPulse } from '@/services/social';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 18 },
@@ -61,6 +63,7 @@ const tripFlowSteps = [
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [destinations, setDestinations] = useState<DestinationPulse[]>([]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -68,6 +71,26 @@ export default function Home() {
     onScroll();
 
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    listDestinationPulses(4)
+      .then(data => {
+        if (mounted) {
+          setDestinations(data);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setDestinations([]);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -139,15 +162,45 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {productMoments.map((point) => (
-                <div
-                  key={point}
-                  className="rounded-2xl border border-white/70 bg-white/85 px-4 py-4 text-sm font-medium text-[#53506A] shadow-[0_18px_48px_rgba(63,61,86,0.08)] backdrop-blur"
-                >
-                  {point}
+            <div className="rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_18px_48px_rgba(63,61,86,0.08)] backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92]">
+                    Live social proof
+                  </div>
+                  <h2 className="mt-1 text-lg font-medium tracking-[-0.03em] text-[#3F3D56]">
+                    Travelers are already clustering by destination.
+                  </h2>
                 </div>
-              ))}
+                <Link href="/explore" className="text-sm font-semibold text-[#6C63FF] hover:underline">
+                  Explore
+                </Link>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {(destinations.length > 0 ? destinations : []).map((pulse) => (
+                  <Link
+                    key={pulse.destination_slug}
+                    href={`/explore/${pulse.destination_slug}`}
+                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="text-sm font-bold text-[#1A1726]">{pulse.destination}</div>
+                    <div className="mt-1 text-sm text-[#6F6C82]">
+                      {pulse.traveler_count} traveler{pulse.traveler_count !== 1 ? 's' : ''} going
+                      {pulse.room_count > 0 ? ` · ${pulse.room_count} room${pulse.room_count !== 1 ? 's' : ''}` : ''}
+                    </div>
+                  </Link>
+                ))}
+
+                {destinations.length === 0 && productMoments.map(point => (
+                  <div
+                    key={point}
+                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 text-sm font-medium text-[#53506A]"
+                  >
+                    {point}
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
 
@@ -213,6 +266,98 @@ export default function Home() {
               <p className="mt-2 text-sm leading-6 text-white/90">
                 The itinerary stays tied to your actual timing so the whole route feels usable, not over-promised.
               </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Social / Explore feature highlight ─────────────── */}
+      <section className="px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            {...fadeInUp}
+            className="overflow-hidden rounded-[34px] border border-[#D8D4F2] bg-[#3F3D56] p-5 shadow-[0_24px_80px_rgba(63,61,86,0.18)] sm:p-8"
+          >
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+              {/* Left copy */}
+              <div className="space-y-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
+                  <Users className="h-3.5 w-3.5" />
+                  New — Wayflo Social
+                </div>
+                <h2 className="text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">
+                  Find travelers heading
+                  <span className="block text-[#A89CFF]"> to the same place.</span>
+                </h2>
+                <p className="text-sm leading-7 text-white/70">
+                  See who else is planning a trip to your destination. Wave to connect,
+                  join a trip room, and plan the route together — or just share notes.
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.35)] transition hover:bg-[#5a52d5]"
+                  >
+                    Join the community
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/explore"
+                    className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Browse travelers
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right visual — feature cards */}
+              <div className="space-y-3">
+                {[
+                  {
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
+                        <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+                        <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+                        <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+                        <path d="M6 14a4 4 0 0 0 4 4h4a6 6 0 0 0 6-6v-1a2 2 0 0 0-4 0" />
+                      </svg>
+                    ),
+                    label: 'Wave to connect',
+                    body: 'Anonymous one-tap interest — only visible if both sides wave back.',
+                  },
+                  {
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
+                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+                        <line x1="9" y1="3" x2="9" y2="18" />
+                        <line x1="15" y1="6" x2="15" y2="21" />
+                      </svg>
+                    ),
+                    label: 'Trip rooms',
+                    body: 'Start a shared planning space for up to 6 travelers going the same way.',
+                  },
+                  {
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    ),
+                    label: 'Privacy first',
+                    body: 'Nothing is public until you opt in. Exact dates are never shared.',
+                  },
+                ].map(item => (
+                  <div key={item.label} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">{item.label}</p>
+                      <p className="mt-0.5 text-sm leading-6 text-white/60">{item.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         </div>
@@ -365,22 +510,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <footer className="border-t border-white/60 px-4 py-8 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-[#6F6C82] sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Brand href="/" compact className="shrink-0" />
-            <p>© 2026 wayflo</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/dashboard" className="transition hover:text-[#3F3D56]">
-              Dashboard
-            </Link>
-            <Link href="/dashboard/onboarding" className="transition hover:text-[#3F3D56]">
-              New trip
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
