@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 // DELETE /api/social/waves/[userId] — retract a wave
 export async function DELETE(
@@ -25,6 +26,7 @@ export async function DELETE(
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return new NextResponse(null, { status: 204 });
 }
 
@@ -57,5 +59,6 @@ export async function POST(
     { onConflict: 'from_user,to_user' }
   );
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json({ connected: true });
 }

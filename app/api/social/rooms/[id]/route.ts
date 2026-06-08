@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 // GET /api/social/rooms/[id]
 export async function GET(
@@ -30,7 +31,7 @@ export async function GET(
   const { data: profiles, error: profilesError } = memberIds.length > 0
     ? await supabase
       .from('traveler_profiles')
-      .select('id, display_name, avatar_url, bio, travel_style, verified')
+      .select('id, display_name, avatar_url, bio, travel_style, verified, verification_provider, verification_level, verification_status, verified_at')
       .in('id', memberIds)
     : { data: [], error: null };
 
@@ -50,6 +51,10 @@ export async function GET(
   const currentUserRole = user
     ? roomMembers.find(member => member.user_id === user.id)?.role ?? null
     : null;
+
+  if (user?.id) {
+    await touchTravelerLastSeen(user.id);
+  }
 
   return NextResponse.json({
     ...room,

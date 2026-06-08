@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 // POST /api/social/rooms/[id]/join
 export async function POST(
@@ -40,6 +41,7 @@ export async function POST(
   }
 
   if (existingMembership) {
+    await touchTravelerLastSeen(user.id);
     return NextResponse.json({
       joined: true,
       already_joined: true,
@@ -64,5 +66,6 @@ export async function POST(
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json({ joined: true, already_joined: false, role: 'member' });
 }

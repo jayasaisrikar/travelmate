@@ -146,7 +146,7 @@ export default function DestinationExplorePage({
                   </h2>
                 </div>
                 <Link
-                  href={`/explore?tab=rooms&destination=${slug}`}
+                  href={`/explore?tab=rooms&destination=${encodeURIComponent(displayName)}`}
                   className="text-sm font-semibold text-[#6C63FF] hover:underline"
                 >
                   + Start a room

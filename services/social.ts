@@ -7,6 +7,10 @@
  */
 
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import type {
+  SocialVerificationLevel,
+  SocialVerificationStatus,
+} from '@/services/social-verification';
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -18,6 +22,12 @@ export interface TravelerProfile {
   travel_style: 'solo' | 'couple' | 'group' | 'flexible' | null;
   is_public: boolean;
   verified: boolean;
+  verification_provider: 'didit' | null;
+  verification_level: SocialVerificationLevel;
+  verification_status: SocialVerificationStatus;
+  verification_session_id: string | null;
+  verification_requested_at: string | null;
+  verified_at: string | null;
   last_seen_at: string | null;
   created_at: string;
 }
@@ -57,6 +67,15 @@ export interface TripRoom {
   created_at: string;
 }
 
+export interface DestinationPulse {
+  destination: string;
+  destination_slug: string;
+  traveler_count: number;
+  room_count: number;
+  travel_months: string[];
+  recent_travelers: Array<Pick<TravelerProfile, 'id' | 'display_name' | 'avatar_url' | 'verified' | 'verification_level'>>;
+}
+
 export interface TripRoomMember {
   room_id: string;
   user_id: string;
@@ -74,6 +93,12 @@ export interface TravelerMessage {
   read_at: string | null;
   created_at: string;
   sender?: Pick<TravelerProfile, 'id' | 'display_name' | 'avatar_url'> | null;
+}
+
+export interface DiditVerificationStartResult {
+  sessionId: string;
+  sessionUrl: string;
+  status: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -145,6 +170,16 @@ export async function getPublicProfile(userId: string): Promise<TravelerProfile 
   return apiFetch<TravelerProfile | null>(`/api/social/profile/${userId}`);
 }
 
+/** Start the optional Didit verification flow for the current user */
+export async function startDiditVerification(returnTo?: string): Promise<DiditVerificationStartResult> {
+  return apiFetch<DiditVerificationStartResult>('/api/social/verification/didit/session', {
+    method: 'POST',
+    body: JSON.stringify({
+      returnTo,
+    }),
+  });
+}
+
 // ─── Trip signals ─────────────────────────────────────────────────────────────
 
 /** Publish a trip signal ("I'm going to X in Y month") */
@@ -200,6 +235,12 @@ export async function getTravelerCount(destinationSlug: string): Promise<number>
   return data.count;
 }
 
+/** Fetch top public destinations for discovery / social proof surfaces */
+export async function listDestinationPulses(limit = 6): Promise<DestinationPulse[]> {
+  const data = await apiFetch<DestinationPulse[]>(`/api/social/destinations?limit=${limit}`);
+  return data;
+}
+
 /** Fetch travelers going to the same destinations as the current user */
 export async function getCompanionSuggestions(limit = 6): Promise<TravelerWithSignal[]> {
   return apiFetch<TravelerWithSignal[]>(`/api/social/companions/suggestions?limit=${limit}`);
@@ -252,6 +293,11 @@ export async function getTravelerMessages(): Promise<TravelerMessage[]> {
 export async function listTripRooms(destinationSlug?: string): Promise<TripRoom[]> {
   const qs = destinationSlug ? `?destination=${encodeURIComponent(destinationSlug)}` : '';
   return apiFetch<TripRoom[]>(`/api/social/rooms${qs}`);
+}
+
+/** List the rooms the current traveler has joined or created */
+export async function listMyTripRooms(): Promise<TripRoom[]> {
+  return apiFetch<TripRoom[]>('/api/social/rooms/mine');
 }
 
 /** Create a new trip room */

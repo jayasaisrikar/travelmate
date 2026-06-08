@@ -1,10 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, BadgeCheck, MessageCircle } from 'lucide-react';
+import { BadgeCheck, Clock3, MapPin, MessageCircle, ShieldAlert } from 'lucide-react';
 import { WaveButton } from '@/components/social/WaveButton';
 import { MessageButton } from '@/components/social/MessageButton';
 import type { TravelerWithSignal } from '@/services/social';
+import {
+  getVerificationLevelMeta,
+  getVerificationStatusMeta,
+  isTrustedSocialVerificationLevel,
+} from '@/services/social-verification';
 
 interface TravelerCardProps {
   traveler: TravelerWithSignal;
@@ -29,6 +34,9 @@ const styleColors: Record<string, string> = {
 function Avatar({ name, url, size = 48 }: { name: string | null; url: string | null; size?: number }) {
   if (url) {
     return (
+      // Avatar URLs can come from user-provided or remote storage sources.
+      // We keep a plain <img> here to avoid over-constraining avatar hosts.
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={url}
         alt={name ?? 'Traveler'}
@@ -57,6 +65,58 @@ function Avatar({ name, url, size = 48 }: { name: string | null; url: string | n
   );
 }
 
+function VerificationChip({ traveler }: { traveler: TravelerWithSignal }) {
+  const status = traveler.verification_status ?? 'not_started';
+  const levelMeta = getVerificationLevelMeta(traveler.verification_level);
+  const statusMeta = getVerificationStatusMeta(status);
+
+  if (status === 'pending' || status === 'in_review' || status === 'resubmitted') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusMeta.pillClassName} ${statusMeta.textClassName}`}
+      >
+        <Clock3 size={11} className={statusMeta.iconClassName} />
+        {statusMeta.label}
+      </span>
+    );
+  }
+
+  if (status === 'declined' || status === 'expired' || status === 'abandoned') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusMeta.pillClassName} ${statusMeta.textClassName}`}
+      >
+        <ShieldAlert size={11} className={statusMeta.iconClassName} />
+        {statusMeta.label}
+      </span>
+    );
+  }
+
+  if (traveler.verified || isTrustedSocialVerificationLevel(traveler.verification_level)) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${levelMeta.pillClassName} ${levelMeta.textClassName}`}
+      >
+        <BadgeCheck size={11} className={levelMeta.iconClassName} />
+        {levelMeta.label}
+      </span>
+    );
+  }
+
+  if (traveler.verification_level === 'basic') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${levelMeta.pillClassName} ${levelMeta.textClassName}`}
+      >
+        <BadgeCheck size={11} className={levelMeta.iconClassName} />
+        {levelMeta.label}
+      </span>
+    );
+  }
+
+  return null;
+}
+
 export function TravelerCard({ traveler, compact = false }: TravelerCardProps) {
   if (compact) {
     return (
@@ -72,9 +132,7 @@ export function TravelerCard({ traveler, compact = false }: TravelerCardProps) {
             <span className="truncate text-sm font-semibold text-[#1A1726]">
               {traveler.display_name ?? 'Traveler'}
             </span>
-            {traveler.verified && (
-              <BadgeCheck size={13} className="shrink-0 text-[#6C63FF]" />
-            )}
+            <VerificationChip traveler={traveler} />
           </div>
           <div className="mt-0.5 flex items-center gap-1 text-xs text-[#8A869C]">
             <MapPin size={11} />
@@ -114,19 +172,18 @@ export function TravelerCard({ traveler, compact = false }: TravelerCardProps) {
               <span className="font-bold text-[#1A1726]">
                 {traveler.display_name ?? 'Traveler'}
               </span>
-              {traveler.verified && (
-                <BadgeCheck size={14} className="text-[#6C63FF]" />
+            </div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+              {traveler.travel_style && (
+                <span
+                  className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    styleColors[traveler.travel_style] ?? 'bg-[#F4F3FF] text-[#6C63FF]'
+                  }`}
+                >
+                  {styleLabels[traveler.travel_style]}
+                </span>
               )}
             </div>
-            {traveler.travel_style && (
-              <span
-                className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                  styleColors[traveler.travel_style] ?? 'bg-[#F4F3FF] text-[#6C63FF]'
-                }`}
-              >
-                {styleLabels[traveler.travel_style]}
-              </span>
-            )}
           </div>
         </div>
 
@@ -147,6 +204,10 @@ export function TravelerCard({ traveler, compact = false }: TravelerCardProps) {
       {traveler.bio && (
         <p className="mt-3 text-sm leading-5 text-[#6F6C82] line-clamp-2">{traveler.bio}</p>
       )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <VerificationChip traveler={traveler} />
+      </div>
 
       {/* Destination badge */}
       <div className="mt-4 flex items-center gap-1.5 rounded-xl bg-[#F8F7FF] px-3 py-2">

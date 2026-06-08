@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 function slugifyDestination(destination: string) {
   return destination
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(data ?? []);
 }
 
@@ -95,5 +97,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(data, { status: existing ? 200 : 201 });
 }

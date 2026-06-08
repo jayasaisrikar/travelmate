@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, Compass, MapPinned, Sparkles, Users, Waves } from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
 import { Footer } from '@/components/common/Footer';
+import { listDestinationPulses, type DestinationPulse } from '@/services/social';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 18 },
@@ -62,6 +63,7 @@ const tripFlowSteps = [
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [destinations, setDestinations] = useState<DestinationPulse[]>([]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -69,6 +71,26 @@ export default function Home() {
     onScroll();
 
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    listDestinationPulses(4)
+      .then(data => {
+        if (mounted) {
+          setDestinations(data);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setDestinations([]);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -140,15 +162,45 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {productMoments.map((point) => (
-                <div
-                  key={point}
-                  className="rounded-2xl border border-white/70 bg-white/85 px-4 py-4 text-sm font-medium text-[#53506A] shadow-[0_18px_48px_rgba(63,61,86,0.08)] backdrop-blur"
-                >
-                  {point}
+            <div className="rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_18px_48px_rgba(63,61,86,0.08)] backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92]">
+                    Live social proof
+                  </div>
+                  <h2 className="mt-1 text-lg font-medium tracking-[-0.03em] text-[#3F3D56]">
+                    Travelers are already clustering by destination.
+                  </h2>
                 </div>
-              ))}
+                <Link href="/explore" className="text-sm font-semibold text-[#6C63FF] hover:underline">
+                  Explore
+                </Link>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {(destinations.length > 0 ? destinations : []).map((pulse) => (
+                  <Link
+                    key={pulse.destination_slug}
+                    href={`/explore/${pulse.destination_slug}`}
+                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="text-sm font-bold text-[#1A1726]">{pulse.destination}</div>
+                    <div className="mt-1 text-sm text-[#6F6C82]">
+                      {pulse.traveler_count} traveler{pulse.traveler_count !== 1 ? 's' : ''} going
+                      {pulse.room_count > 0 ? ` · ${pulse.room_count} room${pulse.room_count !== 1 ? 's' : ''}` : ''}
+                    </div>
+                  </Link>
+                ))}
+
+                {destinations.length === 0 && productMoments.map(point => (
+                  <div
+                    key={point}
+                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 text-sm font-medium text-[#53506A]"
+                  >
+                    {point}
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
 

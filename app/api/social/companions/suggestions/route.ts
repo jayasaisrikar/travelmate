@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { activeTravelerCutoff, touchTravelerLastSeen } from '@/services/social-activity';
 
 /**
  * GET /api/social/companions/suggestions?limit=6
@@ -16,12 +17,14 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '6', 10), 20);
+  const cutoff = activeTravelerCutoff();
 
   // Get destinations this user is signalling
   const { data: mySignals } = await supabase
     .from('traveler_trip_signals')
     .select('destination_slug')
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .gte('created_at', cutoff);
 
   const mySlugs = [...new Set((mySignals ?? []).map(s => s.destination_slug))];
 
@@ -36,6 +39,7 @@ export async function GET(request: NextRequest) {
     `)
     .eq('is_public', true)
     .neq('user_id', user.id)
+    .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -54,9 +58,10 @@ export async function GET(request: NextRequest) {
   const { data: profiles, error: profilesError } = userIds.length > 0
     ? await supabase
       .from('traveler_profiles')
-      .select('id, display_name, avatar_url, bio, travel_style, is_public, verified, last_seen_at, created_at')
+      .select('id, display_name, avatar_url, bio, travel_style, is_public, verified, verification_provider, verification_level, verification_status, verified_at, last_seen_at, created_at')
       .in('id', userIds)
       .eq('is_public', true)
+      .gte('last_seen_at', cutoff)
     : { data: [], error: null };
 
   if (profilesError) {
@@ -77,5 +82,6 @@ export async function GET(request: NextRequest) {
     }] : [];
   });
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(travelers);
 }

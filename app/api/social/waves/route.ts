@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 const DAILY_WAVE_LIMIT = 10;
 
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(data ?? []);
 }
 
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    await touchTravelerLastSeen(user.id);
     return NextResponse.json({ ...data, auto_connected: true }, { status: 201 });
   }
 
@@ -98,5 +101,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(data, { status: 201 });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 const DAILY_MESSAGE_LIMIT = 20;
 const MAX_MESSAGE_LENGTH = 500;
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
   }
 
   const profileMap = new Map((profiles ?? []).map(profile => [profile.id, profile]));
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(
     (messages ?? []).map(message => ({
       ...message,
@@ -140,5 +142,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: messageError(insertError) }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(data, { status: 201 });
 }

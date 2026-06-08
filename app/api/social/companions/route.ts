@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { activeTravelerCutoff, touchTravelerLastSeen } from '@/services/social-activity';
 
 /**
  * GET /api/social/companions
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
   const destinationSlug = searchParams.get('destination');
   const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '20', 10), 50);
   const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+  const cutoff = activeTravelerCutoff();
 
   // Fetch public signals first. traveler_trip_signals.user_id and
   // traveler_profiles.id both reference auth.users, so PostgREST cannot infer
@@ -34,6 +36,7 @@ export async function GET(request: NextRequest) {
       user_id
     `)
     .eq('is_public', true)
+    .gte('created_at', cutoff)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -55,9 +58,10 @@ export async function GET(request: NextRequest) {
   const userIds = [...new Set(signals.map(s => s.user_id))];
   const { data: profiles, error: profilesError } = await supabase
     .from('traveler_profiles')
-    .select('id, display_name, avatar_url, bio, travel_style, is_public, verified, last_seen_at, created_at')
+    .select('id, display_name, avatar_url, bio, travel_style, is_public, verified, verification_provider, verification_level, verification_status, verified_at, last_seen_at, created_at')
     .in('id', userIds)
-    .eq('is_public', true);
+    .eq('is_public', true)
+    .gte('last_seen_at', cutoff);
 
   if (profilesError) {
     return NextResponse.json({ error: profilesError.message }, { status: 500 });
@@ -98,5 +102,6 @@ export async function GET(request: NextRequest) {
     }] : [];
   });
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json(travelers);
 }

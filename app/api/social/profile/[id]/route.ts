@@ -10,7 +10,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from('traveler_profiles')
-    .select('*')
+    .select('id, display_name, avatar_url, bio, travel_style, is_public, verified, verification_provider, verification_level, verification_status, verified_at, last_seen_at, created_at')
     .eq('id', id)
     .eq('is_public', true)
     .maybeSingle();

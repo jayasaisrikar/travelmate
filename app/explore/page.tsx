@@ -1,18 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Users, Globe, Compass, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowRight, Compass, Globe, MapPinned, Plus, Search, Sparkles, SlidersHorizontal, Users, X } from 'lucide-react';
 import Link from 'next/link';
 import { Brand } from '@/components/common/Brand';
 import { TravelerCard } from '@/components/social/TravelerCard';
 import { DestinationRoomCard } from '@/components/social/DestinationRoomCard';
 import {
+  listDestinationPulses,
   listTravelers,
   listTripRooms,
   createTripRoom,
   joinTripRoom,
   slugifyDestination,
+  type DestinationPulse,
   type TravelerWithSignal,
   type TripRoom,
 } from '@/services/social';
@@ -34,11 +37,16 @@ const STYLE_FILTERS: { id: StyleFilter; label: string }[] = [
 ];
 
 export default function ExplorePage() {
-  const [tab,         setTab]         = useState<Tab>('travelers');
-  const [search,      setSearch]      = useState('');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'rooms' ? 'rooms' : 'travelers';
+  const initialSearch = searchParams.get('destination') ?? '';
+
+  const [tab,         setTab]         = useState<Tab>(initialTab);
+  const [search,      setSearch]      = useState(initialSearch);
   const [styleFilter, setStyleFilter] = useState<StyleFilter>('all');
   const [travelers,   setTravelers]   = useState<TravelerWithSignal[]>([]);
   const [rooms,       setRooms]       = useState<TripRoom[]>([]);
+  const [destinations,setDestinations]= useState<DestinationPulse[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [joiningId,   setJoiningId]   = useState<string | null>(null);
   const [showCreate,  setShowCreate]  = useState(false);
@@ -79,6 +87,26 @@ export default function ExplorePage() {
   }, [searchSlug]);
 
   useEffect(() => {
+    let mounted = true;
+
+    listDestinationPulses(6)
+      .then(data => {
+        if (mounted) {
+          setDestinations(data);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setDestinations([]);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (tab === 'travelers') fetchTravelers();
     else fetchRooms();
   }, [tab, fetchTravelers, fetchRooms]);
@@ -97,6 +125,16 @@ export default function ExplorePage() {
   const filteredTravelers = styleFilter === 'all'
     ? travelers
     : travelers.filter(t => t.travel_style === styleFilter);
+  const liveRoomCount = destinations.reduce((total, pulse) => total + pulse.room_count, 0);
+
+  const openCreateRoom = () => {
+    if (!newRoomDest.trim() && search.trim()) {
+      setNewRoomDest(search.trim());
+    }
+
+    setCreateError('');
+    setShowCreate(true);
+  };
 
   const handleJoinRoom = async (roomId: string) => {
     setJoiningId(roomId);
@@ -149,7 +187,7 @@ export default function ExplorePage() {
     <div className="min-h-screen bg-[#F9F9FC] text-[#3F3D56]">
       {/* ── Nav ─────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 border-b border-[#DDDCE8] bg-[rgba(249,249,252,0.9)] px-5 py-3 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <Brand href="/dashboard" />
           <div className="flex items-center gap-3">
             <Link
@@ -159,8 +197,14 @@ export default function ExplorePage() {
               Dashboard
             </Link>
             <Link
+              href="/rooms"
+              className="text-sm font-semibold text-[#6F6C82] hover:text-[#3F3D56]"
+            >
+              Rooms
+            </Link>
+            <Link
               href="/explore"
-              className="rounded-xl bg-[#6C63FF] px-4 py-2 text-sm font-semibold text-white"
+              className="rounded-xl bg-[#6C63FF] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(108,99,255,0.2)]"
             >
               Explore
             </Link>
@@ -168,25 +212,166 @@ export default function ExplorePage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
         {/* ── Hero header ─────────────────────────────────── */}
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#DDDCE8] bg-white px-3 py-1.5 text-xs font-semibold text-[#6C63FF] shadow-sm">
-            <Compass size={13} />
-            Wayflo Community
+        <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#DDDCE8] bg-white px-3 py-1.5 text-xs font-semibold text-[#6C63FF] shadow-sm">
+              <Compass size={13} />
+              Wayflo Community
+            </div>
+            <h1 className="max-w-3xl text-4xl font-black tracking-tight text-[#1A1726] sm:text-5xl lg:text-6xl">
+              Find your travel
+              <span className="block text-[#6C63FF]">companions.</span>
+            </h1>
+            <p className="max-w-2xl text-base leading-7 text-[#6F6C82] sm:text-lg">
+              Discover travelers heading to the same destination, see where the rooms are forming, and keep the whole
+              experience privacy-first from the first wave to the shared itinerary.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/rooms"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43]"
+              >
+                View your rooms
+                <ArrowRight size={15} />
+              </Link>
+              <button
+                type="button"
+                onClick={openCreateRoom}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#DDDCE8] bg-white px-5 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#F8F7FF]"
+              >
+                <Plus size={15} />
+                Start a room
+              </button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { label: 'Traveler pulses', value: destinations.length.toString(), icon: Users },
+                { label: 'Trip rooms', value: liveRoomCount.toString(), icon: Globe },
+                { label: 'Active filters', value: styleFilter === 'all' ? 'All' : styleFilter, icon: Sparkles },
+              ].map(item => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92]">
+                      <span>{item.label}</span>
+                      <Icon size={13} className="text-[#6C63FF]" />
+                    </div>
+                    <div className="mt-3 text-2xl font-black tracking-tight text-[#1A1726]">{item.value}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-[#1A1726] sm:text-5xl">
-            Find your travel<br />
-            <span className="text-[#6C63FF]">companions.</span>
-          </h1>
-          <p className="mt-3 max-w-xl text-base text-[#6F6C82]">
-            Connect with real travelers heading to the same destination. Plan
-            together in a trip room — or just wave to say hi.
-          </p>
-        </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_48%,#FFE9EF_100%)] p-5 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-6"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#7E7A92]">
+                  Destination pulse
+                </div>
+                <h2 className="mt-1 text-2xl font-black tracking-tight text-[#1A1726]">
+                  Live travel clusters
+                </h2>
+              </div>
+              <div className="rounded-full bg-[#3F3D56] px-3 py-1.5 text-xs font-semibold text-white">
+                <MapPinned size={13} className="mr-1 inline" />
+                Today
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              {destinations.length > 0 ? (
+                destinations.slice(0, 4).map((pulse, index) => (
+                  <Link
+                    key={pulse.destination_slug}
+                    href={`/explore/${pulse.destination_slug}`}
+                    className="group rounded-2xl border border-[#E4E2F0] bg-white/90 p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-[#1A1726]">{pulse.destination}</p>
+                        <p className="mt-1 text-xs text-[#8A869C]">
+                          {pulse.traveler_count} traveler{pulse.traveler_count !== 1 ? 's' : ''} going
+                          {pulse.room_count > 0 ? ` · ${pulse.room_count} room${pulse.room_count !== 1 ? 's' : ''}` : ''}
+                        </p>
+                      </div>
+                      <span
+                        className="flex h-9 w-9 items-center justify-center rounded-2xl text-sm font-black text-white shadow-sm"
+                        style={{
+                          background:
+                            index % 3 === 0
+                              ? 'linear-gradient(180deg, #6C63FF 0%, #8B84FF 100%)'
+                              : index % 3 === 1
+                                ? 'linear-gradient(180deg, #FF6584 0%, #FF8DA5 100%)'
+                                : 'linear-gradient(180deg, #3F3D56 0%, #5A5671 100%)',
+                        }}
+                      >
+                        {pulse.destination
+                          .split(/\s+/)
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map(part => part[0]?.toUpperCase() ?? '')
+                          .join('')}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <div className="flex -space-x-2">
+                        {pulse.recent_travelers.map(traveler => (
+                          traveler.avatar_url ? (
+                            <img
+                              key={traveler.id}
+                              src={traveler.avatar_url}
+                              alt={traveler.display_name ?? 'Traveler'}
+                              className="h-7 w-7 rounded-full border-2 border-white object-cover"
+                            />
+                          ) : (
+                            <div
+                              key={traveler.id}
+                              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-[#6C63FF] to-[#FF6584] text-[10px] font-semibold text-white"
+                            >
+                              {(traveler.display_name ?? '?').slice(0, 1).toUpperCase()}
+                            </div>
+                          )
+                        ))}
+                      </div>
+                      <span className="text-xs font-semibold text-[#6C63FF] group-hover:underline">
+                        Explore
+                      </span>
+                    </div>
+
+                    {pulse.travel_months.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {pulse.travel_months.map(month => (
+                          <span key={month} className="rounded-full bg-[#F4F3FF] px-2.5 py-1 text-[11px] font-semibold text-[#6C63FF]">
+                            {month}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-[#DDDCE8] bg-white/80 p-5 text-sm leading-6 text-[#6F6C82]">
+                  No active destination pulses yet. As more travelers opt in, this area will show the live clusters people
+                  are planning around.
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </section>
 
         {/* ── Search + filter bar ──────────────────────────── */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mb-6 mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search
               size={16}
@@ -212,7 +397,7 @@ export default function ExplorePage() {
 
           <button
             type="button"
-            onClick={() => setShowCreate(true)}
+            onClick={openCreateRoom}
             className="shrink-0 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5a52d5]"
           >
             + Start a room
@@ -314,7 +499,7 @@ export default function ExplorePage() {
                     icon={Globe}
                     title={search ? `No rooms for "${search}"` : 'No trip rooms yet'}
                     body="Start the first trip room for your destination and invite others to plan together."
-                    cta={{ label: 'Start a room', action: () => setShowCreate(true) }}
+                    cta={{ label: 'Start a room', action: openCreateRoom }}
                   />
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

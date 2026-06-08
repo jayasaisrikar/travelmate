@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 // GET /api/social/rooms?destination=<slug>
 export async function GET(request: NextRequest) {
@@ -12,8 +13,7 @@ export async function GET(request: NextRequest) {
     .from('trip_rooms')
     .select(
       `
-      *,
-      member_count:trip_room_members(count)
+      *
     `
     )
     .eq('is_open', true)
@@ -32,6 +32,17 @@ export async function GET(request: NextRequest) {
 
   const roomRows = data ?? [];
   const roomIds = roomRows.map(room => room.id);
+  const { data: membershipCounts, error: countsError } = roomIds.length > 0
+    ? await supabase
+      .from('trip_room_members')
+      .select('room_id')
+      .in('room_id', roomIds)
+    : { data: [], error: null };
+
+  if (countsError) {
+    return NextResponse.json({ error: countsError.message }, { status: 500 });
+  }
+
   const { data: memberships, error: membershipsError } = user && roomIds.length > 0
     ? await supabase
       .from('trip_room_members')
@@ -45,12 +56,22 @@ export async function GET(request: NextRequest) {
   }
 
   const membershipMap = new Map((memberships ?? []).map(membership => [membership.room_id, membership.role]));
+  const memberCountMap = new Map<string, number>();
+
+  for (const membership of membershipCounts ?? []) {
+    memberCountMap.set(membership.room_id, (memberCountMap.get(membership.room_id) ?? 0) + 1);
+  }
+
   const rooms = roomRows.map(room => ({
     ...room,
-    member_count: (room.member_count as { count: number }[])?.[0]?.count ?? 0,
+    member_count: memberCountMap.get(room.id) ?? 0,
     is_member: membershipMap.has(room.id),
     current_user_role: membershipMap.get(room.id) ?? null,
   }));
+
+  if (user?.id) {
+    await touchTravelerLastSeen(user.id);
+  }
 
   return NextResponse.json(rooms);
 }
@@ -101,6 +122,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: hostError.message }, { status: 500 });
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json({
     ...room,
     member_count: 1,

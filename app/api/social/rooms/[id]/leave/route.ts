@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
+import { touchTravelerLastSeen } from '@/services/social-activity';
 
 // POST /api/social/rooms/[id]/leave
 export async function POST(
@@ -55,5 +56,6 @@ export async function POST(
     }
   }
 
+  await touchTravelerLastSeen(user.id);
   return NextResponse.json({ left: true });
 }
