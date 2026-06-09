@@ -7,9 +7,14 @@ import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { generateItineraryFromLiveData } from '@/services/itinerary';
 import { regenerateItineraryCluster, regenerateItineraryDay, type RegenerationScope } from '@/services/itinerary-regeneration';
 import { resolveDestination } from '@/services/places';
-import { buildPublicShareUrl, buildSharePreview, createOrRefreshTripShare, getTripShareByTripId, type TripRow } from '@/services/trip-sharing';
+import {
+  buildPublicShareUrl,
+  buildSharePreview,
+  createOrRefreshTripShare,
+  type TripRow,
+} from '@/services/trip-sharing';
 import { saveTravelerPreferences } from '@/services/traveler-preferences';
-import type { GeneratedItinerary } from '@/lib/travel-types';
+import type { GeneratedItinerary, ItineraryDayPlan, TripShareRecord } from '@/lib/travel-types';
 
 function unauthorizedResponse(message = 'Unauthorized') {
   return NextResponse.json({ error: message }, { status: 401 });
@@ -62,7 +67,23 @@ function isFullScope(value: unknown): value is 'full' {
   return value === 'full';
 }
 
-function getDailyPlans(itinerary: Record<string, any> | null | undefined) {
+async function loadShareByTripId(tripId: string, ownerUserId?: string) {
+  const query = supabase.from('trip_shares').select('*').eq('trip_id', tripId);
+
+  if (ownerUserId) {
+    query.eq('owner_user_id', ownerUserId);
+  }
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    return { share: null as TripShareRecord | null, error };
+  }
+
+  return { share: (data ?? null) as TripShareRecord | null, error: null };
+}
+
+function getDailyPlans(itinerary: GeneratedItinerary | null | undefined): ItineraryDayPlan[] {
   if (Array.isArray(itinerary?.dailyPlans)) {
     return itinerary.dailyPlans;
   }
@@ -116,15 +137,9 @@ export async function POST(
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
     }
 
-    const rawItinerary = trip.itinerary as Record<string, any> | null;
+    const rawItinerary = trip.itinerary as GeneratedItinerary | null;
     const dailyPlans = getDailyPlans(rawItinerary);
-    const itinerary = rawItinerary
-      ? ({
-          ...rawItinerary,
-          dailyPlans,
-          daily_plans: dailyPlans,
-        } as GeneratedItinerary)
-      : null;
+    const itinerary = rawItinerary;
 
     if (!itinerary || dailyPlans.length === 0) {
       return NextResponse.json({ error: 'Trip itinerary is unavailable' }, { status: 400 });
@@ -229,7 +244,7 @@ export async function POST(
         shareUpdateQuery.eq('owner_user_id', user.id);
       }
 
-      let shareData = null as Awaited<ReturnType<typeof getTripShareByTripId>>['share'];
+      let shareData: TripShareRecord | null = null;
       const { data: refreshedShare, error: shareUpdateError } = await shareUpdateQuery.select('*').maybeSingle();
 
       if (shareUpdateError) {
@@ -242,10 +257,8 @@ export async function POST(
       if (refreshedShare) {
         shareData = refreshedShare;
       } else {
-        const existingShare = canAccessAllTrips
-          ? await supabase.from('trip_shares').select('*').eq('trip_id', id).maybeSingle()
-          : await getTripShareByTripId(id, user.id);
-        shareData = 'share' in existingShare ? existingShare.share : existingShare.data;
+        const existingShare = await loadShareByTripId(id, canAccessAllTrips ? undefined : user.id);
+        shareData = existingShare.share;
 
         if (!shareData) {
           const refreshed = await createOrRefreshTripShare(

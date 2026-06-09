@@ -5,7 +5,7 @@ import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { searchStayCandidates } from '@/services/places';
 import { suggestStayRetry } from '@/services/stay';
-import type { PointOfInterest } from '@/lib/travel-types';
+import type { GeneratedItinerary, PointOfInterest } from '@/lib/travel-types';
 
 function unauthorizedResponse(message = 'Unauthorized') {
   return NextResponse.json({ error: message }, { status: 401 });
@@ -19,13 +19,12 @@ function formatTripError(error: { message?: string; code?: string } | null | und
   return error.message || 'Failed to update stay';
 }
 
-function getCandidateArray(itinerary: Record<string, any> | null | undefined): PointOfInterest[] {
+function getCandidateArray(itinerary: GeneratedItinerary | null | undefined): PointOfInterest[] {
   if (!itinerary?.sourceData || typeof itinerary.sourceData !== 'object') {
     return [];
   }
 
-  const sourceData = itinerary.sourceData as { stayCandidates?: PointOfInterest[] };
-  return Array.isArray(sourceData.stayCandidates) ? sourceData.stayCandidates : [];
+  return Array.isArray(itinerary.sourceData.stayCandidates) ? itinerary.sourceData.stayCandidates : [];
 }
 
 export async function POST(
@@ -74,7 +73,7 @@ export async function POST(
       return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
     }
 
-    const itinerary = trip.itinerary as Record<string, any>;
+    const itinerary = trip.itinerary as GeneratedItinerary;
     const destination = itinerary?.sourceData?.destination;
 
     if (
@@ -101,7 +100,7 @@ export async function POST(
     const previousStayName = typeof itinerary?.stay?.name === 'string' ? itinerary.stay.name : null;
     const updatedStay = retryResult.stay;
     const updatedTransfers = Array.isArray(itinerary?.transfers)
-      ? itinerary.transfers.map((transfer: Record<string, any>) => {
+      ? itinerary.transfers.map(transfer => {
           if (transfer.kind === 'arrival') {
             return {
               ...transfer,

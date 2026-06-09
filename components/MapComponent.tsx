@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
+import type * as Leaflet from 'leaflet';
 
 interface Activity {
   time: string;
@@ -41,11 +42,11 @@ export function MapComponent({
   focusStayTrigger,
 }: MapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const [leaflet, setLeaflet] = useState<any>(null);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const activityMarkersRef = useRef<any[]>([]);
-  const polylineRef = useRef<any>(null);
+  const [leaflet, setLeaflet] = useState<typeof import('leaflet') | null>(null);
+  const mapRef = useRef<Leaflet.Map | null>(null);
+  const markersRef = useRef<Leaflet.Marker[]>([]);
+  const activityMarkersRef = useRef<Leaflet.Marker[]>([]);
+  const polylineRef = useRef<Leaflet.Polyline | null>(null);
 
   const validActivities = useMemo(() => activities.filter(hasValidCoordinates), [activities]);
 
@@ -53,10 +54,10 @@ export function MapComponent({
     let mounted = true;
 
     const loadLeaflet = async () => {
-      const module = await import('leaflet');
+      const leafletModule = await import('leaflet');
 
       if (mounted) {
-        setLeaflet(module.default ?? module);
+        setLeaflet((leafletModule.default ?? leafletModule) as typeof import('leaflet'));
       }
     };
 
@@ -97,7 +98,7 @@ export function MapComponent({
       polylineRef.current = null;
     }
 
-    const bounds: any[] = [];
+    const bounds: Array<[number, number]> = [];
 
     if (destinationCoordinates) {
       const destinationMarker = leaflet.marker([destinationCoordinates.latitude, destinationCoordinates.longitude], {
@@ -266,7 +267,7 @@ export function MapComponent({
   }, [leaflet, selectedActivityIndex, validActivities.length]);
 
   useEffect(() => {
-    if (!stay || focusStayTrigger === undefined || focusStayTrigger <= 0) {
+    if (!stay || focusStayTrigger === undefined || focusStayTrigger <= 0 || !leaflet) {
       return;
     }
 

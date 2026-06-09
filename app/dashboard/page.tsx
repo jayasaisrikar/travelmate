@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import { 
   Compass, 
   Calendar, 
@@ -132,7 +133,7 @@ interface AdminOverview {
 
 type DashboardTab = 'overview' | 'trips' | 'shares' | 'suggestions' | 'users' | 'social';
 
-const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string; icon: any }> = [
+const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string; icon: LucideIcon }> = [
   { id: 'overview',     label: 'Overview',    description: 'Summary',   icon: Activity  },
   { id: 'trips',        label: 'Trips',       description: 'Manage',    icon: Compass   },
   { id: 'shares',       label: 'Shares',      description: 'Revoke',    icon: Share2    },
@@ -1230,7 +1231,7 @@ export default function DashboardPage() {
                           <div className="text-[10px] font-mono text-[#8A869C]">{formatDate(suggestion.created_at)}</div>
                         </div>
                         <p className="mt-3 text-xs leading-relaxed text-[#3F3D56] bg-white border border-slate-100 rounded-xl p-3.5 italic">
-                          "{shorten(suggestion.message, 180)}"
+                          &quot;{shorten(suggestion.message, 180)}&quot;
                         </p>
                         <div className="mt-3.5 text-right">
                           <button

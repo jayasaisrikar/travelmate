@@ -102,6 +102,8 @@ export async function GET(request: NextRequest) {
     }] : [];
   });
 
-  await touchTravelerLastSeen(user.id);
+  if (user) {
+    await touchTravelerLastSeen(user.id);
+  }
   return NextResponse.json(travelers);
 }

@@ -15,11 +15,33 @@ import { TimelineView } from '@/components/trip/TimelineView';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
-import type { TripSuggestion } from '@/lib/travel-types';
+import type {
+  GeneratedItinerary,
+  ItineraryActivity,
+  ItineraryDayPlan,
+  TravelStay,
+  TripSuggestion,
+} from '@/lib/travel-types';
 
 export const dynamicParams = true;
 
-function getDailyPlans(itinerary: Record<string, any>): any[] {
+type TripItinerary = GeneratedItinerary;
+
+type TripMapActivity = {
+  day: number;
+  dayTheme: string;
+  activityIndex: number;
+  time: string;
+  name: string;
+  category: string;
+  description: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  estimated_cost: number | null;
+};
+
+function getDailyPlans(itinerary: TripItinerary | null | undefined): ItineraryDayPlan[] {
   if (Array.isArray(itinerary?.dailyPlans)) {
     return itinerary.dailyPlans;
   }
@@ -31,7 +53,7 @@ function getDailyPlans(itinerary: Record<string, any>): any[] {
   return [];
 }
 
-function getTotalEstimatedCost(itinerary: Record<string, any>): string | null {
+function getTotalEstimatedCost(itinerary: TripItinerary | null | undefined): string | null {
   const rawValue = itinerary?.totalEstimatedCost ?? itinerary?.total_estimated_cost;
 
   if (typeof rawValue === 'number' || typeof rawValue === 'string') {
@@ -41,7 +63,7 @@ function getTotalEstimatedCost(itinerary: Record<string, any>): string | null {
   return null;
 }
 
-function getDestinationCoordinates(itinerary: Record<string, any>) {
+function getDestinationCoordinates(itinerary: TripItinerary | null | undefined) {
   const destination = itinerary?.sourceData?.destination;
 
   if (
@@ -58,7 +80,7 @@ function getDestinationCoordinates(itinerary: Record<string, any>) {
   return null;
 }
 
-function getStay(itinerary: Record<string, any>) {
+function getStay(itinerary: TripItinerary | null | undefined): TravelStay | null {
   const stay = itinerary?.stay;
 
   if (
@@ -73,23 +95,23 @@ function getStay(itinerary: Record<string, any>) {
   return null;
 }
 
-function getFlatActivities(dailyPlans: any[]) {
-  return dailyPlans.flatMap((day: any, dayIndex: number) => {
+function getFlatActivities(dailyPlans: ItineraryDayPlan[]): TripMapActivity[] {
+  return dailyPlans.flatMap((day, dayIndex) => {
     const activities = Array.isArray(day?.activities) ? day.activities : [];
 
-    return activities.map((activity: any, activityIndex: number) => ({
-      day: typeof day?.day === 'number' ? day.day : dayIndex + 1,
-      dayTheme: day?.theme || `Day ${dayIndex + 1}`,
+    return activities.map((activity: ItineraryActivity, activityIndex: number) => ({
+      day: typeof day.day === 'number' ? day.day : dayIndex + 1,
+      dayTheme: day.theme || `Day ${dayIndex + 1}`,
       activityIndex,
-      time: activity?.time || '',
-      name: activity?.name || 'Activity',
-      category: activity?.category || 'Stop',
-      description: activity?.description || '',
-      address: activity?.address || null,
-      latitude: typeof activity?.latitude === 'number' ? activity.latitude : null,
-      longitude: typeof activity?.longitude === 'number' ? activity.longitude : null,
+      time: activity.time || '',
+      name: activity.name || 'Activity',
+      category: activity.category || 'Stop',
+      description: activity.description || '',
+      address: activity.address || null,
+      latitude: typeof activity.latitude === 'number' ? activity.latitude : null,
+      longitude: typeof activity.longitude === 'number' ? activity.longitude : null,
       estimated_cost:
-        typeof activity?.estimated_cost === 'number' ? activity.estimated_cost : activity?.cost ?? null,
+        typeof activity.estimated_cost === 'number' ? activity.estimated_cost : activity.cost ?? null,
     }));
   });
 }

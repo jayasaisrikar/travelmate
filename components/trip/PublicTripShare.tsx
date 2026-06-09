@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { Brand } from '@/components/common/Brand';
+import type { GeneratedItinerary, PublicTripSharePayload } from '@/lib/travel-types';
 
 type PublicTripShareProps = {
   shareToken: string;
@@ -10,10 +11,10 @@ type PublicTripShareProps = {
   shareTitle: string;
   shareDescription: string;
   suggestionsCount: number;
-  trip: any;
+  trip: PublicTripSharePayload['trip'];
 };
 
-function getDailyPlans(itinerary: any): any[] {
+function getDailyPlans(itinerary: GeneratedItinerary | null | undefined) {
   if (Array.isArray(itinerary?.dailyPlans)) {
     return itinerary.dailyPlans;
   }
@@ -47,7 +48,7 @@ export function PublicTripShare({
     () =>
       dailyPlans
         .slice(0, 3)
-        .map((day: any) => day?.theme || `Day ${day?.day}`)
+        .map(day => day?.theme || `Day ${day?.day}`)
         .filter(Boolean),
     [dailyPlans]
   );
