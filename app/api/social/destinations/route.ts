@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const current = destinationMap.get(signal.destination_slug) ?? {
+    const current: DestinationPulseAccumulator = destinationMap.get(signal.destination_slug) ?? {
       destination: signal.destination,
       destination_slug: signal.destination_slug,
       traveler_count: 0,

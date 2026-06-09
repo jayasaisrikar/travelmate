@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 let supabaseBrowserClient: ReturnType<typeof createClient> | null = null;
 
-type SupabaseBrowserMock = any;
+type SupabaseBrowserMock = ReturnType<typeof createClient>;
 
 export function getSupabaseBrowser(): ReturnType<typeof createClient> {
   if (typeof window !== 'undefined') {

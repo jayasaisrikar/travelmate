@@ -9,6 +9,7 @@ import {
   getTripShareByTripId,
   type TripRow,
 } from '@/services/trip-sharing';
+import type { TripShareRecord } from '@/lib/travel-types';
 
 function unauthorizedResponse(message = 'Unauthorized') {
   return NextResponse.json({ error: message }, { status: 401 });
@@ -49,13 +50,13 @@ async function loadShareByTripId(tripId: string, ownerUserId?: string) {
   const { data, error } = await query.maybeSingle();
 
   if (error) {
-    return { share: null as any, error };
+    return { share: null as TripShareRecord | null, error };
   }
 
-  return { share: (data ?? null) as any, error: null };
+  return { share: (data ?? null) as TripShareRecord | null, error: null };
 }
 
-function shareResponse(baseUrl: string, share: { token: string; id: string; revoked_at: string | null; created_at: string; updated_at: string; share_title: string | null; share_description: string | null; share_image_url: string | null } | null, suggestionsCount = 0) {
+function shareResponse(baseUrl: string, share: TripShareRecord | null, suggestionsCount = 0) {
   if (!share) {
     return { share: null, shareUrl: null, suggestionsCount };
   }

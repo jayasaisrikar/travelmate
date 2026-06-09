@@ -1,6 +1,7 @@
 import { getSupabaseBrowser } from '@/services/supabase-browser'
 import type {
   BookingConfirmationExtraction,
+  GeneratedItinerary,
   TravelerPreferences,
   TripShareRecord,
   TripSuggestion,
@@ -18,7 +19,7 @@ export interface Trip {
   duration: number
   budget: string
   interests: string[]
-  itinerary: any
+  itinerary: GeneratedItinerary
   cover_image_url?: string | null
   created_at: string
   updated_at: string

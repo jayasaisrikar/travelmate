@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { lookupDestinationPhotoUrl } from '@/services/place-photo';
-import { buildPublicShareUrl, createOrRefreshTripShare } from '@/services/trip-sharing';
+import { buildPublicShareUrl, createOrRefreshTripShare, type TripRow } from '@/services/trip-sharing';
 import { saveTravelerPreferences } from '@/services/traveler-preferences';
 
 export const dynamic = 'force-dynamic';
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { share, error: shareError } = await createOrRefreshTripShare(data as any, user.id);
+    const { share, error: shareError } = await createOrRefreshTripShare(data as TripRow, user.id);
 
     if (shareError) {
       console.error('[api/trips] share precreate failed', {

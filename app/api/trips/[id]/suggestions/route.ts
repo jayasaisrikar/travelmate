@@ -4,6 +4,7 @@ import { isAdminEmail } from '@/services/admin-access';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { listTripSuggestionsByTripId } from '@/services/trip-sharing';
+import type { TripSuggestionRecord } from '@/lib/travel-types';
 
 function unauthorizedResponse(message = 'Unauthorized') {
   return NextResponse.json({ error: message }, { status: 401 });
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           .select('*')
           .eq('trip_id', id)
           .order('created_at', { ascending: false })
-          .then(({ data, error }) => ({ suggestions: (data ?? []) as any[], error }))
+          .then(({ data, error }) => ({ suggestions: (data ?? []) as TripSuggestionRecord[], error }))
       : await listTripSuggestionsByTripId(id, user.id);
 
     if (error) {
