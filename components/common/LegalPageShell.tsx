@@ -73,10 +73,10 @@ export function LegalPageShell({
   };
 
   return (
-    <main className="min-h-screen bg-[#FDFDFD] text-[#3F3D56] selection:bg-[#6C63FF] selection:text-white">
+    <main className="min-h-screen bg-[#FDFDFD] text-[#3a2540] selection:bg-[#ea580c] selection:text-white">
       {/* Progress Bar */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#6C63FF] to-[#FF6584] origin-left z-50 rounded-r-full"
+        className="fixed top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#ea580c] to-[#f43f5e] origin-left z-50 rounded-r-full"
         style={{ scaleX: smoothProgress }}
       />
 
@@ -88,7 +88,7 @@ export function LegalPageShell({
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="rounded-full bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-5 py-3 text-sm font-semibold text-[#53506A] transition hover:text-[#6C63FF]"
+              className="rounded-full bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-5 py-3 text-sm font-semibold text-[#5b4a55] transition hover:text-[#ea580c]"
             >
               Log in
             </Link>
@@ -105,20 +105,20 @@ export function LegalPageShell({
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#F3F2FA] border border-[#6C63FF]/10 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-[#6C63FF]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#fbf1e6] border border-[#ea580c]/10 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-[#ea580c]">
               <Sparkles className="h-3.5 w-3.5" />
               {eyebrow}
             </div>
             
-            <h1 className="mt-6 text-5xl lg:text-7xl font-semibold tracking-[-0.04em] text-[#1E1D2D] leading-[0.9]">
+            <h1 className="mt-6 text-5xl lg:text-7xl font-semibold tracking-[-0.04em] text-[#1b1220] leading-[0.9]">
               {title}
             </h1>
             
-            <p className="mt-6 text-base lg:text-lg leading-relaxed text-[#6F6C82] max-w-sm">
+            <p className="mt-6 text-base lg:text-lg leading-relaxed text-[#7c6a72] max-w-sm">
               {intro}
             </p>
 
-            <div className="mt-8 pt-8 border-t border-[#E4E2F0]/50 max-w-sm">
+            <div className="mt-8 pt-8 border-t border-[#f0e2d0]/50 max-w-sm">
                <span className="text-xs font-bold uppercase tracking-widest text-[#A5A2B8] block mb-4">On this page</span>
                <nav className="flex flex-col gap-1">
                  {quickLinks.map((link) => (
@@ -127,8 +127,8 @@ export function LegalPageShell({
                      onClick={() => handleScroll(link.id)}
                      className={`group relative flex items-center justify-between w-full text-left px-4 py-3 rounded-2xl transition-all duration-300 ${
                        activeSection === link.index 
-                         ? 'bg-[#6C63FF] text-white shadow-lg shadow-[#6C63FF]/25' 
-                         : 'text-[#6F6C82] hover:bg-[#F8F7FF] hover:text-[#1E1D2D]'
+                         ? 'bg-[#ea580c] text-white shadow-lg shadow-[#ea580c]/25' 
+                         : 'text-[#7c6a72] hover:bg-[#fffbf4] hover:text-[#1b1220]'
                      }`}
                    >
                      <span className={`text-sm font-medium ${activeSection === link.index ? 'font-semibold' : ''}`}>
@@ -145,7 +145,7 @@ export function LegalPageShell({
             </div>
 
             <div className="mt-8 flex items-center gap-3">
-              <div className="h-px bg-[#E4E2F0] flex-1" />
+              <div className="h-px bg-[#f0e2d0] flex-1" />
               <span className="text-[11px] font-bold uppercase tracking-widest text-[#A5A2B8]">Updated {effectiveDate}</span>
             </div>
 
@@ -170,18 +170,18 @@ export function LegalPageShell({
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="scroll-mt-48 mb-20 relative group"
             >
-              <div className="absolute -inset-x-8 -inset-y-8 bg-white rounded-3xl opacity-0 group-hover:opacity-100 group-hover:shadow-[0_40px_100px_rgba(108,99,255,0.06)] transition-all duration-700 pointer-events-none -z-10" />
+              <div className="absolute -inset-x-8 -inset-y-8 bg-white rounded-3xl opacity-0 group-hover:opacity-100 group-hover:shadow-[0_40px_100px_rgba(234,88,12,0.06)] transition-all duration-700 pointer-events-none -z-10" />
               
               <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F8F7FF] to-[#EEEDFE] border border-[#6C63FF]/10 text-[#6C63FF] font-semibold text-lg shadow-sm">
+                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-[#fffbf4] to-[#ffedd5] border border-[#ea580c]/10 text-[#ea580c] font-semibold text-lg shadow-sm">
                   {index + 1}
                 </div>
-                <h2 className="text-3xl font-semibold tracking-tight text-[#1E1D2D]">
+                <h2 className="text-3xl font-semibold tracking-tight text-[#1b1220]">
                   {section.title}
                 </h2>
               </div>
               
-              <div className="space-y-6 text-[#53506A] text-lg leading-[1.8] pl-0 sm:pl-16">
+              <div className="space-y-6 text-[#5b4a55] text-lg leading-[1.8] pl-0 sm:pl-16">
                 {section.body.map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}

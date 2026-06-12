@@ -50,7 +50,7 @@ export function MessageButton({ userId, travelerName }: MessageButtonProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-xl border border-[#DDDCE8] bg-white px-3 py-1.5 text-xs font-semibold text-[#3F3D56] transition hover:border-[#6C63FF] hover:text-[#6C63FF]"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-[#eaddc7] bg-white px-3 py-1.5 text-xs font-semibold text-[#3a2540] transition hover:border-[#ea580c] hover:text-[#ea580c]"
       >
         <MessageCircle size={13} />
         Message traveler
@@ -63,17 +63,17 @@ export function MessageButton({ userId, travelerName }: MessageButtonProps) {
               initial={{ opacity: 0, scale: 0.97, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 12 }}
-              className="w-full max-w-md rounded-2xl border border-[#DDDCE8] bg-white p-5 shadow-[0_30px_80px_rgba(46,40,51,0.22)]"
+              className="w-full max-w-md rounded-2xl border border-[#eaddc7] bg-white p-5 shadow-[0_30px_80px_rgba(46,40,51,0.22)]"
               role="dialog"
               aria-modal="true"
               aria-label={`Message ${travelerName ?? 'traveler'}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-black text-[#1A1726]">
+                  <h2 className="text-lg font-black text-[#1c1018]">
                     Message {travelerName ?? 'traveler'}
                   </h2>
-                  <p className="mt-1 text-xs leading-5 text-[#6F6C82]">
+                  <p className="mt-1 text-xs leading-5 text-[#7c6a72]">
                     Keep it friendly and relevant to the trip. Maximum 500 characters.
                   </p>
                 </div>
@@ -82,7 +82,7 @@ export function MessageButton({ userId, travelerName }: MessageButtonProps) {
                   onClick={close}
                   disabled={sending}
                   aria-label="Close message composer"
-                  className="rounded-lg border border-[#DDDCE8] p-1.5 text-[#8A869C] transition hover:bg-[#F4F3FF] disabled:opacity-50"
+                  className="rounded-lg border border-[#eaddc7] p-1.5 text-[#9b8b92] transition hover:bg-[#fff7ed] disabled:opacity-50"
                 >
                   <X size={15} />
                 </button>
@@ -90,13 +90,13 @@ export function MessageButton({ userId, travelerName }: MessageButtonProps) {
 
               {sent ? (
                 <div className="mt-5">
-                  <p className="rounded-xl border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-semibold text-[#3F3D56]">
+                  <p className="rounded-xl border border-[#ea580c] bg-[#ffedd5] px-4 py-3 text-sm font-semibold text-[#3a2540]">
                     Message sent.
                   </p>
                   <button
                     type="button"
                     onClick={close}
-                    className="mt-4 rounded-xl bg-[#3F3D56] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#302F43]"
+                    className="mt-4 rounded-xl bg-[#3a2540] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2c1b33]"
                   >
                     Done
                   </button>
@@ -108,11 +108,11 @@ export function MessageButton({ userId, travelerName }: MessageButtonProps) {
                     onChange={event => setMessage(event.target.value.slice(0, 500))}
                     rows={5}
                     placeholder="Hey, I am planning a similar trip..."
-                    className="mt-5 w-full resize-none rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm leading-6 text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+                    className="mt-5 w-full resize-none rounded-xl border border-[#eaddc7] bg-[#fffbf2] px-4 py-3 text-sm leading-6 text-[#3a2540] outline-none placeholder:text-[#9b8b92] focus:border-[#ea580c] focus:ring-2 focus:ring-[#ea580c]/20"
                   />
-                  <div className="mt-1 text-right text-xs text-[#8A869C]">{message.length}/500</div>
+                  <div className="mt-1 text-right text-xs text-[#9b8b92]">{message.length}/500</div>
                   {error && (
-                    <p className="mt-3 rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-2.5 text-sm text-[#C14D72]">
+                    <p className="mt-3 rounded-xl border border-[#be123c] bg-[#ffe4e6] px-4 py-2.5 text-sm text-[#be123c]">
                       {error}
                     </p>
                   )}
@@ -120,7 +120,7 @@ export function MessageButton({ userId, travelerName }: MessageButtonProps) {
                     type="button"
                     onClick={() => void handleSend()}
                     disabled={sending}
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5b54e7] disabled:opacity-60"
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#ea580c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c2410c] disabled:opacity-60"
                   >
                     {sending ? <LoaderCircle size={15} className="animate-spin" /> : <Send size={15} />}
                     {sending ? 'Sending...' : 'Send message'}

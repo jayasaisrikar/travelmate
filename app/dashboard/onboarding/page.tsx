@@ -510,15 +510,15 @@ export default function OnboardingPage() {
       <div
         style={{
           minHeight: '100vh',
-          background: '#F2F2F2',
-          color: '#3F3D56',
+          background: '#fbf4ea',
+          color: '#3a2540',
           fontFamily: 'system-ui, sans-serif',
           display: 'grid',
           placeItems: 'center',
           padding: 24,
         }}
       >
-        <div style={{ border: '1px solid #3F3D56', background: '#ffffff', padding: '18px 20px', fontWeight: 700 }}>
+        <div style={{ border: '1px solid #3a2540', background: '#ffffff', padding: '18px 20px', fontWeight: 700 }}>
           Loading trip details...
         </div>
       </div>
@@ -529,8 +529,8 @@ export default function OnboardingPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#F2F2F2',
-        color: '#3F3D56',
+        background: '#fbf4ea',
+        color: '#3a2540',
         fontFamily: 'system-ui, sans-serif',
       }}
     >
@@ -539,13 +539,13 @@ export default function OnboardingPage() {
           position: 'sticky',
           top: 0,
           zIndex: 20,
-          borderBottom: '1px solid #DDDCE8',
+          borderBottom: '1px solid #eaddc7',
           padding: '14px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 12,
-          background: '#FBFAFF',
+          background: '#fffbf2',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -556,18 +556,18 @@ export default function OnboardingPage() {
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 104px' }}>
         <div style={{ marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', color: '#8A869C' }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase', color: '#9b8b92' }}>
               Step {step + 1} of {STEPS.length}
             </div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#6C63FF' }}>{Math.round(stepProgress)}%</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#ea580c' }}>{Math.round(stepProgress)}%</div>
           </div>
-          <div style={{ marginTop: 10, height: 8, borderRadius: 999, background: '#DDDCE8', overflow: 'hidden' }}>
+          <div style={{ marginTop: 10, height: 8, borderRadius: 999, background: '#eaddc7', overflow: 'hidden' }}>
             <div
               style={{
                 width: `${stepProgress}%`,
                 height: '100%',
                 borderRadius: 999,
-                background: 'linear-gradient(90deg, #6C63FF 0%, #FF6584 100%)',
+                background: 'linear-gradient(90deg, #ea580c 0%, #f43f5e 100%)',
                 transition: 'width .25s ease',
               }}
             />
@@ -581,11 +581,11 @@ export default function OnboardingPage() {
                 style={{
                   height: 5,
                   borderRadius: 999,
-                  background: index <= step ? '#6C63FF' : '#DDDCE8',
+                  background: index <= step ? '#ea580c' : '#eaddc7',
                   transition: 'background .3s',
                 }}
               />
-              <div style={{ marginTop: 8, fontSize: 11, color: index === step ? '#3F3D56' : '#8A869C', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2 }}>
+              <div style={{ marginTop: 8, fontSize: 11, color: index === step ? '#3a2540' : '#9b8b92', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2 }}>
                 {label}
               </div>
             </div>
@@ -599,7 +599,7 @@ export default function OnboardingPage() {
               : ['Search for your destination', 'Choose your trip window', 'Set your preferences', 'Review before generating']
           )[step]}
         </h1>
-        <p style={{ color: '#6F6C82', marginBottom: 28, fontSize: 'clamp(0.98rem, 2.5vw, 1.05rem)', lineHeight: 1.65, maxWidth: 640 }}>
+        <p style={{ color: '#7c6a72', marginBottom: 28, fontSize: 'clamp(0.98rem, 2.5vw, 1.05rem)', lineHeight: 1.65, maxWidth: 640 }}>
           {(
             isEditMode
               ? [
@@ -618,13 +618,13 @@ export default function OnboardingPage() {
         </p>
 
         {preferencesLoaded && form.budget && step <= 2 && (
-          <div style={{ marginBottom: 24, padding: '12px 14px', borderRadius: 18, border: '1px solid #DDDCE8', background: '#FBFAFF', color: '#6F6C82', fontSize: 14 }}>
+          <div style={{ marginBottom: 24, padding: '12px 14px', borderRadius: 18, border: '1px solid #eaddc7', background: '#fffbf2', color: '#7c6a72', fontSize: 14 }}>
             Saved preferences loaded where available. We will reuse your budget and pacing defaults unless you change them.
           </div>
         )}
 
         {error && (
-          <div style={{ marginBottom: 24, padding: '14px 16px', background: '#FFF0F4', border: '1px solid #f0d7de', borderRadius: 18, color: '#C14D72', fontSize: 14, boxShadow: '0 10px 30px rgba(165,58,83,0.08)' }}>
+          <div style={{ marginBottom: 24, padding: '14px 16px', background: '#ffe4e6', border: '1px solid #fecdd3', borderRadius: 18, color: '#be123c', fontSize: 14, boxShadow: '0 10px 30px rgba(165,58,83,0.08)' }}>
             {error}
           </div>
         )}
@@ -644,7 +644,7 @@ export default function OnboardingPage() {
                     void searchDestinations(form.destination);
                   }
                 }}
-                style={{ flex: '1 1 280px', minWidth: 0, padding: '16px 20px', fontSize: 18, background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 18, color: '#3F3D56', outline: 'none', boxSizing: 'border-box', boxShadow: '0 14px 36px rgba(67,32,79,0.06)' }}
+                style={{ flex: '1 1 280px', minWidth: 0, padding: '16px 20px', fontSize: 18, background: '#ffffff', border: '1px solid #eaddc7', borderRadius: 18, color: '#3a2540', outline: 'none', boxSizing: 'border-box', boxShadow: '0 14px 36px rgba(67,32,79,0.06)' }}
               />
               <button
                 type="button"
@@ -656,8 +656,8 @@ export default function OnboardingPage() {
                   minWidth: 124,
                   borderRadius: 18,
                   border: 'none',
-                  background: searching || form.destination.trim().length < 2 ? '#DDDCE8' : '#3F3D56',
-                  color: searching || form.destination.trim().length < 2 ? '#8A869C' : '#ffffff',
+                  background: searching || form.destination.trim().length < 2 ? '#eaddc7' : '#3a2540',
+                  color: searching || form.destination.trim().length < 2 ? '#9b8b92' : '#ffffff',
                   fontWeight: 800,
                   fontSize: 15,
                   cursor: searching || form.destination.trim().length < 2 ? 'not-allowed' : 'pointer',
@@ -669,9 +669,9 @@ export default function OnboardingPage() {
             </div>
 
             {(searching || results.length > 0) && (
-              <div style={{ marginTop: 10, background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 18, overflow: 'hidden', zIndex: 50, boxShadow: '0 16px 42px rgba(46,40,51,0.12)', maxHeight: 320, overflowY: 'auto' }}>
+              <div style={{ marginTop: 10, background: '#ffffff', border: '1px solid #eaddc7', borderRadius: 18, overflow: 'hidden', zIndex: 50, boxShadow: '0 16px 42px rgba(46,40,51,0.12)', maxHeight: 320, overflowY: 'auto' }}>
                   {searching ? (
-                    <div style={{ padding: '14px 20px', color: '#6F6C82', fontSize: 14 }}>
+                    <div style={{ padding: '14px 20px', color: '#7c6a72', fontSize: 14 }}>
                       Searching destinations...
                     </div>
                   ) : (
@@ -679,29 +679,29 @@ export default function OnboardingPage() {
                       <button
                         key={`${result.name}-${result.latitude}-${result.longitude}`}
                         onClick={() => handleSelectDestination(result)}
-                        style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid #f4e5ee', cursor: 'pointer', color: '#3F3D56' }}
-                        onMouseEnter={event => (event.currentTarget.style.background = '#FBFAFF')}
+                        style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid #f4e5ee', cursor: 'pointer', color: '#3a2540' }}
+                        onMouseEnter={event => (event.currentTarget.style.background = '#fffbf2')}
                         onMouseLeave={event => (event.currentTarget.style.background = 'none')}
                       >
                         <div style={{ fontWeight: 600 }}>{result.name}</div>
-                        <div style={{ fontSize: 13, color: '#8A869C', marginTop: 2 }}>{result.address}</div>
+                        <div style={{ fontSize: 13, color: '#9b8b92', marginTop: 2 }}>{result.address}</div>
                       </button>
                     ))
                   )}
                 </div>
               )}
 
-            <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 18, border: '1px solid #DDDCE8', background: '#ffffff', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}>
+            <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 18, border: '1px solid #eaddc7', background: '#ffffff', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}>
               {typeof form.latitude === 'number' && typeof form.longitude === 'number' ? (
-                <p style={{ margin: 0, color: '#6C63FF', fontSize: 14, fontWeight: 600 }}>
+                <p style={{ margin: 0, color: '#ea580c', fontSize: 14, fontWeight: 600 }}>
                   Destination selected from live results. Coordinates saved for itinerary generation.
                 </p>
               ) : hasSearched && !searching && results.length === 0 ? (
-                <p style={{ margin: 0, color: '#C14D72', fontSize: 14, fontWeight: 600 }}>
+                <p style={{ margin: 0, color: '#be123c', fontSize: 14, fontWeight: 600 }}>
                   No matching destination found. Refine your search to continue.
                 </p>
               ) : (
-                <p style={{ margin: 0, color: '#6F6C82', fontSize: 14 }}>
+                <p style={{ margin: 0, color: '#7c6a72', fontSize: 14 }}>
                   Search and then pick one of the live results. We do not prefill destinations anymore.
                 </p>
               )}
@@ -719,36 +719,36 @@ export default function OnboardingPage() {
                 { label: 'Departure Time', key: 'departureTime' as const, type: 'time' as const },
               ].map(({ label, key, type }) => (
                 <div key={key}>
-                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#7c6a72', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                     {label}
                   </label>
                   <input
                     type={type}
                     value={form[key]}
                     onChange={event => setForm(previous => ({ ...previous, [key]: event.target.value }))}
-                    style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 16, color: '#3F3D56', colorScheme: 'light', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+                    style={{ width: '100%', padding: '14px 16px', background: '#ffffff', border: '1px solid #eaddc7', borderRadius: 16, color: '#3a2540', colorScheme: 'light', fontSize: 16, boxSizing: 'border-box', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
                   />
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: '14px 16px', border: '1px solid #DDDCE8', background: '#FBFAFF' }}>
-              <p style={{ margin: 0, color: '#6F6C82', fontSize: 14, lineHeight: 1.6 }}>
+            <div style={{ padding: '14px 16px', border: '1px solid #eaddc7', background: '#fffbf2' }}>
+              <p style={{ margin: 0, color: '#7c6a72', fontSize: 14, lineHeight: 1.6 }}>
                 We use your arrival and departure times as hard boundaries, but the transfer notes are optional. The planner should not assume the day starts at 9:00.
               </p>
             </div>
 
-              <div style={{ border: '1px solid #DDDCE8', background: '#ffffff', padding: 18 }}>
+              <div style={{ border: '1px solid #eaddc7', background: '#ffffff', padding: 18 }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 12, background: '#6C63FF', flexShrink: 0 }} />
+                  <div style={{ width: 34, height: 34, borderRadius: 12, background: '#ea580c', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#8A869C' }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase', color: '#9b8b92' }}>
                       Trip Assistant
                     </div>
-                    <p style={{ margin: '6px 0 0', color: '#3F3D56', fontSize: 15, lineHeight: 1.6 }}>
+                    <p style={{ margin: '6px 0 0', color: '#3a2540', fontSize: 15, lineHeight: 1.6 }}>
                     Tell us the basics first. Transfer notes help, but they are optional and can be rough.
                     </p>
-                    <p style={{ margin: '10px 0 0', color: '#6F6C82', fontSize: 13, lineHeight: 1.6 }}>
+                    <p style={{ margin: '10px 0 0', color: '#7c6a72', fontSize: 13, lineHeight: 1.6 }}>
                     Your stay is chosen automatically from live lodging options, so these fields only refine the arrival and departure legs.
                     </p>
                   </div>
@@ -756,9 +756,9 @@ export default function OnboardingPage() {
 
               <div style={{ display: 'grid', gap: 14, marginTop: 16 }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#7c6a72', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                     Arrival drop-off
-                    <span style={{ marginLeft: 6, color: '#8A869C' }}>(optional)</span>
+                    <span style={{ marginLeft: 6, color: '#9b8b92' }}>(optional)</span>
                   </label>
                   <textarea
                     value={form.arrivalTransferContext}
@@ -767,14 +767,14 @@ export default function OnboardingPage() {
                   }
                     placeholder="Example: a station, airport, ferry terminal, or neighborhood"
                     rows={2}
-                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#FBFAFF', border: '1px solid #DDDCE8', color: '#3F3D56', fontSize: 16, boxSizing: 'border-box' }}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffbf2', border: '1px solid #eaddc7', color: '#3a2540', fontSize: 16, boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+                  <label style={{ display: 'block', marginBottom: 8, fontSize: 13, fontWeight: 700, color: '#7c6a72', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                     Departure pick-up
-                    <span style={{ marginLeft: 6, color: '#8A869C' }}>(optional)</span>
+                    <span style={{ marginLeft: 6, color: '#9b8b92' }}>(optional)</span>
                   </label>
                   <textarea
                     value={form.departureTransferContext}
@@ -783,14 +783,14 @@ export default function OnboardingPage() {
                     }
                     placeholder="Example: train station, railway station, airport, or ferry terminal"
                     rows={2}
-                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#FBFAFF', border: '1px solid #DDDCE8', color: '#3F3D56', fontSize: 16, boxSizing: 'border-box' }}
+                    style={{ width: '100%', resize: 'vertical', minHeight: 72, padding: '14px 16px', background: '#fffbf2', border: '1px solid #eaddc7', color: '#3a2540', fontSize: 16, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: 12, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
+              <label style={{ display: 'block', marginBottom: 12, fontSize: 13, fontWeight: 700, color: '#7c6a72', textTransform: 'uppercase', letterSpacing: 1.1 }}>
                 Arriving by
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
@@ -798,7 +798,7 @@ export default function OnboardingPage() {
                   <button
                     key={method}
                     onClick={() => setForm(previous => ({ ...previous, arrivalMethod: method }))}
-                    style={{ padding: '16px 12px', borderRadius: 16, border: `2px solid ${form.arrivalMethod === method ? '#6C63FF' : '#DDDCE8'}`, background: form.arrivalMethod === method ? '#6C63FF' : '#ffffff', color: form.arrivalMethod === method ? '#ffffff' : '#6F6C82', cursor: 'pointer', fontWeight: 800, textTransform: 'capitalize', fontSize: 14, boxShadow: '0 10px 26px rgba(67,32,79,0.06)' }}
+                    style={{ padding: '16px 12px', borderRadius: 16, border: `2px solid ${form.arrivalMethod === method ? '#ea580c' : '#eaddc7'}`, background: form.arrivalMethod === method ? '#ea580c' : '#ffffff', color: form.arrivalMethod === method ? '#ffffff' : '#7c6a72', cursor: 'pointer', fontWeight: 800, textTransform: 'capitalize', fontSize: 14, boxShadow: '0 10px 26px rgba(67,32,79,0.06)' }}
                   >
                     {method}
                   </button>
@@ -817,7 +817,7 @@ export default function OnboardingPage() {
                   marginBottom: 12,
                   fontSize: 13,
                   fontWeight: 700,
-                  color: '#6F6C82',
+                  color: '#7c6a72',
                   textTransform: 'uppercase',
                   letterSpacing: 1.1,
                 }}
@@ -833,15 +833,15 @@ export default function OnboardingPage() {
                   width: '100%',
                   padding: '14px 16px',
                   background: '#ffffff',
-                  border: '1px solid #DDDCE8',
+                  border: '1px solid #eaddc7',
                   borderRadius: 16,
-                  color: '#3F3D56',
+                  color: '#3a2540',
                   fontSize: 16,
                   boxSizing: 'border-box',
                   boxShadow: '0 10px 28px rgba(67,32,79,0.06)',
                 }}
               />
-              <p style={{ marginTop: 8, fontSize: 13, color: '#8A869C' }}>
+              <p style={{ marginTop: 8, fontSize: 13, color: '#9b8b92' }}>
                 You can type your own interests or tap a suggestion to add it quickly.
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
@@ -851,9 +851,9 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => appendInterest(interest)}
                     style={{
-                      border: '1px solid #DDDCE8',
-                      background: '#FBFAFF',
-                      color: '#3F3D56',
+                      border: '1px solid #eaddc7',
+                      background: '#fffbf2',
+                      color: '#3a2540',
                       borderRadius: 999,
                       padding: '8px 12px',
                       fontSize: 13,
@@ -875,7 +875,7 @@ export default function OnboardingPage() {
                     marginBottom: 8,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#6F6C82',
+                    color: '#7c6a72',
                     textTransform: 'uppercase',
                     letterSpacing: 1.1,
                   }}
@@ -892,9 +892,9 @@ export default function OnboardingPage() {
                     width: '100%',
                     padding: '14px 16px',
                     background: '#ffffff',
-                    border: '1px solid #DDDCE8',
+                    border: '1px solid #eaddc7',
                     borderRadius: 16,
-                    color: '#3F3D56',
+                    color: '#3a2540',
                     fontSize: 16,
                     boxSizing: 'border-box',
                     boxShadow: '0 10px 28px rgba(67,32,79,0.06)',
@@ -907,9 +907,9 @@ export default function OnboardingPage() {
                       type="button"
                       onClick={() => setForm(previous => ({ ...previous, budget: preset }))}
                       style={{
-                        border: `1px solid ${form.budget === preset ? '#6C63FF' : '#DDDCE8'}`,
-                        background: form.budget === preset ? '#EEEDFE' : '#FFFFFF',
-                        color: '#3F3D56',
+                        border: `1px solid ${form.budget === preset ? '#ea580c' : '#eaddc7'}`,
+                        background: form.budget === preset ? '#ffedd5' : '#FFFFFF',
+                        color: '#3a2540',
                         borderRadius: 999,
                         padding: '8px 12px',
                         fontSize: 13,
@@ -930,7 +930,7 @@ export default function OnboardingPage() {
                     marginBottom: 8,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#6F6C82',
+                    color: '#7c6a72',
                     textTransform: 'uppercase',
                     letterSpacing: 1.1,
                   }}
@@ -946,9 +946,9 @@ export default function OnboardingPage() {
                       style={{
                         padding: '14px 14px',
                         borderRadius: 16,
-                        border: `2px solid ${form.activityIntensity === level ? '#FF6584' : '#DDDCE8'}`,
-                        background: form.activityIntensity === level ? '#FF6584' : '#ffffff',
-                        color: form.activityIntensity === level ? '#fff' : '#6F6C82',
+                        border: `2px solid ${form.activityIntensity === level ? '#f43f5e' : '#eaddc7'}`,
+                        background: form.activityIntensity === level ? '#f43f5e' : '#ffffff',
+                        color: form.activityIntensity === level ? '#fff' : '#7c6a72',
                         cursor: 'pointer',
                         fontWeight: 800,
                         textAlign: 'left',
@@ -984,12 +984,12 @@ export default function OnboardingPage() {
               { label: 'Budget', value: form.budget ? `$${form.budget}` : '' },
               { label: 'Interests', value: parsedInterests.join(', ') },
             ].map(({ label, value }) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '16px 18px', background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 18, boxShadow: '0 10px 28px rgba(67,32,79,0.06)', flexWrap: 'wrap' }}>
-                <span style={{ color: '#8A869C', fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</span>
-                <span style={{ color: '#3F3D56', fontWeight: 700, fontSize: 14, textAlign: 'right', maxWidth: '100%' }}>{value || 'Not set'}</span>
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '16px 18px', background: '#ffffff', border: '1px solid #eaddc7', borderRadius: 18, boxShadow: '0 10px 28px rgba(67,32,79,0.06)', flexWrap: 'wrap' }}>
+                <span style={{ color: '#9b8b92', fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.8 }}>{label}</span>
+                <span style={{ color: '#3a2540', fontWeight: 700, fontSize: 14, textAlign: 'right', maxWidth: '100%' }}>{value || 'Not set'}</span>
               </div>
             ))}
-            <div style={{ padding: '16px 18px', borderRadius: 18, border: '1px solid #DDDCE8', background: '#FBFAFF', color: '#6F6C82', lineHeight: 1.6, fontSize: 14 }}>
+            <div style={{ padding: '16px 18px', borderRadius: 18, border: '1px solid #eaddc7', background: '#fffbf2', color: '#7c6a72', lineHeight: 1.6, fontSize: 14 }}>
               This is the last check. After you generate, you can still refine the trip in the saved itinerary view.
             </div>
           </div>
@@ -1000,7 +1000,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => setStep(currentStep => currentStep - 1)}
               disabled={loading}
-              style={{ padding: '16px 28px', borderRadius: 16, border: '1px solid #DDDCE8', background: '#ffffff', color: '#3F3D56', cursor: 'pointer', fontWeight: 800, fontSize: 16, flex: '1 1 160px', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
+              style={{ padding: '16px 28px', borderRadius: 16, border: '1px solid #eaddc7', background: '#ffffff', color: '#3a2540', cursor: 'pointer', fontWeight: 800, fontSize: 16, flex: '1 1 160px', boxShadow: '0 10px 28px rgba(67,32,79,0.06)' }}
             >
               Back
             </button>
@@ -1014,8 +1014,8 @@ export default function OnboardingPage() {
               borderRadius: 16,
               border: 'none',
               cursor: isValid() && !loading ? 'pointer' : 'not-allowed',
-              background: isValid() && !loading ? '#3F3D56' : '#DDDCE8',
-              color: isValid() && !loading ? '#fff' : '#8A869C',
+              background: isValid() && !loading ? '#3a2540' : '#eaddc7',
+              color: isValid() && !loading ? '#fff' : '#9b8b92',
               fontWeight: 800,
               fontSize: 16,
               opacity: loading ? 0.85 : 1,
@@ -1075,7 +1075,7 @@ export default function OnboardingPage() {
                       borderRadius: 18,
                       display: 'grid',
                       placeItems: 'center',
-                      background: '#6C63FF',
+                      background: '#ea580c',
                       boxShadow: '0 20px 40px rgba(90,167,232,0.2)',
                     }}
                   >
@@ -1092,8 +1092,8 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div>
-                  <div style={{ color: '#3F3D56', fontSize: 22, fontWeight: 800 }}>Generating your itinerary</div>
-                  <div style={{ color: '#6F6C82', fontSize: 14, marginTop: 4 }}>
+                  <div style={{ color: '#3a2540', fontSize: 22, fontWeight: 800 }}>Generating your itinerary</div>
+                  <div style={{ color: '#7c6a72', fontSize: 14, marginTop: 4 }}>
                     Live APIs are running in parallel to keep this as fast as possible.
                   </div>
                 </div>
@@ -1112,7 +1112,7 @@ export default function OnboardingPage() {
                         flex: 1,
                         height: 6,
                         borderRadius: 999,
-                        background: index <= loadingPhase ? '#6C63FF' : '#DDDCE8',
+                        background: index <= loadingPhase ? '#ea580c' : '#eaddc7',
                       }}
                   />
                 ))}
@@ -1124,12 +1124,12 @@ export default function OnboardingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                style={{ color: '#3F3D56', fontSize: 16, fontWeight: 700, minHeight: 28 }}
+                style={{ color: '#3a2540', fontSize: 16, fontWeight: 700, minHeight: 28 }}
               >
                 {GENERATION_PHASES[loadingPhase]}
               </motion.div>
 
-              <p style={{ margin: '12px 0 0', color: '#6F6C82', lineHeight: 1.6, fontSize: 14 }}>
+              <p style={{ margin: '12px 0 0', color: '#7c6a72', lineHeight: 1.6, fontSize: 14 }}>
                 We are pulling live POIs, weather, and trip details, then asking the model for a
                 compact JSON itinerary.
               </p>
@@ -1151,7 +1151,7 @@ export default function OnboardingPage() {
                       border: '1px solid rgba(222,211,196,0.9)',
                       background: 'rgba(252,250,247,0.95)',
                       textAlign: 'center',
-                      color: '#3F3D56',
+                      color: '#3a2540',
                       fontSize: 13,
                       fontWeight: 700,
                     }}

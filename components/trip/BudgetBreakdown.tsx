@@ -27,8 +27,8 @@ export function BudgetBreakdown({ breakdown, total }: BudgetBreakdownProps) {
         : Number.NaN;
 
   return (
-    <section className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
-      <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Budget</div>
+    <section className="rounded-[28px] border border-[#eaddc7] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
+      <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#9b8b92]">Budget</div>
       <h2 className="mt-1 text-2xl font-black tracking-tight">Where the money goes</h2>
 
       {hasBreakdown ? (
@@ -42,23 +42,23 @@ export function BudgetBreakdown({ breakdown, total }: BudgetBreakdownProps) {
               }
 
               return (
-                <div key={label} className="rounded-[20px] border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8A869C]">{label}</div>
-                  <div className="mt-1 text-lg font-black text-[#3F3D56]">{formatCurrency(value)}</div>
+                <div key={label} className="rounded-[20px] border border-[#eaddc7] bg-[#fffbf2] px-4 py-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#9b8b92]">{label}</div>
+                  <div className="mt-1 text-lg font-black text-[#3a2540]">{formatCurrency(value)}</div>
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-4 rounded-[20px] border border-[#6C63FF]/20 bg-[#EEEDFE] px-4 py-3">
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6C63FF]">Estimated total</div>
-            <div className="mt-1 text-2xl font-black text-[#3F3D56]">
+          <div className="mt-4 rounded-[20px] border border-[#ea580c]/20 bg-[#ffedd5] px-4 py-3">
+            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#ea580c]">Estimated total</div>
+            <div className="mt-1 text-2xl font-black text-[#3a2540]">
               {Number.isFinite(totalValue) ? formatCurrency(totalValue) : typeof total === 'string' && total.trim() ? total : 'Not set'}
             </div>
           </div>
         </>
       ) : (
-        <div className="mt-4 rounded-[24px] border border-dashed border-[#DDDCE8] bg-[#FBFAFF] p-5 text-sm leading-6 text-[#6F6C82]">
+        <div className="mt-4 rounded-[24px] border border-dashed border-[#eaddc7] bg-[#fffbf2] p-5 text-sm leading-6 text-[#7c6a72]">
           No detailed budget breakdown was generated yet. The saved trip budget still appears in the main summary.
         </div>
       )}

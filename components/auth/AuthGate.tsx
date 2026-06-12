@@ -88,7 +88,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F2F2F2] px-4 text-[#3F3D56]">
+      <div className="flex min-h-screen items-center justify-center bg-[#fbf4ea] px-4 text-[#3a2540]">
         <div className="w-full max-w-lg">
           <StatusCard
             tone="primary"

@@ -17,18 +17,18 @@ type StatusCardProps = {
 
 const toneStyles: Record<StatusTone, { badge: string; panel: string; icon: ReactNode }> = {
   neutral: {
-    badge: 'border-[#DDDCE8] bg-white text-[#8A869C]',
-    panel: 'border-[#DDDCE8] bg-white text-[#3F3D56]',
+    badge: 'border-[#eaddc7] bg-white text-[#9b8b92]',
+    panel: 'border-[#eaddc7] bg-white text-[#3a2540]',
     icon: <Loader2 className="h-4 w-4 animate-spin" />,
   },
   primary: {
-    badge: 'border-[#6C63FF]/20 bg-[#EEEDFE] text-[#6C63FF]',
-    panel: 'border-[#DDDCE8] bg-[#FBFAFF] text-[#3F3D56]',
+    badge: 'border-[#ea580c]/20 bg-[#ffedd5] text-[#ea580c]',
+    panel: 'border-[#eaddc7] bg-[#fffbf2] text-[#3a2540]',
     icon: <Sparkles className="h-4 w-4" />,
   },
   warning: {
-    badge: 'border-[#f0d7de] bg-[#FFF0F4] text-[#C14D72]',
-    panel: 'border-[#f0d7de] bg-[#FFF0F4] text-[#C14D72]',
+    badge: 'border-[#fecdd3] bg-[#ffe4e6] text-[#be123c]',
+    panel: 'border-[#fecdd3] bg-[#ffe4e6] text-[#be123c]',
     icon: <AlertTriangle className="h-4 w-4" />,
   },
 };
@@ -57,12 +57,12 @@ export function StatusCard({
 
         <div className="min-w-0 flex-1">
           {eyebrow && (
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">
               {eyebrow}
             </div>
           )}
-          <h3 className="mt-1 text-xl font-black tracking-tight text-[#3F3D56]">{title}</h3>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6F6C82]">{description}</p>
+          <h3 className="mt-1 text-xl font-black tracking-tight text-[#3a2540]">{title}</h3>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7c6a72]">{description}</p>
 
           {actions && <div className="mt-4 flex flex-wrap gap-3">{actions}</div>}
         </div>

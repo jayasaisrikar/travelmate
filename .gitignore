@@ -42,3 +42,6 @@ __pycache__/
 venv/
 .vercel
 .next/
+
+# Visual A/B theme screenshots
+screenshots/

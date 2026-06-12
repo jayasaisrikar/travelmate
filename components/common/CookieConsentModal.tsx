@@ -141,21 +141,21 @@ export function CookieConsentModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-2xl rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-5 shadow-[0_30px_90px_rgba(63,61,86,0.18)] sm:p-7"
+            className="w-full max-w-2xl rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#fffbf4_100%)] p-5 shadow-[0_30px_90px_rgba(58,37,64,0.18)] sm:p-7"
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-consent-title"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#ffedd5] text-[#ea580c]">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882] sm:text-[11px] sm:tracking-[0.24em]">
                     Your privacy
                   </div>
-                  <h2 id="cookie-consent-title" className="mt-1 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56]">
+                  <h2 id="cookie-consent-title" className="mt-1 text-2xl font-medium tracking-[-0.04em] text-[#3a2540]">
                     Choose how wayflo uses cookies.
                   </h2>
                 </div>
@@ -165,7 +165,7 @@ export function CookieConsentModal() {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#E4E2F0] bg-white text-[#6F6C82] hover:text-[#3F3D56]"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#f0e2d0] bg-white text-[#7c6a72] hover:text-[#3a2540]"
                   aria-label="Close cookie preferences"
                 >
                   <X className="h-4 w-4" />
@@ -173,7 +173,7 @@ export function CookieConsentModal() {
               )}
             </div>
 
-            <p className="mt-4 max-w-xl text-sm leading-7 text-[#6F6C82] sm:text-base">
+            <p className="mt-4 max-w-xl text-sm leading-7 text-[#7c6a72] sm:text-base">
               We use essential cookies to keep sign-in and trip planning secure. With your permission, we also use
               optional cookies to improve the product and remember helpful preferences.
             </p>
@@ -185,12 +185,12 @@ export function CookieConsentModal() {
                 return (
                   <div
                     key={toggle.key}
-                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 shadow-[0_12px_28px_rgba(63,61,86,0.05)]"
+                    className="rounded-2xl border border-[#f0e2d0] bg-white px-4 py-4 shadow-[0_12px_28px_rgba(58,37,64,0.05)]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="text-sm font-semibold text-[#3F3D56] sm:text-base">{toggle.title}</div>
-                        <p className="mt-1 text-sm leading-6 text-[#6F6C82]">{toggle.description}</p>
+                        <div className="text-sm font-semibold text-[#3a2540] sm:text-base">{toggle.title}</div>
+                        <p className="mt-1 text-sm leading-6 text-[#7c6a72]">{toggle.description}</p>
                       </div>
 
                       <button
@@ -208,8 +208,8 @@ export function CookieConsentModal() {
                         }}
                         className={`relative inline-flex h-8 w-14 shrink-0 rounded-full border transition ${
                           enabled
-                            ? 'border-[#6C63FF] bg-[#6C63FF]'
-                            : 'border-[#D8D4F2] bg-[#F3F2FA]'
+                            ? 'border-[#ea580c] bg-[#ea580c]'
+                            : 'border-[#fed7aa] bg-[#fbf1e6]'
                         } ${toggle.locked ? 'cursor-not-allowed opacity-90' : ''}`}
                         aria-pressed={enabled}
                         aria-label={`${enabled ? 'Disable' : 'Enable'} ${toggle.title}`}
@@ -224,7 +224,7 @@ export function CookieConsentModal() {
               })}
             </div>
 
-            <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-[#3F3D56] px-4 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl bg-[#3a2540] px-4 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-3">
                 <SlidersHorizontal className="mt-0.5 h-4 w-4 shrink-0 text-white/80" />
                 <p className="text-sm leading-6 text-white/85">
@@ -244,14 +244,14 @@ export function CookieConsentModal() {
                     personalization: false,
                   })
                 }
-                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/25 bg-white px-4 py-3 text-sm font-semibold text-[#6C63FF]"
+                className="inline-flex items-center justify-center rounded-xl border border-[#ea580c]/25 bg-white px-4 py-3 text-sm font-semibold text-[#ea580c]"
               >
                 Essential only
               </button>
               <button
                 type="button"
                 onClick={() => handleSave(preferences)}
-                className="inline-flex items-center justify-center rounded-xl border border-[#E4E2F0] bg-[#F8F7FF] px-4 py-3 text-sm font-semibold text-[#3F3D56]"
+                className="inline-flex items-center justify-center rounded-xl border border-[#f0e2d0] bg-[#fffbf4] px-4 py-3 text-sm font-semibold text-[#3a2540]"
               >
                 Save preferences
               </button>
@@ -264,7 +264,7 @@ export function CookieConsentModal() {
                     personalization: true,
                   })
                 }
-                className="inline-flex items-center justify-center rounded-xl bg-[#6C63FF] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.24)]"
+                className="inline-flex items-center justify-center rounded-xl bg-[#ea580c] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(234,88,12,0.24)]"
               >
                 Accept all
               </button>

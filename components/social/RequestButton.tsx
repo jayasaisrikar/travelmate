@@ -65,7 +65,7 @@ export function RequestButton({ traveler, status, onStatusChange, block }: Reque
 
   if (localStatus === 'request_sent') {
     return (
-      <span className={`${baseClass} border border-[#DDDCE8] bg-[#FBFAFF] text-[#8A869C]`}>
+      <span className={`${baseClass} border border-[#eaddc7] bg-[#fffbf2] text-[#9b8b92]`}>
         <Clock3 size={13} />
         Requested
       </span>
@@ -80,7 +80,7 @@ export function RequestButton({ traveler, status, onStatusChange, block }: Reque
           whileTap={{ scale: 0.94 }}
           onClick={() => void respond('accept')}
           disabled={busy}
-          className={`${baseClass} bg-[#6C63FF] text-white shadow-[0_2px_12px_rgba(108,99,255,0.35)] disabled:opacity-60`}
+          className={`${baseClass} bg-[#ea580c] text-white shadow-[0_2px_12px_rgba(234,88,12,0.35)] disabled:opacity-60`}
         >
           {busy ? <LoaderCircle size={13} className="animate-spin" /> : <Check size={13} />}
           Accept
@@ -89,7 +89,7 @@ export function RequestButton({ traveler, status, onStatusChange, block }: Reque
           type="button"
           onClick={() => void respond('decline')}
           disabled={busy}
-          className="rounded-xl border border-[#DDDCE8] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#8A869C] transition hover:border-[#C14D72] hover:text-[#C14D72] disabled:opacity-60"
+          className="rounded-xl border border-[#eaddc7] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#9b8b92] transition hover:border-[#be123c] hover:text-[#be123c] disabled:opacity-60"
         >
           Decline
         </button>
@@ -104,7 +104,7 @@ export function RequestButton({ traveler, status, onStatusChange, block }: Reque
         type="button"
         whileTap={{ scale: 0.94 }}
         onClick={() => setOpen(true)}
-        className={`${baseClass} bg-[#6C63FF] text-white shadow-[0_2px_12px_rgba(108,99,255,0.35)] hover:bg-[#5b54e7]`}
+        className={`${baseClass} bg-[#ea580c] text-white shadow-[0_2px_12px_rgba(234,88,12,0.35)] hover:bg-[#c2410c]`}
       >
         <UserPlus size={13} />
         Request to connect

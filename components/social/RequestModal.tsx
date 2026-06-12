@@ -74,49 +74,49 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 16 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#E4E2F0] bg-white shadow-[0_30px_90px_rgba(46,40,51,0.28)]"
+            className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#f0e2d0] bg-white shadow-[0_30px_90px_rgba(46,40,51,0.28)]"
             role="dialog"
             aria-modal="true"
             aria-label={`Connect with ${name}`}
           >
             {/* Header with match context */}
-            <div className="relative bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_55%,#FFE9EF_100%)] px-6 pb-5 pt-6">
+            <div className="relative bg-[linear-gradient(135deg,#ffedd5_0%,#FFFFFF_55%,#ffe4e6_100%)] px-6 pb-5 pt-6">
               <button
                 type="button"
                 onClick={close}
                 disabled={sending}
                 aria-label="Close"
-                className="absolute right-4 top-4 rounded-lg border border-white/70 bg-white/70 p-1.5 text-[#8A869C] transition hover:bg-white disabled:opacity-50"
+                className="absolute right-4 top-4 rounded-lg border border-white/70 bg-white/70 p-1.5 text-[#9b8b92] transition hover:bg-white disabled:opacity-50"
               >
                 <X size={16} />
               </button>
 
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#6C63FF]">
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#ea580c]">
                 <Sparkles size={13} />
                 Tripmate request
               </div>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-[#1A1726]">
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-[#1c1018]">
                 Connect with {name}
               </h2>
 
               {score !== null && (
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D9CEF7] bg-white/80 px-3 py-1.5 text-sm font-bold text-[#6C63FF]">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#6C63FF] text-[11px] font-black text-white">
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D9CEF7] bg-white/80 px-3 py-1.5 text-sm font-bold text-[#ea580c]">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-[#ea580c] text-[11px] font-black text-white">
                     {score}
                   </span>
                   {score}% match
                 </div>
               )}
               {matchLine && (
-                <p className="mt-2 text-sm leading-5 text-[#6F6C82]">{matchLine}</p>
+                <p className="mt-2 text-sm leading-5 text-[#7c6a72]">{matchLine}</p>
               )}
             </div>
 
             <div className="space-y-5 px-6 py-5">
               {/* Reason chips */}
               <div>
-                <p className="text-sm font-bold text-[#1A1726]">Why are you reaching out?</p>
-                <p className="mt-0.5 text-xs text-[#8A869C]">
+                <p className="text-sm font-bold text-[#1c1018]">Why are you reaching out?</p>
+                <p className="mt-0.5 text-xs text-[#9b8b92]">
                   Choose a reason so {name} understands your intent.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -131,8 +131,8 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
                         aria-pressed={active}
                         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                           active
-                            ? 'border-[#6C63FF] bg-[#6C63FF] text-white shadow-[0_4px_14px_rgba(108,99,255,0.3)]'
-                            : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF] hover:text-[#6C63FF]'
+                            ? 'border-[#ea580c] bg-[#ea580c] text-white shadow-[0_4px_14px_rgba(234,88,12,0.3)]'
+                            : 'border-[#eaddc7] bg-white text-[#7c6a72] hover:border-[#ea580c] hover:text-[#ea580c]'
                         }`}
                       >
                         {active && <Check size={12} />}
@@ -145,8 +145,8 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
 
               {/* Optional message */}
               <div>
-                <label htmlFor="request-message" className="text-sm font-bold text-[#1A1726]">
-                  Add a note <span className="font-normal text-[#8A869C]">(optional)</span>
+                <label htmlFor="request-message" className="text-sm font-bold text-[#1c1018]">
+                  Add a note <span className="font-normal text-[#9b8b92]">(optional)</span>
                 </label>
                 <textarea
                   id="request-message"
@@ -154,16 +154,16 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
                   onChange={e => setMessage(e.target.value.slice(0, REQUEST_MESSAGE_LIMIT))}
                   rows={3}
                   placeholder={`Hi ${name}, I'm planning a similar trip and would love to compare notes…`}
-                  className="mt-2 w-full resize-none rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm leading-6 text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+                  className="mt-2 w-full resize-none rounded-xl border border-[#eaddc7] bg-[#fffbf2] px-4 py-3 text-sm leading-6 text-[#3a2540] outline-none placeholder:text-[#9b8b92] focus:border-[#ea580c] focus:ring-2 focus:ring-[#ea580c]/20"
                 />
-                <div className="mt-1 text-right text-xs text-[#8A869C]">
+                <div className="mt-1 text-right text-xs text-[#9b8b92]">
                   {message.length}/{REQUEST_MESSAGE_LIMIT}
                 </div>
               </div>
 
               {/* Safety notice */}
-              <div className="flex items-start gap-2 rounded-xl bg-[#F4F3FF] px-3 py-2.5 text-xs leading-5 text-[#6F6C82]">
-                <ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#6C63FF]" />
+              <div className="flex items-start gap-2 rounded-xl bg-[#fff7ed] px-3 py-2.5 text-xs leading-5 text-[#7c6a72]">
+                <ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#ea580c]" />
                 <span>
                   Keep it about the trip. For your safety, links, emails and phone numbers
                   aren’t allowed until {name} accepts and you’re connected.
@@ -171,7 +171,7 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
               </div>
 
               {error && (
-                <p className="rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-2.5 text-sm text-[#C14D72]">
+                <p className="rounded-xl border border-[#be123c] bg-[#ffe4e6] px-4 py-2.5 text-sm text-[#be123c]">
                   {error}
                 </p>
               )}
@@ -181,7 +181,7 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={sending || !reason}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#6C63FF] py-3 text-sm font-bold text-white transition hover:bg-[#5b54e7] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#ea580c] py-3 text-sm font-bold text-white transition hover:bg-[#c2410c] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sending ? <LoaderCircle size={16} className="animate-spin" /> : <Send size={16} />}
                   {sending ? 'Sending…' : 'Send request'}
@@ -190,7 +190,7 @@ export function RequestModal({ open, onClose, traveler, onSent }: RequestModalPr
                   type="button"
                   onClick={close}
                   disabled={sending}
-                  className="rounded-xl border border-[#DDDCE8] px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#F8F7FF] disabled:opacity-50"
+                  className="rounded-xl border border-[#eaddc7] px-4 py-3 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4] disabled:opacity-50"
                 >
                   Cancel
                 </button>

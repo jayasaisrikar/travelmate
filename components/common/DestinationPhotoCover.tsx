@@ -32,10 +32,10 @@ function hashString(value: string) {
 
 function getFallbackPalette(destination: string) {
   const palettes = [
-    ['#6C63FF', '#FF6584', '#3F3D56'],
-    ['#FF6584', '#FF8AA2', '#4A3551'],
-    ['#3F3D56', '#6C63FF', '#1D1B28'],
-    ['#7E7A92', '#C2C0D8', '#3F3D56'],
+    ['#ea580c', '#f43f5e', '#3a2540'],
+    ['#f43f5e', '#fb7185', '#4A3551'],
+    ['#3a2540', '#ea580c', '#1D1B28'],
+    ['#8c7882', '#C2C0D8', '#3a2540'],
   ] as const;
 
   return palettes[hashString(destination) % palettes.length];
@@ -121,11 +121,11 @@ export function DestinationPhotoCover({ destination, imageUrl, className }: Dest
       <div
         className={
           hasPhoto
-            ? 'absolute inset-0 bg-gradient-to-t from-[#161320]/10 via-transparent to-transparent'
+            ? 'absolute inset-0 bg-gradient-to-t from-[#160c14]/10 via-transparent to-transparent'
             : 'absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.28),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.06),transparent_16%)]'
         }
       />
-      <div className={hasPhoto ? 'absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#161320]/06' : 'absolute inset-0 bg-gradient-to-t from-[#161320]/48 via-[#161320]/14 to-transparent'} />
+      <div className={hasPhoto ? 'absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#160c14]/06' : 'absolute inset-0 bg-gradient-to-t from-[#160c14]/48 via-[#160c14]/14 to-transparent'} />
       <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
     </div>
   );

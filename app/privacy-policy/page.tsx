@@ -68,7 +68,7 @@ export default function PrivacyPolicyPage() {
       effectiveDate="May 31, 2026"
       sections={privacySections}
     >
-      <div className="rounded-2xl bg-[#3F3D56] px-4 py-4 text-white">
+      <div className="rounded-2xl bg-[#3a2540] px-4 py-4 text-white">
         <div className="flex items-start gap-3">
           <Mail className="mt-0.5 h-4 w-4 shrink-0 text-white/80" />
           <div>

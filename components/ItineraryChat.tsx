@@ -50,7 +50,7 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
         <ul key={`bullets-${blocks.length}`} className="mt-2 space-y-2">
           {bulletGroup.map((line, index) => (
             <li key={`${line}-${index}`} className="flex items-start gap-2">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-[#6C63FF]" />
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-[#ea580c]" />
               <span>{line.replace(/^[-*•]\s*/, '')}</span>
             </li>
           ))}
@@ -72,7 +72,7 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
 
       if (isHeading) {
         blocks.push(
-          <div key={`${line}-${index}`} className="mt-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#6C63FF]">
+          <div key={`${line}-${index}`} className="mt-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[#ea580c]">
             {line.replace(/[:#]/g, '').trim()}
           </div>
         );
@@ -171,12 +171,12 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
           animate={{ y: 0, scale: 1 }}
           exit={{ y: 24, scale: 0.98 }}
           transition={{ type: 'spring', stiffness: 180, damping: 24 }}
-          className="flex h-[100dvh] w-full max-w-none flex-col overflow-hidden border border-[#DDDCE8] bg-[#FBFAFF] shadow-[0_30px_120px_rgba(46,40,51,0.18)] sm:h-[min(84vh,760px)] sm:max-w-[420px] sm:rounded-[32px]"
+          className="flex h-[100dvh] w-full max-w-none flex-col overflow-hidden border border-[#eaddc7] bg-[#fffbf2] shadow-[0_30px_120px_rgba(46,40,51,0.18)] sm:h-[min(84vh,760px)] sm:max-w-[420px] sm:rounded-[32px]"
         >
-          <div className="relative overflow-hidden border-b border-[#DDDCE8] bg-[#3F3D56] px-4 py-5 text-white sm:px-5">
+          <div className="relative overflow-hidden border-b border-[#eaddc7] bg-[#3a2540] px-4 py-5 text-white sm:px-5">
             <div className="relative flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#6C63FF] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#ea580c] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
                   <Sparkles size={12} />
                   Trip Assistant
                 </div>
@@ -187,7 +187,7 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
               </div>
               <button
                 onClick={onClose}
-                className="grid h-10 w-10 place-items-center border border-white bg-white text-[#3F3D56] transition hover:bg-[#FF6584]"
+                className="grid h-10 w-10 place-items-center border border-white bg-white text-[#3a2540] transition hover:bg-[#f43f5e]"
                 aria-label="Close itinerary assistant"
               >
                 <X size={18} />
@@ -195,10 +195,10 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-[#F2F2F2] px-4 py-4 sm:px-5">
+          <div className="flex-1 overflow-y-auto bg-[#fbf4ea] px-4 py-4 sm:px-5">
             {messages.length === 0 && (
-              <div className="mb-4 border border-[#DDDCE8] bg-white p-4 shadow-sm">
-                <p className="text-sm leading-6 text-[#3F3D56]">
+              <div className="mb-4 border border-[#eaddc7] bg-white p-4 shadow-sm">
+                <p className="text-sm leading-6 text-[#3a2540]">
                   I can help you tighten the itinerary, swap stops, change the tempo, or make the plan cheaper.
                 </p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -207,7 +207,7 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
                       key={prompt}
                       onClick={() => handleSendMessage(prompt)}
                       disabled={loading}
-                      className="rounded-2xl border border-[#DDDCE8] bg-[#FBFAFF] px-3 py-3 text-left text-sm font-medium text-[#3F3D56] transition hover:-translate-y-0.5 hover:border-[#6C63FF] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-2xl border border-[#eaddc7] bg-[#fffbf2] px-3 py-3 text-left text-sm font-medium text-[#3a2540] transition hover:-translate-y-0.5 hover:border-[#ea580c] hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {prompt}
                     </button>
@@ -225,8 +225,8 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
                   <div
                     className={`max-w-[85%] rounded-[22px] px-4 py-3 text-sm leading-6 shadow-sm sm:max-w-[78%] ${
                       message.role === 'user'
-                        ? 'rounded-br-md bg-[#6C63FF] text-white'
-                        : 'rounded-bl-md border border-[#DDDCE8] bg-white text-[#3F3D56]'
+                        ? 'rounded-br-md bg-[#ea580c] text-white'
+                        : 'rounded-bl-md border border-[#eaddc7] bg-white text-[#3a2540]'
                     }`}
                   >
                     <div className={message.role === 'assistant' ? 'whitespace-normal' : 'whitespace-pre-wrap'}>
@@ -239,10 +239,10 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
 
             {loading && (
               <div className="mt-3 flex justify-start">
-                <div className="inline-flex items-center gap-2 rounded-[18px] border border-[#DDDCE8] bg-white px-4 py-3 text-sm text-[#6F6C82] shadow-sm">
-                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1 }} className="h-2 w-2 rounded-full bg-[#6C63FF]" />
-                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.15 }} className="h-2 w-2 rounded-full bg-[#FF6584]" />
-                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.3 }} className="h-2 w-2 rounded-full bg-[#FF6584]" />
+                <div className="inline-flex items-center gap-2 rounded-[18px] border border-[#eaddc7] bg-white px-4 py-3 text-sm text-[#7c6a72] shadow-sm">
+                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1 }} className="h-2 w-2 rounded-full bg-[#ea580c]" />
+                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.15 }} className="h-2 w-2 rounded-full bg-[#f43f5e]" />
+                  <motion.span animate={{ opacity: [0.35, 1, 0.35] }} transition={{ repeat: Infinity, duration: 1.1, delay: 0.3 }} className="h-2 w-2 rounded-full bg-[#f43f5e]" />
                   Thinking
                 </div>
               </div>
@@ -251,7 +251,7 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-[#DDDCE8] bg-white px-3 py-3 sm:px-4">
+          <div className="border-t border-[#eaddc7] bg-white px-3 py-3 sm:px-4">
             <div className="flex items-end gap-2">
               <textarea
                 value={input}
@@ -264,13 +264,13 @@ export default function ItineraryChat({ itinerary, isOpen, onClose }: ItineraryC
                 }}
                 placeholder="Ask about this itinerary"
                 rows={1}
-                className="min-h-[48px] max-h-28 flex-1 resize-none rounded-[18px] border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm text-[#3F3D56] outline-none transition placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-4 focus:ring-[#6C63FF]/10"
+                className="min-h-[48px] max-h-28 flex-1 resize-none rounded-[18px] border border-[#eaddc7] bg-[#fffbf2] px-4 py-3 text-sm text-[#3a2540] outline-none transition placeholder:text-[#9b8b92] focus:border-[#ea580c] focus:ring-4 focus:ring-[#ea580c]/10"
                 disabled={loading}
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={loading || !input.trim()}
-                className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#6C63FF] text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+                className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] bg-[#ea580c] text-white transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send size={18} />
               </button>

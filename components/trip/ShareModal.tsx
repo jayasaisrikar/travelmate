@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Copy, ExternalLink, MessageSquareShare, X } from 'lucide-react';
 import { createTripShare } from '@/lib/supabase-trips';
-import { BadgeGlobeCanvas, createBadgeGifFile } from '@/components/trip/BadgeGlobe';
+import { createBoardingPassFile } from '@/components/trip/BoardingPassCard';
 
 type ShareModalProps = {
   tripId: string;
@@ -17,18 +17,6 @@ type ShareModalProps = {
 };
 
 const SHARE_BADGE_TEXT = 'Check out my trip on wayflo and send your suggestions.';
-
-function BadgeBrand() {
-  return (
-    <div className="inline-flex items-center rounded-2xl border border-white/14 bg-[#091a2e]/80 px-3 py-2 shadow-[0_12px_28px_rgba(8,15,31,0.18)] backdrop-blur-sm">
-      <div className="min-w-0 leading-none">
-        <div className="text-[13px] font-semibold tracking-[-0.03em] text-white">
-          way<span className="text-[#FF6584]">flo</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function downloadFile(file: File) {
   const url = URL.createObjectURL(file);
@@ -53,7 +41,9 @@ export function ShareModal({
   const [shareUrl, setShareUrl] = useState(initialShareUrl);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [gifLoading, setGifLoading] = useState(false);
+  const [passSharing, setPassSharing] = useState(false);
+  const [passUrl, setPassUrl] = useState('');
+  const [passFile, setPassFile] = useState<File | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -91,6 +81,30 @@ export function ShareModal({
     return () => { mounted = false; };
   }, [isOpen, loading, shareUrl, tripId]);
 
+  // Render the boarding-pass image once the public link exists.
+  useEffect(() => {
+    if (!isOpen || !shareUrl) return;
+
+    let active = true;
+    let objectUrl = '';
+
+    createBoardingPassFile({ destination, shareText, shareUrl })
+      .then(file => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(file);
+        setPassFile(file);
+        setPassUrl(objectUrl);
+      })
+      .catch(() => {
+        /* preview is best-effort; sharing still works via link */
+      });
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [isOpen, shareUrl, destination, shareText]);
+
   const copyLink = async () => {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl);
@@ -98,19 +112,16 @@ export function ShareModal({
     setTimeout(() => setCopied(false), 2200);
   };
 
-  const shareBadgeGif = async () => {
-    if (!shareUrl || gifLoading) return;
+  const shareBoardingPass = async () => {
+    if (!shareUrl || passSharing) return;
 
-    setGifLoading(true);
+    setPassSharing(true);
     setStatusMessage('');
     setError('');
 
     try {
-      const file = await createBadgeGifFile({
-        destination,
-        shareText,
-        shareUrl,
-      });
+      const file =
+        passFile ?? (await createBoardingPassFile({ destination, shareText, shareUrl }));
 
       const canShareFiles =
         typeof navigator !== 'undefined' &&
@@ -124,16 +135,16 @@ export function ShareModal({
           url: shareUrl,
           files: [file],
         });
-        setStatusMessage('Animated GIF ready to share.');
+        setStatusMessage('Boarding pass ready to share.');
         return;
       }
 
       downloadFile(file);
-      setStatusMessage('Animated GIF downloaded.');
+      setStatusMessage('Boarding pass downloaded.');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create animated badge');
+      setError(err instanceof Error ? err.message : 'Failed to create boarding pass');
     } finally {
-      setGifLoading(false);
+      setPassSharing(false);
       window.setTimeout(() => setStatusMessage(''), 2400);
     }
   };
@@ -165,20 +176,20 @@ export function ShareModal({
           animate={{ y: 0, scale: 1, opacity: 1 }}
           exit={{ y: 28, scale: 0.97, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-          className="flex w-full max-w-[540px] flex-col border border-[#3F3D56] bg-white shadow-[0_40px_120px_rgba(46,40,51,0.32)]"
+          className="flex w-full max-w-[540px] flex-col border border-[#3a2540] bg-white shadow-[0_40px_120px_rgba(46,40,51,0.32)]"
         >
           {/* ── Header ── */}
-          <div className="flex items-center justify-between gap-4 border-b border-[#3F3D56] px-5 py-4">
+          <div className="flex items-center justify-between gap-4 border-b border-[#3a2540] px-5 py-4">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#8A869C]">Share trip</div>
-              <h3 className="mt-0.5 text-xl font-black tracking-tight text-[#3F3D56]">
+              <div className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#9b8b92]">Share trip</div>
+              <h3 className="mt-0.5 text-xl font-black tracking-tight text-[#3a2540]">
                 {destination ? `Share your ${destination} trip` : 'Invite people to your trip'}
               </h3>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 border border-[#3F3D56] bg-white p-2 text-[#3F3D56] transition hover:bg-[#F7F6FF]"
+              className="shrink-0 border border-[#3a2540] bg-white p-2 text-[#3a2540] transition hover:bg-[#F7F6FF]"
               aria-label="Close share modal"
             >
               <X size={16} />
@@ -186,53 +197,40 @@ export function ShareModal({
           </div>
 
           <div className="space-y-4 p-5">
-            {/* ── Badge preview card ── */}
-            <div className="overflow-hidden border border-[#3F3D56] bg-white">
-              {/* Hero — globe background */}
-              <div className="relative h-48 overflow-hidden bg-[#091a2e] sm:h-52">
-                {/* Globe */}
-                <div className="absolute right-[-48px] top-1/2 h-[300px] w-[300px] -translate-y-1/2 sm:right-[-36px]">
-                  <BadgeGlobeCanvas className="h-full w-full" />
-                </div>
-
-                {/* Left-to-right fade so text stays readable */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#091a2e] via-[#091a2e]/75 to-transparent" />
-                {/* Subtle top vignette */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
-
-                {/* Content overlay */}
-                <div className="relative z-10 flex h-full flex-col justify-between p-5">
-                  {/* Brand logo + title top-right */}
-                  <div className="flex items-center justify-between">
-                    <div />
-                    <BadgeBrand />
+            {/* ── Boarding-pass preview card ── */}
+            <div className="overflow-hidden rounded-2xl border border-[#eaddc7] bg-[#fbf2e6]">
+              {/* Hero — generated boarding pass */}
+              <div className="relative flex aspect-[1000/420] items-center justify-center overflow-hidden p-4">
+                {passUrl ? (
+                  <motion.img
+                    key={passUrl}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    src={passUrl}
+                    alt={destination ? `Boarding pass for ${destination}` : 'Trip boarding pass'}
+                    className="h-full w-full object-contain drop-shadow-[0_18px_40px_rgba(58,37,64,0.22)]"
+                  />
+                ) : (
+                  <div className="flex w-full max-w-[460px] animate-pulse flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[#eaddc7]">
+                    <div className="h-3 w-24 rounded-full bg-[#f0e2d0]" />
+                    <div className="h-9 w-40 rounded-md bg-[#f0e2d0]" />
+                    <div className="mt-2 h-6 w-full rounded-md bg-[#f0e2d0]" />
+                    <div className="h-3 w-32 rounded-full bg-[#f0e2d0]" />
                   </div>
-
-                  {/* Text */}
-                  <div>
-                    {destination && (
-                      <div className="mb-1 text-[10px] font-bold uppercase tracking-[0.24em] text-[#FF6584]">
-                        {destination}
-                      </div>
-                    )}
-                    <p className="max-w-[58%] text-[15px] font-black leading-snug text-white">
-                      {SHARE_BADGE_TEXT}
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* URL bar */}
-              <div className="flex items-center gap-3 border-t border-[#3F3D56] bg-[#FBFAFF] px-4 py-3">
+              <div className="flex items-center gap-3 border-t border-[#eaddc7] bg-white px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-[#8A869C]">Public link</div>
-                  <div className="mt-0.5 truncate text-xs font-semibold text-[#3F3D56]">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.24em] text-[#9b8b92]">Public link</div>
+                  <div className="mt-0.5 truncate text-xs font-semibold text-[#3a2540]">
                     {loading || shareLoading ? (
-                      <span className="text-[#8A869C]">Generating link…</span>
+                      <span className="text-[#9b8b92]">Generating link…</span>
                     ) : shareUrl ? (
                       shareUrl
                     ) : (
-                      <span className="text-[#8A869C]">Link not available</span>
+                      <span className="text-[#9b8b92]">Link not available</span>
                     )}
                   </div>
                 </div>
@@ -246,14 +244,14 @@ export function ShareModal({
 
             {/* ── Error banner ── */}
             {error && (
-              <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-2.5 text-xs font-medium text-[#C14D72]">
+              <div className="border border-[#be123c] bg-[#ffe4e6] px-4 py-2.5 text-xs font-medium text-[#be123c]">
                 {error}
               </div>
             )}
 
             {/* ── Action buttons ── */}
             {statusMessage && (
-              <div className="border border-[#6C63FF] bg-[#EEEDFE] px-4 py-2.5 text-xs font-medium text-[#3F3D56]">
+              <div className="border border-[#ea580c] bg-[#ffedd5] px-4 py-2.5 text-xs font-medium text-[#3a2540]">
                 {statusMessage}
               </div>
             )}
@@ -263,7 +261,7 @@ export function ShareModal({
                 type="button"
                 onClick={copyLink}
                 disabled={!shareUrl}
-                className="flex items-center justify-center gap-2 border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FBFAFF] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 border border-[#3a2540] bg-white px-4 py-3 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf2] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {copied
                   ? <Check size={15} className="text-[#3fa55d]" />
@@ -273,19 +271,19 @@ export function ShareModal({
 
               <button
                 type="button"
-                onClick={shareBadgeGif}
+                onClick={shareBoardingPass}
                 disabled={!shareUrl}
-                className="flex items-center justify-center gap-2 border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center justify-center gap-2 border border-[#3a2540] bg-[#3a2540] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2c1b33] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <MessageSquareShare size={15} />
-                {gifLoading ? 'Preparing GIF...' : 'Share GIF'}
+                {passSharing ? 'Preparing pass…' : 'Share pass'}
               </button>
 
               <button
                 type="button"
                 onClick={shareWhatsApp}
                 disabled={!shareUrl}
-                className="col-span-2 flex items-center justify-center gap-2 border border-[#3F3D56] bg-[#FF6584] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#FF7B97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="col-span-2 flex items-center justify-center gap-2 border border-[#3a2540] bg-[#f43f5e] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#FF7B97] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ExternalLink size={15} />
                 Share to WhatsApp

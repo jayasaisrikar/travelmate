@@ -156,7 +156,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
     return (
       <div className="space-y-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-12 animate-pulse rounded-xl bg-[#F4F3FF]" />
+          <div key={i} className="h-12 animate-pulse rounded-xl bg-[#fff7ed]" />
         ))}
       </div>
     );
@@ -165,14 +165,14 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
   return (
     <div className="space-y-6">
       {/* Visibility toggle — most prominent setting */}
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#DDDCE8] bg-white p-4">
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#eaddc7] bg-white p-4">
         <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${isPublic ? 'bg-[#F4F3FF]' : 'bg-[#F4F3F4]'}`}>
-            {isPublic ? <Eye size={18} className="text-[#6C63FF]" /> : <EyeOff size={18} className="text-[#8A869C]" />}
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${isPublic ? 'bg-[#fff7ed]' : 'bg-[#f7f1e8]'}`}>
+            {isPublic ? <Eye size={18} className="text-[#ea580c]" /> : <EyeOff size={18} className="text-[#9b8b92]" />}
           </div>
           <div>
-            <p className="font-semibold text-[#1A1726]">Traveler profile</p>
-            <p className="text-xs text-[#6F6C82]">
+            <p className="font-semibold text-[#1c1018]">Traveler profile</p>
+            <p className="text-xs text-[#7c6a72]">
               {isPublic ? 'You appear in the explore page' : 'Hidden — only you can see your profile'}
             </p>
           </div>
@@ -183,7 +183,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           type="button"
           onClick={() => setIsPublic(prev => !prev)}
           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
-            isPublic ? 'bg-[#6C63FF]' : 'bg-[#DDDCE8]'
+            isPublic ? 'bg-[#ea580c]' : 'bg-[#eaddc7]'
           }`}
           aria-label="Toggle traveler profile visibility"
         >
@@ -199,15 +199,15 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-3xl border border-[#D8D3FF] bg-[#FBFAFF] p-4 sm:p-5"
+        className="rounded-3xl border border-[#D8D3FF] bg-[#fffbf2] p-4 sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <ShieldCheck size={18} className="text-[#6C63FF]" />
-              <p className="font-semibold text-[#1A1726]">Identity verification</p>
+              <ShieldCheck size={18} className="text-[#ea580c]" />
+              <p className="font-semibold text-[#1c1018]">Identity verification</p>
             </div>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#6F6C82]">
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7c6a72]">
               Didit adds a trust badge to your public traveler profile. That badge carries through Explore, Rooms, and traveler cards so other travelers can see how much context they can trust.
             </p>
           </div>
@@ -238,10 +238,10 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
                 key={level}
                 className={`rounded-2xl border p-3 transition ${
                   isCurrent
-                    ? 'border-[#6C63FF] bg-white shadow-sm'
+                    ? 'border-[#ea580c] bg-white shadow-sm'
                     : isPast
                       ? 'border-[#D9EAD8] bg-[#F8FBF8]'
-                      : 'border-[#DDDCE8] bg-white'
+                      : 'border-[#eaddc7] bg-white'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -251,24 +251,24 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
                   ) : isPast ? (
                     <Sparkles size={15} className="text-[#1B7A5A]" />
                   ) : (
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#DDDCE8]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#eaddc7]" />
                   )}
                 </div>
-                <p className="mt-2 text-xs leading-5 text-[#6F6C82]">{meta.description}</p>
+                <p className="mt-2 text-xs leading-5 text-[#7c6a72]">{meta.description}</p>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-[#DDDCE8] bg-white p-4">
+        <div className="mt-4 rounded-2xl border border-[#eaddc7] bg-white p-4">
           {verificationComplete ? (
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F0FBF4]">
                 <BadgeCheck size={18} className="text-[#1B7A5A]" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-[#1A1726]">Verification complete</p>
-                <p className="mt-1 text-sm leading-6 text-[#6F6C82]">
+                <p className="font-semibold text-[#1c1018]">Verification complete</p>
+                <p className="mt-1 text-sm leading-6 text-[#7c6a72]">
                   {levelMeta.description} Other travelers will see your badge wherever your profile appears.
                 </p>
               </div>
@@ -276,12 +276,12 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           ) : (
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F4F3FF]">
-                  <Sparkles size={18} className="text-[#6C63FF]" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fff7ed]">
+                  <Sparkles size={18} className="text-[#ea580c]" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-[#1A1726]">{statusMeta.label}</p>
-                  <p className="mt-1 text-sm leading-6 text-[#6F6C82]">
+                  <p className="font-semibold text-[#1c1018]">{statusMeta.label}</p>
+                  <p className="mt-1 text-sm leading-6 text-[#7c6a72]">
                     {verificationStatus === 'declined'
                       ? 'Didit could not confirm your identity on the last attempt. You can restart when you are ready.'
                       : verificationStatus === 'pending' || verificationStatus === 'in_review' || verificationStatus === 'resubmitted'
@@ -292,7 +292,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
               </div>
 
               {hasUnsavedVisibilityChange && (
-                <div className="flex items-start gap-2 rounded-2xl border border-[#F0D9A8] bg-[#FFF9EB] px-3 py-2.5 text-sm text-[#A07800]">
+                <div className="flex items-start gap-2 rounded-2xl border border-[#F0D9A8] bg-[#fef3c7] px-3 py-2.5 text-sm text-[#A07800]">
                   <ShieldAlert size={16} className="mt-0.5 shrink-0" />
                   Save your profile first so Didit verifies the version other travelers actually see.
                 </div>
@@ -303,21 +303,21 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
                   type="button"
                   onClick={() => void handleStartVerification()}
                   disabled={!canStartVerification || startingVerification}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5b54e7] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#ea580c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c2410c] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {startingVerification ? 'Opening Didit…' : verificationStatus === 'declined' ? 'Try again with Didit' : 'Start with Didit'}
                 </button>
 
                 {!profile?.is_public ? (
-                  <p className="text-sm text-[#6F6C82]">
+                  <p className="text-sm text-[#7c6a72]">
                     Make your traveler profile public to unlock verification.
                   </p>
                 ) : hasUnsavedVisibilityChange ? (
-                  <p className="text-sm text-[#6F6C82]">
+                  <p className="text-sm text-[#7c6a72]">
                     Save changes first, then reopen this panel to launch verification.
                   </p>
                 ) : (
-                  <p className="text-sm text-[#6F6C82]">
+                  <p className="text-sm text-[#7c6a72]">
                     The verification session opens in Didit and returns you here automatically.
                   </p>
                 )}
@@ -329,7 +329,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
 
       {/* Display name */}
       <div>
-        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">
+        <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#7c6a72]">
           Display name
         </label>
         <input
@@ -337,15 +337,15 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           value={displayName}
           onChange={e => setDisplayName(e.target.value)}
           placeholder="How other travelers see you"
-          className="w-full rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-2.5 text-sm text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+          className="w-full rounded-xl border border-[#eaddc7] bg-[#fffbf2] px-4 py-2.5 text-sm text-[#3a2540] outline-none placeholder:text-[#9b8b92] focus:border-[#ea580c] focus:ring-2 focus:ring-[#ea580c]/20"
         />
       </div>
 
       {/* Bio */}
       <div>
-        <label className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#6F6C82]">
+        <label className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#7c6a72]">
           Bio
-          <span className={`normal-case ${bio.length > 120 ? 'text-[#C14D72]' : 'text-[#8A869C]'}`}>
+          <span className={`normal-case ${bio.length > 120 ? 'text-[#be123c]' : 'text-[#9b8b92]'}`}>
             {bio.length}/140
           </span>
         </label>
@@ -354,13 +354,13 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           onChange={e => setBio(e.target.value.slice(0, 140))}
           rows={3}
           placeholder="A short note about how you travel…"
-          className="w-full resize-none rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm leading-6 text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+          className="w-full resize-none rounded-xl border border-[#eaddc7] bg-[#fffbf2] px-4 py-3 text-sm leading-6 text-[#3a2540] outline-none placeholder:text-[#9b8b92] focus:border-[#ea580c] focus:ring-2 focus:ring-[#ea580c]/20"
         />
       </div>
 
       {/* Travel style */}
       <div>
-        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">
+        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#7c6a72]">
           Travel style
         </label>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -371,8 +371,8 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
               onClick={() => setStyle(opt.value)}
               className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
                 style === opt.value
-                  ? 'border-[#6C63FF] bg-[#F4F3FF] text-[#6C63FF]'
-                  : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF]'
+                  ? 'border-[#ea580c] bg-[#fff7ed] text-[#ea580c]'
+                  : 'border-[#eaddc7] bg-white text-[#7c6a72] hover:border-[#ea580c]'
               }`}
             >
               <span>{opt.emoji}</span>
@@ -384,9 +384,9 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
 
       {/* Interests — powers tripmate match scoring */}
       <div>
-        <label className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#6F6C82]">
+        <label className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#7c6a72]">
           Interests
-          <span className="normal-case text-[#8A869C]">{interests.length}/12 · helps us match you</span>
+          <span className="normal-case text-[#9b8b92]">{interests.length}/12 · helps us match you</span>
         </label>
         <div className="flex flex-wrap gap-2">
           {INTEREST_OPTIONS.map(option => {
@@ -399,8 +399,8 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
                 aria-pressed={active}
                 className={`rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition ${
                   active
-                    ? 'border-[#6C63FF] bg-[#6C63FF] text-white'
-                    : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF] hover:text-[#6C63FF]'
+                    ? 'border-[#ea580c] bg-[#ea580c] text-white'
+                    : 'border-[#eaddc7] bg-white text-[#7c6a72] hover:border-[#ea580c] hover:text-[#ea580c]'
                 }`}
               >
                 {option}
@@ -413,7 +413,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
       {/* Budget + pace */}
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">Budget</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#7c6a72]">Budget</label>
           <div className="flex flex-wrap gap-2">
             {BUDGET_OPTIONS.map(opt => (
               <button
@@ -422,8 +422,8 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
                 onClick={() => setBudget(prev => (prev === opt.value ? '' : opt.value))}
                 className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                   budget === opt.value
-                    ? 'border-[#6C63FF] bg-[#F4F3FF] text-[#6C63FF]'
-                    : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF]'
+                    ? 'border-[#ea580c] bg-[#fff7ed] text-[#ea580c]'
+                    : 'border-[#eaddc7] bg-white text-[#7c6a72] hover:border-[#ea580c]'
                 }`}
               >
                 {opt.label}
@@ -432,7 +432,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           </div>
         </div>
         <div>
-          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">Pace</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#7c6a72]">Pace</label>
           <div className="flex flex-wrap gap-2">
             {PACE_OPTIONS.map(opt => (
               <button
@@ -441,8 +441,8 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
                 onClick={() => setPace(prev => (prev === opt.value ? '' : opt.value))}
                 className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                   pace === opt.value
-                    ? 'border-[#6C63FF] bg-[#F4F3FF] text-[#6C63FF]'
-                    : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF]'
+                    ? 'border-[#ea580c] bg-[#fff7ed] text-[#ea580c]'
+                    : 'border-[#eaddc7] bg-white text-[#7c6a72] hover:border-[#ea580c]'
                 }`}
               >
                 {opt.label}
@@ -454,19 +454,19 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
 
       {/* Languages */}
       <div>
-        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">Languages</label>
+        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#7c6a72]">Languages</label>
         <div className="flex flex-wrap gap-2">
           {languages.map(lang => (
             <span
               key={lang}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F3FF] px-3 py-1.5 text-xs font-semibold capitalize text-[#6C63FF]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#fff7ed] px-3 py-1.5 text-xs font-semibold capitalize text-[#ea580c]"
             >
               {lang}
               <button
                 type="button"
                 onClick={() => setLanguages(prev => prev.filter(l => l !== lang))}
                 aria-label={`Remove ${lang}`}
-                className="text-[#8A869C] hover:text-[#C14D72]"
+                className="text-[#9b8b92] hover:text-[#be123c]"
               >
                 ×
               </button>
@@ -485,12 +485,12 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
               }
             }}
             placeholder="Add a language and press Enter"
-            className="flex-1 rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-2.5 text-sm text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+            className="flex-1 rounded-xl border border-[#eaddc7] bg-[#fffbf2] px-4 py-2.5 text-sm text-[#3a2540] outline-none placeholder:text-[#9b8b92] focus:border-[#ea580c] focus:ring-2 focus:ring-[#ea580c]/20"
           />
           <button
             type="button"
             onClick={addLanguage}
-            className="rounded-xl border border-[#DDDCE8] bg-white px-4 py-2.5 text-sm font-semibold text-[#6C63FF] transition hover:bg-[#F4F3FF]"
+            className="rounded-xl border border-[#eaddc7] bg-white px-4 py-2.5 text-sm font-semibold text-[#ea580c] transition hover:bg-[#fff7ed]"
           >
             Add
           </button>
@@ -499,12 +499,12 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
 
       {/* Error / success */}
       {error && (
-        <p className="rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-2.5 text-sm text-[#C14D72]">
+        <p className="rounded-xl border border-[#be123c] bg-[#ffe4e6] px-4 py-2.5 text-sm text-[#be123c]">
           {error}
         </p>
       )}
       {saved && (
-        <p className="rounded-xl border border-[#6C63FF] bg-[#EEEDFE] px-4 py-2.5 text-sm font-medium text-[#3F3D56]">
+        <p className="rounded-xl border border-[#ea580c] bg-[#ffedd5] px-4 py-2.5 text-sm font-medium text-[#3a2540]">
           Profile saved ✓
         </p>
       )}
@@ -513,7 +513,7 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
         type="button"
         onClick={handleSave}
         disabled={saving}
-        className="flex items-center gap-2 rounded-xl bg-[#3F3D56] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:opacity-60"
+        className="flex items-center gap-2 rounded-xl bg-[#3a2540] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2c1b33] disabled:opacity-60"
       >
         <Save size={15} />
         {saving ? 'Saving…' : 'Save profile'}

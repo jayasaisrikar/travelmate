@@ -25,13 +25,13 @@ export function Features() {
     <section className="px-4 py-10 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 max-w-2xl">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882] sm:text-[11px] sm:tracking-[0.24em]">
             Why wayflo
           </div>
-          <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
+          <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3a2540] sm:text-4xl">
             The route, the timing, and the mood stay connected.
           </h2>
-          <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
+          <p className="mt-3 text-sm leading-7 text-[#7c6a72] sm:text-base">
             You get a calmer way to plan, with the important details easy to spot and the next step always obvious.
           </p>
         </div>
@@ -43,16 +43,16 @@ export function Features() {
             return (
               <article
                 key={item.title}
-                className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
+                className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(58,37,64,0.08)] sm:p-6"
                 style={{ transform: `translateY(${index % 2 === 0 ? 0 : 6}px)` }}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF] sm:h-12 sm:w-12">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffedd5] text-[#ea580c] sm:h-12 sm:w-12">
                   <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <h3 className="mt-4 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:mt-5 sm:text-2xl">
+                <h3 className="mt-4 text-xl font-medium tracking-[-0.03em] text-[#3a2540] sm:mt-5 sm:text-2xl">
                   {item.title}
                 </h3>
-                <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{item.body}</p>
+                <p className="mt-3 text-sm leading-7 text-[#7c6a72]">{item.body}</p>
               </article>
             );
           })}

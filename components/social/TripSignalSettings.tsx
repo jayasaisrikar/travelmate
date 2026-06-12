@@ -126,31 +126,31 @@ export function TripSignalSettings({ trips, profile }: TripSignalSettingsProps) 
   };
 
   if (loading) {
-    return <div className="h-24 animate-pulse rounded-2xl bg-[#F4F3FF]" />;
+    return <div className="h-24 animate-pulse rounded-2xl bg-[#fff7ed]" />;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start gap-3 rounded-2xl border border-[#DDDCE8] bg-white p-4">
+      <div className="flex items-start gap-3 rounded-2xl border border-[#eaddc7] bg-white p-4">
         {profile?.is_public
-          ? <Eye size={18} className="mt-0.5 shrink-0 text-[#6C63FF]" />
-          : <EyeOff size={18} className="mt-0.5 shrink-0 text-[#8A869C]" />}
+          ? <Eye size={18} className="mt-0.5 shrink-0 text-[#ea580c]" />
+          : <EyeOff size={18} className="mt-0.5 shrink-0 text-[#9b8b92]" />}
         <div>
-          <p className="text-sm font-semibold text-[#1A1726]">Public trip signals</p>
-          <p className="mt-1 text-xs leading-5 text-[#6F6C82]">
+          <p className="text-sm font-semibold text-[#1c1018]">Public trip signals</p>
+          <p className="mt-1 text-xs leading-5 text-[#7c6a72]">
             Share only your destination and month. Your itinerary and exact dates stay private.
           </p>
         </div>
       </div>
 
       {error && (
-        <p className="rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-2.5 text-sm text-[#C14D72]">
+        <p className="rounded-xl border border-[#be123c] bg-[#ffe4e6] px-4 py-2.5 text-sm text-[#be123c]">
           {error}
         </p>
       )}
 
       {trips.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-[#DDDCE8] px-4 py-5 text-sm text-[#6F6C82]">
+        <p className="rounded-xl border border-dashed border-[#eaddc7] px-4 py-5 text-sm text-[#7c6a72]">
           Create a trip first, then publish it here when you are ready to find companions.
         </p>
       ) : (
@@ -161,12 +161,12 @@ export function TripSignalSettings({ trips, profile }: TripSignalSettingsProps) 
             const monthValue = months[trip.id] ?? (parseMonthLabel(signal?.travel_month ?? null) || getTripMonthValue(trip));
 
             return (
-              <div key={trip.id} className="rounded-2xl border border-[#DDDCE8] bg-white p-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1726]">
-                  <MapPin size={15} className="text-[#6C63FF]" />
+              <div key={trip.id} className="rounded-2xl border border-[#eaddc7] bg-white p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#1c1018]">
+                  <MapPin size={15} className="text-[#ea580c]" />
                   {trip.destination}
                 </div>
-                <p className="mt-1 text-xs text-[#8A869C]">
+                <p className="mt-1 text-xs text-[#9b8b92]">
                   {tripWindow.arrivalDate && tripWindow.departureDate
                     ? `Private trip dates: ${tripWindow.arrivalDate} to ${tripWindow.departureDate}`
                     : 'Saved exact dates are unavailable for this older trip. Choose the public month manually.'}
@@ -178,13 +178,13 @@ export function TripSignalSettings({ trips, profile }: TripSignalSettingsProps) 
                     value={monthValue}
                     onChange={event => setMonths(previous => ({ ...previous, [trip.id]: event.target.value }))}
                     aria-label={`Public travel month for ${trip.destination}`}
-                    className="rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-3 py-2 text-xs text-[#3F3D56] outline-none focus:border-[#6C63FF]"
+                    className="rounded-xl border border-[#eaddc7] bg-[#fffbf2] px-3 py-2 text-xs text-[#3a2540] outline-none focus:border-[#ea580c]"
                   />
                   <button
                     type="button"
                     onClick={() => void handlePublish(trip)}
                     disabled={actionId === trip.id || !profile?.is_public}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#6C63FF] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#5b54e7] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#ea580c] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#c2410c] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {actionId === trip.id ? <LoaderCircle size={14} className="animate-spin" /> : <Plus size={14} />}
                     {signal ? 'Update month' : 'Publish trip'}
@@ -193,14 +193,14 @@ export function TripSignalSettings({ trips, profile }: TripSignalSettingsProps) 
 
                 {signal && (
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs font-medium text-[#6C63FF]">
+                    <p className="text-xs font-medium text-[#ea580c]">
                       Visible on Explore{signal.travel_month ? ` for ${signal.travel_month}` : ''}
                     </p>
                     <button
                       type="button"
                       onClick={() => void handleRetract(signal)}
                       disabled={actionId === signal.id}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#DDDCE8] px-3 py-2 text-xs font-semibold text-[#6F6C82] transition hover:bg-[#FFF0F4] hover:text-[#C14D72] disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#eaddc7] px-3 py-2 text-xs font-semibold text-[#7c6a72] transition hover:bg-[#ffe4e6] hover:text-[#be123c] disabled:opacity-60"
                     >
                       {actionId === signal.id ? <LoaderCircle size={14} className="animate-spin" /> : <Trash2 size={14} />}
                       Hide trip

@@ -18,11 +18,11 @@ function WayfloMark({ compact = false }: { compact?: boolean }) {
     <svg
       viewBox="0 0 56 56"
       xmlns="http://www.w3.org/2000/svg"
-      className={clsx(sizeClass, 'shrink-0 drop-shadow-[0_12px_24px_rgba(108,99,255,0.2)]')}
+      className={clsx(sizeClass, 'shrink-0 drop-shadow-[0_12px_24px_rgba(234,88,12,0.2)]')}
       aria-hidden="true"
     >
-      <rect width="56" height="56" rx="14" fill="#6C63FF" />
-      <path d="M14 28 Q20 18 28 22 Q36 26 42 16" stroke="#FF6584" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <rect width="56" height="56" rx="14" fill="#ea580c" />
+      <path d="M14 28 Q20 18 28 22 Q36 26 42 16" stroke="#f43f5e" strokeWidth="3" strokeLinecap="round" fill="none" />
       <path
         d="M14 34 Q20 24 28 28 Q36 32 42 22"
         stroke="white"
@@ -61,11 +61,11 @@ export function Brand({
               compact ? 'text-[clamp(1.2rem,2vw,1.55rem)]' : 'text-[clamp(1.45rem,3vw,2.1rem)]'
             )}
           >
-            <span className="font-medium text-[#6C63FF]">way</span>
-            <span className="font-medium text-[#FF6584]">flo</span>
+            <span className="font-medium text-[#ea580c]">way</span>
+            <span className="font-medium text-[#f43f5e]">flo</span>
           </div>
           {!compact && (
-            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[#7E7A92] sm:text-[11px]">
+            <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[#8c7882] sm:text-[11px]">
               travel. flow. freedom.
             </div>
           )}

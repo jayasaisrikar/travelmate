@@ -385,8 +385,8 @@ function drawBadgeFrame(
   ctx.fillRect(0, 0, width, height);
 
   const glow = ctx.createRadialGradient(width * 0.78, height * 0.4, 20, width * 0.78, height * 0.4, height * 0.55);
-  glow.addColorStop(0, 'rgba(108, 99, 255, 0.34)');
-  glow.addColorStop(0.35, 'rgba(255, 101, 132, 0.18)');
+  glow.addColorStop(0, 'rgba(234,88,12, 0.34)');
+  glow.addColorStop(0.35, 'rgba(244,63,94, 0.18)');
   glow.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
@@ -417,7 +417,7 @@ function drawBadgeFrame(
   const logoSize = 40;
   ctx.save();
   ctx.translate(52, 44);
-  ctx.fillStyle = '#6C63FF';
+  ctx.fillStyle = '#ea580c';
   ctx.beginPath();
   ctx.roundRect(0, 0, logoSize, logoSize, 12);
   ctx.fill();
@@ -429,7 +429,7 @@ function drawBadgeFrame(
   ctx.quadraticCurveTo(17, 8, 22, 12);
   ctx.quadraticCurveTo(29, 18, 31, 8);
   ctx.stroke();
-  ctx.strokeStyle = '#FF6584';
+  ctx.strokeStyle = '#f43f5e';
   ctx.lineWidth = 2.5;
   ctx.beginPath();
   ctx.moveTo(9, 24);
@@ -438,10 +438,10 @@ function drawBadgeFrame(
   ctx.stroke();
   ctx.restore();
 
-  ctx.fillStyle = '#3F3D56';
+  ctx.fillStyle = '#3a2540';
   ctx.font = '700 24px "Plus Jakarta Sans", "Arial", sans-serif';
   ctx.fillText('way', 104, 70);
-  ctx.fillStyle = '#6C63FF';
+  ctx.fillStyle = '#ea580c';
   ctx.fillText('flo', 140, 70);
 
   ctx.fillStyle = '#ffffff';

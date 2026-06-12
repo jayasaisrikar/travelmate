@@ -61,10 +61,10 @@ export function MapView({
         focusStayTrigger={focusStayTrigger}
       />
 
-      <div className="flex h-full flex-col rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:h-[360px] lg:min-h-0">
-        <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Location guide</div>
+      <div className="flex h-full flex-col rounded-[28px] border border-[#eaddc7] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6 lg:h-[360px] lg:min-h-0">
+        <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#9b8b92]">Location guide</div>
         <h2 className="mt-1 text-2xl font-black tracking-tight">Places in order</h2>
-        <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
+        <p className="mt-2 text-sm leading-6 text-[#7c6a72]">
           The numbers on the map match the order below, so first-time users can quickly see where each stop sits.
         </p>
 
@@ -81,7 +81,7 @@ export function MapView({
                   <button
                     type="button"
                     onClick={onFocusStay}
-                    className="rounded-full border border-[#6C63FF]/20 bg-[#EEEDFE] px-4 py-2 text-sm font-semibold text-[#6C63FF]"
+                    className="rounded-full border border-[#ea580c]/20 bg-[#ffedd5] px-4 py-2 text-sm font-semibold text-[#ea580c]"
                   >
                     Focus stay
                   </button>
@@ -90,7 +90,7 @@ export function MapView({
                   <button
                     type="button"
                     onClick={onOpenStayRetry}
-                    className="rounded-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-2 text-sm font-semibold text-white"
+                    className="rounded-full border border-[#3a2540] bg-[#3a2540] px-4 py-2 text-sm font-semibold text-white"
                   >
                     Retry stay
                   </button>
@@ -109,22 +109,22 @@ export function MapView({
                 }}
                 className={`w-full rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(46,40,51,0.08)] ${
                   selectedActivityIndex === index
-                    ? 'border-[#6C63FF] bg-[#EEEDFE]'
-                    : 'border-[#DDDCE8] bg-[#FBFAFF]'
+                    ? 'border-[#ea580c] bg-[#ffedd5]'
+                    : 'border-[#eaddc7] bg-[#fffbf2]'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#3F3D56] text-sm font-black text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#3a2540] text-sm font-black text-white">
                     {index + 1}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-[#3F3D56]">
+                    <div className="text-sm font-bold text-[#3a2540]">
                       Day {activity.day} · {activity.time} · {activity.name}
                     </div>
-                    <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#8A869C]">
+                    <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#9b8b92]">
                       {activity.category}
                     </div>
-                    <div className="mt-1 text-sm leading-6 text-[#6F6C82]">
+                    <div className="mt-1 text-sm leading-6 text-[#7c6a72]">
                       {activity.address || 'No address provided'}
                     </div>
                   </div>

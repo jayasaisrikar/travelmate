@@ -108,7 +108,7 @@ export function MapComponent({
               width: 42px;
               height: 42px;
               border-radius: 14px;
-              background: #3F3D56;
+              background: #3a2540;
               color: white;
               display: flex;
               align-items: center;
@@ -127,8 +127,8 @@ export function MapComponent({
 
       destinationMarker.bindPopup(`
         <div style="font-family: system-ui; min-width: 180px;">
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #6C63FF;">Destination</div>
-          <div style="margin-top: 4px; font-size: 16px; font-weight: 800; color: #3F3D56;">${destination}</div>
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #ea580c;">Destination</div>
+          <div style="margin-top: 4px; font-size: 16px; font-weight: 800; color: #3a2540;">${destination}</div>
         </div>
       `);
 
@@ -144,7 +144,7 @@ export function MapComponent({
               width: 42px;
               height: 42px;
               border-radius: 14px;
-              background: #FF6584;
+              background: #f43f5e;
               color: white;
               display: flex;
               align-items: center;
@@ -163,9 +163,9 @@ export function MapComponent({
 
       stayMarker.bindPopup(`
         <div style="font-family: system-ui; min-width: 200px;">
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #FF6584;">Stay</div>
-          <div style="margin-top: 4px; font-size: 16px; font-weight: 800; color: #3F3D56;">${stay.name}</div>
-          ${stay.address ? `<div style="margin-top: 4px; font-size: 13px; color: #6F6C82;">${stay.address}</div>` : ''}
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #f43f5e;">Stay</div>
+          <div style="margin-top: 4px; font-size: 16px; font-weight: 800; color: #3a2540;">${stay.name}</div>
+          ${stay.address ? `<div style="margin-top: 4px; font-size: 13px; color: #7c6a72;">${stay.address}</div>` : ''}
         </div>
       `);
 
@@ -174,7 +174,7 @@ export function MapComponent({
     }
 
     validActivities.forEach((activity, index) => {
-      const palette = ['#6C63FF', '#FF6584', '#FF6584', '#3F3D56'];
+      const palette = ['#ea580c', '#f43f5e', '#f43f5e', '#3a2540'];
       const color = palette[index % palette.length];
 
       const marker = leaflet.marker([activity.latitude, activity.longitude], {
@@ -185,7 +185,7 @@ export function MapComponent({
               height: 40px;
               border-radius: 14px;
               background: ${color};
-              color: ${color === '#FF6584' ? '#3F3D56' : '#ffffff'};
+              color: ${color === '#f43f5e' ? '#3a2540' : '#ffffff'};
               display: flex;
               align-items: center;
               justify-content: center;
@@ -203,10 +203,10 @@ export function MapComponent({
 
       marker.bindPopup(`
         <div style="font-family: system-ui; min-width: 220px;">
-          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #8A869C;">Stop ${index + 1}</div>
-          <div style="margin-top: 4px; font-size: 16px; font-weight: 800; color: #3F3D56;">${activity.time} - ${activity.name}</div>
-          <div style="margin-top: 4px; font-size: 13px; color: #6F6C82;">${activity.category}</div>
-          ${activity.address ? `<div style="margin-top: 4px; font-size: 13px; color: #6F6C82;">${activity.address}</div>` : ''}
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9b8b92;">Stop ${index + 1}</div>
+          <div style="margin-top: 4px; font-size: 16px; font-weight: 800; color: #3a2540;">${activity.time} - ${activity.name}</div>
+          <div style="margin-top: 4px; font-size: 13px; color: #7c6a72;">${activity.category}</div>
+          ${activity.address ? `<div style="margin-top: 4px; font-size: 13px; color: #7c6a72;">${activity.address}</div>` : ''}
         </div>
       `);
 
@@ -219,7 +219,7 @@ export function MapComponent({
       polylineRef.current = leaflet.polyline(
         validActivities.map(activity => [activity.latitude, activity.longitude] as [number, number]),
         {
-          color: '#6C63FF',
+          color: '#ea580c',
           weight: 3,
           opacity: 0.75,
           dashArray: '8, 8',
@@ -292,14 +292,14 @@ export function MapComponent({
 
   if (validActivities.length === 0 && !destinationCoordinates) {
     return (
-      <div className="flex h-full flex-col rounded-[28px] border border-[#DDDCE8] bg-white p-6 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
+      <div className="flex h-full flex-col rounded-[28px] border border-[#eaddc7] bg-white p-6 shadow-[0_16px_48px_rgba(46,40,51,0.06)]">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#FF6584] text-sm font-black text-[#3F3D56]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f43f5e] text-sm font-black text-[#3a2540]">
             MAP
           </div>
           <div>
-            <h3 className="text-lg font-black tracking-tight text-[#3F3D56]">No map coordinates yet</h3>
-            <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
+            <h3 className="text-lg font-black tracking-tight text-[#3a2540]">No map coordinates yet</h3>
+            <p className="mt-2 text-sm leading-6 text-[#7c6a72]">
               This trip does not include geocoded stops yet, so we can’t place markers on the map.
             </p>
           </div>
@@ -309,20 +309,20 @@ export function MapComponent({
   }
 
   return (
-    <div className="relative z-0 flex h-full flex-col rounded-[28px] border border-[#DDDCE8] bg-white p-4 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-5 lg:h-[360px]">
+    <div className="relative z-0 flex h-full flex-col rounded-[28px] border border-[#eaddc7] bg-white p-4 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-5 lg:h-[360px]">
       <div className="mb-4 flex items-end justify-between gap-2">
         <div>
-          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Trip map</div>
-          <h3 className="mt-1 text-2xl font-black tracking-tight text-[#3F3D56]">Where the trip actually goes</h3>
+          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#9b8b92]">Trip map</div>
+          <h3 className="mt-1 text-2xl font-black tracking-tight text-[#3a2540]">Where the trip actually goes</h3>
         </div>
-        <div className="text-sm text-[#6F6C82]">
+        <div className="text-sm text-[#7c6a72]">
           {validActivities.length} mapped stop{validActivities.length === 1 ? '' : 's'}
         </div>
       </div>
 
       <div
         ref={mapContainerRef}
-        className="relative z-0 min-h-[240px] flex-1 overflow-hidden rounded-[24px] border border-[#DDDCE8] bg-[#FBFAFF] lg:min-h-0"
+        className="relative z-0 min-h-[240px] flex-1 overflow-hidden rounded-[24px] border border-[#eaddc7] bg-[#fffbf2] lg:min-h-0"
       />
     </div>
   );
