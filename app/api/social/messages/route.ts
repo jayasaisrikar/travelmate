@@ -95,22 +95,51 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Traveler is no longer available' }, { status: 404 });
   }
 
-  const { data: blockedConnection, error: blockedError } = await supabase
+  // ── Trust before contact (PRD §8.4 / §13) ──
+  // Look at the relationship in both directions in a single query.
+  const { data: relations, error: relationError } = await supabase
     .from('traveler_connections')
-    .select('id')
-    .eq('status', 'blocked')
+    .select('from_user, to_user, status')
     .or(
       `and(from_user.eq.${user.id},to_user.eq.${recipientId}),` +
       `and(from_user.eq.${recipientId},to_user.eq.${user.id})`
-    )
-    .maybeSingle();
+    );
 
-  if (blockedError) {
-    return NextResponse.json({ error: blockedError.message }, { status: 500 });
+  if (relationError) {
+    return NextResponse.json({ error: relationError.message }, { status: 500 });
   }
 
-  if (blockedConnection) {
+  if ((relations ?? []).some(r => r.status === 'blocked')) {
     return NextResponse.json({ error: 'Messaging is unavailable for this traveler' }, { status: 403 });
+  }
+
+  const isConnected = (relations ?? []).some(r => r.status === 'connected');
+
+  // Messaging is only allowed once an accepted tripmate request connects the
+  // two travellers, OR when they already collaborate inside a shared trip room.
+  let canMessage = isConnected;
+  if (!canMessage) {
+    const { data: sharedRooms } = await supabase
+      .from('trip_room_members')
+      .select('room_id')
+      .eq('user_id', user.id);
+
+    const roomIds = (sharedRooms ?? []).map(r => r.room_id);
+    if (roomIds.length > 0) {
+      const { count: sharedCount } = await supabase
+        .from('trip_room_members')
+        .select('room_id', { count: 'exact', head: true })
+        .eq('user_id', recipientId)
+        .in('room_id', roomIds);
+      canMessage = (sharedCount ?? 0) > 0;
+    }
+  }
+
+  if (!canMessage) {
+    return NextResponse.json(
+      { error: 'Send a tripmate request first — you can message once it is accepted.' },
+      { status: 403 }
+    );
   }
 
   const startOfDay = new Date();

@@ -6,6 +6,10 @@ type Traveler = {
   avatar_url: string | null;
   bio: string | null;
   travel_style: 'solo' | 'couple' | 'group' | 'flexible' | null;
+  interests: string[];
+  languages: string[];
+  budget_preference: 'budget' | 'moderate' | 'comfort' | 'luxury' | null;
+  pace_preference: 'slow' | 'balanced' | 'fast' | null;
   is_public: boolean;
   verified: boolean;
   verification_provider: 'didit' | null;
@@ -20,7 +24,9 @@ type Traveler = {
   destination: string;
   destination_slug: string;
   travel_month: string | null;
-  connection_status: 'none' | 'wave_sent' | 'wave_received' | 'connected' | 'blocked';
+  connection_status: 'none' | 'request_sent' | 'request_received' | 'connected' | 'blocked';
+  match_score: number | null;
+  match_reasons: string[];
   is_self: boolean;
 };
 
@@ -187,6 +193,10 @@ const travelers: Traveler[] = [
     avatar_url: null,
     bio: 'Quiet coffee stops and early trains.',
     travel_style: 'solo',
+    interests: ['food', 'slow travel'],
+    languages: ['english'],
+    budget_preference: 'moderate',
+    pace_preference: 'slow',
     is_public: true,
     verified: true,
     verification_provider: 'didit',
@@ -202,6 +212,8 @@ const travelers: Traveler[] = [
     destination_slug: 'bali',
     travel_month: 'June 2026',
     connection_status: 'none',
+    match_score: 84,
+    match_reasons: ["You're both heading to Bali", 'Shared interests: food, slow travel'],
     is_self: false,
   },
   {
@@ -210,6 +222,10 @@ const travelers: Traveler[] = [
     avatar_url: null,
     bio: 'Looking for easy-going room planning.',
     travel_style: 'flexible',
+    interests: ['nature', 'food'],
+    languages: ['english'],
+    budget_preference: 'budget',
+    pace_preference: 'balanced',
     is_public: true,
     verified: false,
     verification_provider: 'didit',
@@ -225,6 +241,8 @@ const travelers: Traveler[] = [
     destination_slug: 'bali',
     travel_month: 'June 2026',
     connection_status: 'none',
+    match_score: 61,
+    match_reasons: ["You're both heading to Bali", 'Shared interests: food'],
     is_self: false,
   },
 ];
@@ -308,6 +326,66 @@ test('explore page shows travelers and can open the room modal', async ({ page }
   await page.getByRole('button', { name: 'Start a room' }).first().click();
   await expect(page.getByRole('heading', { name: 'Start a trip room' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
+});
+
+test('explore page sends a structured tripmate request', async ({ page }) => {
+  await mockSignedInShell(page);
+
+  await page.route('**/api/social/destinations**', route => {
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(destinationPulses) });
+  });
+
+  await page.route('**/api/social/companions**', route => {
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(travelers) });
+  });
+
+  let requestPayload: Record<string, unknown> | null = null;
+  await page.route('**/api/social/requests', route => {
+    if (route.request().method() === 'POST') {
+      requestPayload = route.request().postDataJSON();
+      route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'req-1',
+          from_user: 'user-e2e',
+          to_user: 't1',
+          reason: requestPayload?.reason,
+          message: requestPayload?.message ?? null,
+          status: 'pending',
+          match_score: 84,
+          expires_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          direction: 'outgoing',
+          counterpart: null,
+        }),
+      });
+      return;
+    }
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ incoming: [], outgoing: [] }) });
+  });
+
+  await page.goto('/explore');
+
+  // Match score surfaces on the traveller card.
+  await expect(page.getByText('84%').first()).toBeVisible();
+
+  // Open the request modal from Maya's card.
+  await page.getByRole('button', { name: 'Request to connect' }).first().click();
+  await expect(page.getByRole('dialog', { name: /Connect with Maya/i })).toBeVisible();
+
+  // Send is gated until a reason is chosen.
+  const dialog = page.getByRole('dialog', { name: /Connect with Maya/i });
+  await expect(dialog.getByRole('button', { name: 'Send request' })).toBeDisabled();
+
+  // Pick a reason and send.
+  await dialog.getByRole('button', { name: 'Overlapping dates' }).click();
+  await expect(dialog.getByRole('button', { name: 'Send request' })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Send request' }).click();
+
+  // Card transitions to the "Requested" pending state.
+  await expect(page.getByText('Requested').first()).toBeVisible();
+  expect(requestPayload).toMatchObject({ to_user: 't1', reason: 'same_dates' });
 });
 
 test('destination page groups travelers and rooms for one place', async ({ page }) => {
@@ -437,6 +515,14 @@ test('community settings page starts the Didit verification flow', async ({ page
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify([]),
+    });
+  });
+
+  await page.route('**/api/social/requests', route => {
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ incoming: [], outgoing: [] }),
     });
   });
 

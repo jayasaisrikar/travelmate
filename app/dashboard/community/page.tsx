@@ -7,6 +7,7 @@ import { Brand } from '@/components/common/Brand';
 import { SocialProfileSettings } from '@/components/social/SocialProfileSettings';
 import { TripSignalSettings } from '@/components/social/TripSignalSettings';
 import { TravelerMessageInbox } from '@/components/social/TravelerMessageInbox';
+import { RequestInbox } from '@/components/social/RequestInbox';
 import { listTrips, type Trip } from '@/lib/supabase-trips';
 import type { TravelerProfile } from '@/services/social';
 
@@ -90,6 +91,7 @@ export default function CommunitySettingsPage() {
             )}
           </section>
         </div>
+        <RequestInbox />
         <TravelerMessageInbox />
       </div>
     </main>

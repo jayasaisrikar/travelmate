@@ -25,6 +25,24 @@ const STYLE_OPTIONS = [
 
 type TravelStyle = typeof STYLE_OPTIONS[number]['value'];
 
+const INTEREST_OPTIONS = [
+  'food', 'temples', 'photography', 'nature', 'nightlife', 'museums',
+  'hiking', 'beaches', 'coworking', 'slow travel', 'adventure', 'wellness',
+] as const;
+
+const BUDGET_OPTIONS = [
+  { value: 'budget',   label: 'Budget' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'comfort',  label: 'Comfort' },
+  { value: 'luxury',   label: 'Luxury' },
+] as const;
+
+const PACE_OPTIONS = [
+  { value: 'slow',     label: 'Slow' },
+  { value: 'balanced', label: 'Balanced' },
+  { value: 'fast',     label: 'Fast' },
+] as const;
+
 interface SocialProfileSettingsProps {
   onProfileSaved?: (profile: TravelerProfile) => void;
 }
@@ -41,6 +59,11 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
   const [displayName, setDisplayName] = useState('');
   const [bio,         setBio]         = useState('');
   const [style,       setStyle]       = useState<TravelStyle | ''>('');
+  const [interests,   setInterests]   = useState<string[]>([]);
+  const [languages,   setLanguages]   = useState<string[]>([]);
+  const [languageInput, setLanguageInput] = useState('');
+  const [budget,      setBudget]      = useState('');
+  const [pace,        setPace]        = useState('');
   const [isPublic,    setIsPublic]    = useState(false);
 
   useEffect(() => {
@@ -52,6 +75,10 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           setDisplayName(p.display_name ?? '');
           setBio(p.bio ?? '');
           setStyle((p.travel_style as TravelStyle) ?? '');
+          setInterests(p.interests ?? []);
+          setLanguages(p.languages ?? []);
+          setBudget(p.budget_preference ?? '');
+          setPace(p.pace_preference ?? '');
           setIsPublic(p.is_public);
         }
       })
@@ -95,6 +122,10 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
         display_name: displayName.trim() || undefined,
         bio:          bio.trim() || undefined,
         travel_style: style || undefined,
+        interests,
+        languages,
+        budget_preference: (budget || null) as TravelerProfile['budget_preference'],
+        pace_preference:   (pace || null) as TravelerProfile['pace_preference'],
         is_public:    isPublic,
       });
       setProfile(updated);
@@ -106,6 +137,19 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggleInterest = (value: string) => {
+    setInterests(prev =>
+      prev.includes(value) ? prev.filter(i => i !== value) : prev.length >= 12 ? prev : [...prev, value]
+    );
+  };
+
+  const addLanguage = () => {
+    const value = languageInput.trim().toLowerCase();
+    if (!value) return;
+    setLanguages(prev => (prev.includes(value) || prev.length >= 12 ? prev : [...prev, value]));
+    setLanguageInput('');
   };
 
   if (loading) {
@@ -335,6 +379,121 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
               {opt.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Interests — powers tripmate match scoring */}
+      <div>
+        <label className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#6F6C82]">
+          Interests
+          <span className="normal-case text-[#8A869C]">{interests.length}/12 · helps us match you</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {INTEREST_OPTIONS.map(option => {
+            const active = interests.includes(option);
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => toggleInterest(option)}
+                aria-pressed={active}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition ${
+                  active
+                    ? 'border-[#6C63FF] bg-[#6C63FF] text-white'
+                    : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF] hover:text-[#6C63FF]'
+                }`}
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Budget + pace */}
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">Budget</label>
+          <div className="flex flex-wrap gap-2">
+            {BUDGET_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setBudget(prev => (prev === opt.value ? '' : opt.value))}
+                className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                  budget === opt.value
+                    ? 'border-[#6C63FF] bg-[#F4F3FF] text-[#6C63FF]'
+                    : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">Pace</label>
+          <div className="flex flex-wrap gap-2">
+            {PACE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPace(prev => (prev === opt.value ? '' : opt.value))}
+                className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                  pace === opt.value
+                    ? 'border-[#6C63FF] bg-[#F4F3FF] text-[#6C63FF]'
+                    : 'border-[#DDDCE8] bg-white text-[#6F6C82] hover:border-[#6C63FF]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Languages */}
+      <div>
+        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6F6C82]">Languages</label>
+        <div className="flex flex-wrap gap-2">
+          {languages.map(lang => (
+            <span
+              key={lang}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F3FF] px-3 py-1.5 text-xs font-semibold capitalize text-[#6C63FF]"
+            >
+              {lang}
+              <button
+                type="button"
+                onClick={() => setLanguages(prev => prev.filter(l => l !== lang))}
+                aria-label={`Remove ${lang}`}
+                className="text-[#8A869C] hover:text-[#C14D72]"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={languageInput}
+            onChange={e => setLanguageInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addLanguage();
+              }
+            }}
+            placeholder="Add a language and press Enter"
+            className="flex-1 rounded-xl border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-2.5 text-sm text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+          />
+          <button
+            type="button"
+            onClick={addLanguage}
+            className="rounded-xl border border-[#DDDCE8] bg-white px-4 py-2.5 text-sm font-semibold text-[#6C63FF] transition hover:bg-[#F4F3FF]"
+          >
+            Add
+          </button>
         </div>
       </div>
 

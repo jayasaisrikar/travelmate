@@ -1,8 +1,8 @@
 /**
  * services/social.ts
  *
- * All client-side social feature logic: traveler profiles, waves,
- * trip signals, and trip rooms. Every mutation goes through the
+ * All client-side social feature logic: traveler profiles, tripmate
+ * requests, trip signals, and trip rooms. Every mutation goes through the
  * /api/social/* routes so we can enforce server-side rules cleanly.
  */
 
@@ -20,6 +20,10 @@ export interface TravelerProfile {
   avatar_url: string | null;
   bio: string | null;
   travel_style: 'solo' | 'couple' | 'group' | 'flexible' | null;
+  interests: string[];
+  languages: string[];
+  budget_preference: 'budget' | 'moderate' | 'comfort' | 'luxury' | null;
+  pace_preference: 'slow' | 'balanced' | 'fast' | null;
   is_public: boolean;
   verified: boolean;
   verification_provider: 'didit' | null;
@@ -32,12 +36,29 @@ export interface TravelerProfile {
   created_at: string;
 }
 
+/**
+ * Connection state of the viewer toward a traveller.
+ *   request_sent     — viewer sent a pending tripmate request
+ *   request_received — traveller sent the viewer a pending request
+ *   connected        — an accepted request links the two (messaging unlocked)
+ */
+export type ConnectionStatus =
+  | 'none'
+  | 'request_sent'
+  | 'request_received'
+  | 'connected'
+  | 'blocked';
+
 export interface TravelerWithSignal extends TravelerProfile {
   signal_id: string;
   destination: string;
   destination_slug: string;
   travel_month: string | null;
-  connection_status: 'none' | 'wave_sent' | 'wave_received' | 'connected' | 'blocked';
+  connection_status: ConnectionStatus;
+  /** Match score 0–100 vs the viewer's trips (null when not computable). */
+  match_score: number | null;
+  /** Human-readable reasons behind the match score. */
+  match_reasons: string[];
   is_self: boolean;
 }
 
@@ -157,7 +178,9 @@ export async function getMyProfile(): Promise<TravelerProfile | null> {
 
 /** Create or update the current user's traveler profile */
 export async function upsertMyProfile(
-  patch: Partial<Pick<TravelerProfile, 'display_name' | 'avatar_url' | 'bio' | 'travel_style' | 'is_public'>>
+  patch: Partial<Pick<TravelerProfile,
+    'display_name' | 'avatar_url' | 'bio' | 'travel_style' | 'is_public'
+    | 'interests' | 'languages' | 'budget_preference' | 'pace_preference'>>
 ): Promise<TravelerProfile> {
   return apiFetch<TravelerProfile>('/api/social/profile', {
     method: 'POST',
@@ -246,29 +269,105 @@ export async function getCompanionSuggestions(limit = 6): Promise<TravelerWithSi
   return apiFetch<TravelerWithSignal[]>(`/api/social/companions/suggestions?limit=${limit}`);
 }
 
-// ─── Waves ───────────────────────────────────────────────────────────────────
+// ─── Tripmate requests (PRD §10.7) ────────────────────────────────────────────
 
-/** Send a wave to another traveler */
-export async function sendWave(toUserId: string): Promise<void> {
-  await apiFetch('/api/social/waves', {
+export type TripmateRequestReason =
+  | 'same_destination'
+  | 'same_dates'
+  | 'collaborate_itinerary'
+  | 'one_activity'
+  | 'coffee_meetup'
+  | 'ask_suggestions'
+  | 'full_tripmate';
+
+export type TripmateRequestStatus =
+  | 'pending'
+  | 'accepted'
+  | 'declined'
+  | 'expired'
+  | 'cancelled';
+
+/** Display metadata for each structured request reason. */
+export const REQUEST_REASONS: { id: TripmateRequestReason; label: string; hint: string }[] = [
+  { id: 'same_destination',      label: 'Same destination',      hint: "We're headed to the same place" },
+  { id: 'same_dates',            label: 'Overlapping dates',     hint: 'Our travel dates line up' },
+  { id: 'collaborate_itinerary', label: 'Plan together',         hint: 'Collaborate on an itinerary' },
+  { id: 'one_activity',          label: 'Join one activity',     hint: 'Just one shared activity' },
+  { id: 'coffee_meetup',         label: 'Meet for coffee',       hint: 'A low-pressure local meetup' },
+  { id: 'ask_suggestions',       label: 'Ask for tips',          hint: 'Get local or route suggestions' },
+  { id: 'full_tripmate',         label: 'Full tripmate',         hint: 'Travel together for the trip' },
+];
+
+/** Maximum characters allowed in a first-contact request message. */
+export const REQUEST_MESSAGE_LIMIT = 300;
+
+export interface TripmateRequest {
+  id: string;
+  from_user: string;
+  to_user: string;
+  reason: TripmateRequestReason;
+  message: string | null;
+  status: TripmateRequestStatus;
+  match_score: number | null;
+  expires_at: string;
+  created_at: string;
+  /** Direction relative to the current user. */
+  direction: 'incoming' | 'outgoing';
+  /** The other party's lightweight profile. */
+  counterpart: Pick<TravelerProfile,
+    'id' | 'display_name' | 'avatar_url' | 'verified' | 'verification_level'> | null;
+}
+
+/** Send a structured tripmate request (must precede any messaging). */
+export async function sendTripmateRequest(payload: {
+  toUserId: string;
+  reason: TripmateRequestReason;
+  message?: string;
+  fromSignalId?: string;
+  toSignalId?: string;
+}): Promise<TripmateRequest> {
+  return apiFetch<TripmateRequest>('/api/social/requests', {
     method: 'POST',
-    body: JSON.stringify({ to_user: toUserId }),
+    body: JSON.stringify({
+      to_user: payload.toUserId,
+      reason: payload.reason,
+      message: payload.message,
+      from_signal: payload.fromSignalId,
+      to_signal: payload.toSignalId,
+    }),
   });
 }
 
-/** Revoke / un-wave */
-export async function retractWave(toUserId: string): Promise<void> {
-  await apiFetch(`/api/social/waves/${toUserId}`, { method: 'DELETE' });
+/** Cancel an outgoing pending request. */
+export async function cancelTripmateRequest(requestId: string): Promise<void> {
+  await apiFetch(`/api/social/requests/${requestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'cancel' }),
+  });
 }
 
-/** Accept a wave — upgrades status to 'connected' */
-export async function acceptWave(fromUserId: string): Promise<void> {
-  await apiFetch(`/api/social/waves/${fromUserId}/accept`, { method: 'POST' });
+/** Recipient responds to an incoming request. */
+export async function respondToTripmateRequest(
+  requestId: string,
+  action: 'accept' | 'decline'
+): Promise<TripmateRequest> {
+  return apiFetch<TripmateRequest>(`/api/social/requests/${requestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action }),
+  });
 }
 
-/** Get incoming waves (people who waved at you) — count only for privacy */
-export async function getIncomingWaveCount(): Promise<number> {
-  const data = await apiFetch<{ count: number }>('/api/social/waves/incoming/count');
+/** List the current user's requests (incoming + outgoing). */
+export async function listTripmateRequests(): Promise<{
+  incoming: TripmateRequest[];
+  outgoing: TripmateRequest[];
+}> {
+  return apiFetch('/api/social/requests');
+}
+
+/** Count of pending incoming requests — for nav badges. */
+export async function getIncomingRequestCount(): Promise<number> {
+  const data = await apiFetch<{ count: number }>('/api/social/requests/incoming/count');
   return data.count;
 }
 
