@@ -3,6 +3,19 @@ import { expect, test } from '@playwright/test';
 test.describe('auth verification flow', () => {
   test('signup returns a verification link and login works after visiting it', async ({ page, baseURL }) => {
     await page.addInitScript(() => {
+      window.localStorage.setItem(
+        'wayflo-cookie-consent',
+        JSON.stringify({
+          version: 1,
+          consentedAt: new Date().toISOString(),
+          preferences: {
+            essential: true,
+            analytics: true,
+            personalization: true,
+          },
+        })
+      );
+
       const listeners = new Set<(event: string, session: unknown) => void>();
       let session: {
         access_token: string;
