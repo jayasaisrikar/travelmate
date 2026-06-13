@@ -1,11 +1,12 @@
 'use client';
 
-import { formatCurrency } from '@/lib/utils';
-import type { BudgetBreakdown as BudgetBreakdownType } from '@/lib/travel-types';
+import { formatTripMoney } from '@/lib/utils';
+import type { BudgetBreakdown as BudgetBreakdownType, TripCurrency } from '@/lib/travel-types';
 
 type BudgetBreakdownProps = {
   breakdown?: BudgetBreakdownType | null;
   total?: number | string | null;
+  currency?: TripCurrency | null;
 };
 
 const entries: Array<{ key: keyof BudgetBreakdownType; label: string }> = [
@@ -17,7 +18,7 @@ const entries: Array<{ key: keyof BudgetBreakdownType; label: string }> = [
   { key: 'misc', label: 'Misc' },
 ];
 
-export function BudgetBreakdown({ breakdown, total }: BudgetBreakdownProps) {
+export function BudgetBreakdown({ breakdown, total, currency }: BudgetBreakdownProps) {
   const hasBreakdown = Boolean(breakdown && entries.some(entry => typeof breakdown[entry.key] === 'number'));
   const totalValue =
     typeof total === 'number'
@@ -25,6 +26,8 @@ export function BudgetBreakdown({ breakdown, total }: BudgetBreakdownProps) {
       : typeof total === 'string'
         ? Number.parseFloat(total.replace(/[^0-9.]+/g, ''))
         : Number.NaN;
+
+  // All amounts are converted to the traveler's home currency for display.
 
   return (
     <section className="rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
@@ -44,7 +47,7 @@ export function BudgetBreakdown({ breakdown, total }: BudgetBreakdownProps) {
               return (
                 <div key={label} className="rounded-[20px] border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3">
                   <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#8A869C]">{label}</div>
-                  <div className="mt-1 text-lg font-black text-[#3F3D56]">{formatCurrency(value)}</div>
+                  <div className="mt-1 text-lg font-black text-[#3F3D56]">{formatTripMoney(value, currency)}</div>
                 </div>
               );
             })}
@@ -53,7 +56,7 @@ export function BudgetBreakdown({ breakdown, total }: BudgetBreakdownProps) {
           <div className="mt-4 rounded-[20px] border border-[#6C63FF]/20 bg-[#EEEDFE] px-4 py-3">
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6C63FF]">Estimated total</div>
             <div className="mt-1 text-2xl font-black text-[#3F3D56]">
-              {Number.isFinite(totalValue) ? formatCurrency(totalValue) : typeof total === 'string' && total.trim() ? total : 'Not set'}
+              {Number.isFinite(totalValue) ? formatTripMoney(totalValue, currency) : typeof total === 'string' && total.trim() ? total : 'Not set'}
             </div>
           </div>
         </>

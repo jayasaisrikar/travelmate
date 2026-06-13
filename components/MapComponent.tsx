@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import 'leaflet/dist/leaflet.css';
 import type * as Leaflet from 'leaflet';
 
@@ -27,6 +27,9 @@ interface MapComponentProps {
   } | null;
   selectedActivityIndex?: number | null;
   focusStayTrigger?: number;
+  variant?: 'default' | 'expanded';
+  title?: string;
+  actions?: ReactNode;
 }
 
 function hasValidCoordinates(activity: Activity): activity is Activity & { latitude: number; longitude: number } {
@@ -40,6 +43,9 @@ export function MapComponent({
   stay,
   selectedActivityIndex,
   focusStayTrigger,
+  variant = 'default',
+  title = 'Where the trip actually goes',
+  actions,
 }: MapComponentProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [leaflet, setLeaflet] = useState<typeof import('leaflet') | null>(null);
@@ -49,6 +55,7 @@ export function MapComponent({
   const polylineRef = useRef<Leaflet.Polyline | null>(null);
 
   const validActivities = useMemo(() => activities.filter(hasValidCoordinates), [activities]);
+  const isExpanded = variant === 'expanded';
 
   useEffect(() => {
     let mounted = true;
@@ -76,7 +83,7 @@ export function MapComponent({
     if (!mapRef.current) {
       mapRef.current = leaflet.map(mapContainerRef.current, {
         zoomControl: false,
-        scrollWheelZoom: false,
+        scrollWheelZoom: isExpanded,
       });
 
       leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -173,7 +180,11 @@ export function MapComponent({
       bounds.push([stay.latitude, stay.longitude]);
     }
 
-    validActivities.forEach((activity, index) => {
+    activities.forEach((activity, index) => {
+      if (!hasValidCoordinates(activity)) {
+        return;
+      }
+
       const palette = ['#6C63FF', '#FF6584', '#FF6584', '#3F3D56'];
       const color = palette[index % palette.length];
 
@@ -211,7 +222,7 @@ export function MapComponent({
       `);
 
       markersRef.current.push(marker);
-      activityMarkersRef.current.push(marker);
+      activityMarkersRef.current[index] = marker;
       bounds.push([activity.latitude, activity.longitude]);
     });
 
@@ -245,7 +256,25 @@ export function MapComponent({
         polylineRef.current = null;
       }
     };
-  }, [destination, destinationCoordinates, leaflet, validActivities]);
+  }, [activities, destination, destinationCoordinates, isExpanded, leaflet, stay, validActivities]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map) {
+      return;
+    }
+
+    if (isExpanded) {
+      map.scrollWheelZoom.enable();
+    } else {
+      map.scrollWheelZoom.disable();
+    }
+
+    window.setTimeout(() => {
+      map.invalidateSize();
+    }, 80);
+  }, [isExpanded]);
 
   useEffect(() => {
     if (selectedActivityIndex === null || selectedActivityIndex === undefined) {
@@ -309,20 +338,31 @@ export function MapComponent({
   }
 
   return (
-    <div className="relative z-0 flex h-full flex-col rounded-[28px] border border-[#DDDCE8] bg-white p-4 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-5 lg:h-[360px]">
-      <div className="mb-4 flex items-end justify-between gap-2">
-        <div>
+    <div
+      className={`relative z-0 flex h-full flex-col border border-[#DDDCE8] bg-white shadow-[0_16px_48px_rgba(46,40,51,0.06)] ${
+        isExpanded
+          ? 'min-h-[420px] rounded-[24px] p-3 sm:min-h-0 sm:p-4 lg:h-full'
+          : 'rounded-[28px] p-4 sm:p-5 lg:h-[360px]'
+      }`}
+    >
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <div className="min-w-0">
           <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Trip map</div>
-          <h3 className="mt-1 text-2xl font-black tracking-tight text-[#3F3D56]">Where the trip actually goes</h3>
+          <h3 className="mt-1 text-xl font-black tracking-tight text-[#3F3D56] sm:text-2xl">{title}</h3>
         </div>
-        <div className="text-sm text-[#6F6C82]">
-          {validActivities.length} mapped stop{validActivities.length === 1 ? '' : 's'}
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="hidden text-sm text-[#6F6C82] sm:block">
+            {validActivities.length} mapped stop{validActivities.length === 1 ? '' : 's'}
+          </div>
+          {actions}
         </div>
       </div>
 
       <div
         ref={mapContainerRef}
-        className="relative z-0 min-h-[240px] flex-1 overflow-hidden rounded-[24px] border border-[#DDDCE8] bg-[#FBFAFF] lg:min-h-0"
+        className={`relative z-0 flex-1 overflow-hidden rounded-[24px] border border-[#DDDCE8] bg-[#FBFAFF] ${
+          isExpanded ? 'min-h-[330px] sm:min-h-[420px] lg:min-h-0' : 'min-h-[240px] lg:min-h-0'
+        }`}
       />
     </div>
   );
