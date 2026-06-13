@@ -47,6 +47,9 @@ const config: Config = {
           cream: "#FBF2E6",
         },
       },
+      fontFamily: {
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

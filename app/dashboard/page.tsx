@@ -545,10 +545,10 @@ export default function DashboardPage() {
     return (
       <div className="relative flex min-h-screen items-center justify-center bg-stone-50 px-4 text-[#3a2540] overflow-hidden">
         {/* Background blobs */}
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-[#ea580c]/10 blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#f43f5e]/80 blur-[120px] opacity-10 pointer-events-none" />
+        <div className="pointer-events-none absolute -left-40 -top-40 h-96 w-96 rounded-full bg-[#ea580c]/10 blur-[100px]" />
+        <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-[#f43f5e]/80 opacity-10 blur-[120px]" />
         
-        <div className="relative rounded-[32px] border border-stone-200/50 bg-white/70 backdrop-blur-xl p-8 shadow-[0_32px_64px_rgba(234,88,12,0.08)] text-center max-w-sm">
+        <div className="relative max-w-sm rounded-[32px] border border-stone-200/50 bg-white/70 p-6 text-center shadow-[0_32px_64px_rgba(234,88,12,0.08)] backdrop-blur-xl sm:p-8">
           <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#ea580c]/10 text-[#ea580c]">
             <motion.div
               animate={{ rotate: 360 }}
@@ -576,13 +576,13 @@ export default function DashboardPage() {
     return (
       <main className="relative min-h-screen bg-[#fbf6ef] text-[#3a2540] overflow-hidden pb-12">
         {/* Colorful flowing vector blobs to make UI look organic & high-end */}
-        <div className="absolute -top-40 right-10 h-[500px] w-[#500px] rounded-full bg-gradient-to-tr from-[#ea580c]/5 to-[#f43f5e]/5 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 -left-20 h-[400px] w-[#400px] rounded-full bg-[#ea580c]/3 blur-[100px] pointer-events-none" />
+        <div className="pointer-events-none absolute -top-40 right-10 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-[#ea580c]/5 to-[#f43f5e]/5 blur-[120px]" />
+        <div className="pointer-events-none absolute bottom-10 -left-20 h-[400px] w-[400px] rounded-full bg-[#ea580c]/3 blur-[100px]" />
 
         {/* Global Nav-Bar */}
         <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/70 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <div className="flex items-center gap-4">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
               <div className="hidden h-6 w-[1px] bg-stone-200 sm:block" />
               <div className="hidden sm:block">
@@ -591,12 +591,12 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() => router.push('/dashboard/community')}
                 aria-label="Community settings"
-                className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-xs font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 sm:px-3.5"
               >
                 <Heart className="h-4 w-4 text-[#f43f5e]" />
                 <span className="hidden md:inline">Community</span>
@@ -605,7 +605,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => router.push('/explore')}
                 aria-label="Find travelers"
-                className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#ea580c] shadow-sm transition hover:bg-[#fff7ed]"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-xs font-semibold text-[#ea580c] shadow-sm transition hover:bg-[#fff7ed] sm:px-3.5"
               >
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Find travelers</span>
@@ -614,14 +614,14 @@ export default function DashboardPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => router.push('/dashboard/onboarding')}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#ea580c] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-[#ea580c]/20 hover:bg-[#c2410c] transition-all"
+                className="inline-flex min-h-10 items-center gap-2 rounded-2xl bg-[#ea580c] px-3 py-2.5 text-xs font-bold text-white shadow-md shadow-[#ea580c]/20 transition-all hover:bg-[#c2410c] sm:px-4"
               >
                 <Plus className="h-4 w-4" />
                 <span>New trip</span>
               </motion.button>
               <button
                 onClick={handleSignOut}
-                className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-sm"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-xs font-semibold text-stone-700 shadow-sm hover:bg-stone-50 sm:px-3.5"
               >
                 <LogOut className="h-4 w-4 text-stone-400" />
                 <span className="hidden sm:inline">Sign out</span>
@@ -631,9 +631,9 @@ export default function DashboardPage() {
         </header>
 
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             {/* Elegant Welcome Hero Card */}
-            <div className="bg-sunset-soft relative overflow-hidden rounded-[32px] border border-[#fed7aa] p-6 sm:p-8 shadow-[0_24px_50px_rgba(234,88,12,0.06)] backdrop-blur-md flex flex-col justify-between">
+            <div className="bg-sunset-soft relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-[#fed7aa] p-5 shadow-[0_24px_50px_rgba(234,88,12,0.06)] backdrop-blur-md sm:rounded-[32px] sm:p-8">
               <div className="absolute top-0 right-0 p-8 text-[#ea580c] opacity-[0.06] pointer-events-none">
                 <Compass className="h-48 w-44" />
               </div>
@@ -643,7 +643,7 @@ export default function DashboardPage() {
                   <Sparkles className="h-3 w-3" />
                   Welcome back
                 </span>
-                <h1 className="mt-4 text-3xl font-black text-stone-900 tracking-tight sm:text-5xl leading-[1.12]">
+                <h1 className="mt-4 text-3xl font-black leading-[1.08] tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.12]">
                   Plan, reopen, and edit your trips from one place.
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#7c6a72] sm:text-base">
@@ -651,12 +651,12 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3 relative z-10">
+              <div className="relative z-10 mt-8 grid gap-3 sm:flex sm:flex-wrap">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => router.push('/dashboard/onboarding')}
-                  className="bg-sunset shadow-sunset inline-flex items-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold text-white transition-all hover:brightness-105"
+                  className="bg-sunset shadow-sunset inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold text-white transition-all hover:brightness-105"
                 >
                   <Plus className="h-4 w-4" />
                   {latestTrip ? 'Create another trip' : 'Plan your first trip'}
@@ -666,7 +666,7 @@ export default function DashboardPage() {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => router.push(`/trip/${latestTrip.id}`)}
-                    className="rounded-2xl border border-stone-200 bg-white px-5 py-3.5 text-sm font-bold text-stone-800 hover:border-stone-300 shadow-sm"
+                    className="rounded-2xl border border-stone-200 bg-white px-5 py-3.5 text-sm font-bold text-stone-800 shadow-sm hover:border-stone-300"
                   >
                     Open latest trip
                   </motion.button>
@@ -708,7 +708,7 @@ export default function DashboardPage() {
 
           {/* Trips Directory Grid Section */}
           <section className="mt-10">
-            <div className="flex items-center justify-between border-b border-stone-200 pb-5">
+            <div className="flex items-center justify-between gap-3 border-b border-stone-200 pb-5">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">Saved plans</span>
                 <h2 className="mt-0.5 text-2xl font-black text-stone-950 tracking-tight sm:text-3xl">Your travel logs</h2>
@@ -771,13 +771,13 @@ export default function DashboardPage() {
   return (
     <main className="relative min-h-screen bg-[#fbf6ef] text-[#3a2540] overflow-hidden pb-16">
       {/* Dynamic ambient vector glows */}
-      <div className="absolute -top-40 left-1/3 h-[600px] w-[600px] rounded-full bg-[#ea580c]/3 blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-0 h-[500px] w-[500px] rounded-full bg-[#f43f5e]/3 blur-[120px] pointer-events-none" />
+      <div className="pointer-events-none absolute -top-40 left-1/3 h-[600px] w-[600px] rounded-full bg-[#ea580c]/3 blur-[140px]" />
+      <div className="pointer-events-none absolute bottom-1/4 right-0 h-[500px] w-[500px] rounded-full bg-[#f43f5e]/3 blur-[120px]" />
 
       {/* Modern sticky glass header */}
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
             <div className="hidden h-6 w-[1px] bg-stone-200 sm:block" />
             <div className="hidden sm:block">
@@ -786,12 +786,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => router.push('/dashboard/community')}
               aria-label="Community settings"
-              className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-xs font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 sm:px-3.5"
             >
               <Heart className="h-4 w-4 text-[#f43f5e]" />
               <span className="hidden md:inline">Community</span>
@@ -800,7 +800,7 @@ export default function DashboardPage() {
               type="button"
               onClick={() => router.push('/explore')}
               aria-label="Find travelers"
-              className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#ea580c] shadow-sm transition hover:bg-[#fff7ed]"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-xs font-semibold text-[#ea580c] shadow-sm transition hover:bg-[#fff7ed] sm:px-3.5"
             >
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Find travelers</span>
@@ -809,14 +809,14 @@ export default function DashboardPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/dashboard/onboarding')}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#ea580c] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-[#ea580c]/20 hover:bg-[#c2410c] transition-all"
+              className="inline-flex min-h-10 items-center gap-2 rounded-2xl bg-[#ea580c] px-3 py-2.5 text-xs font-bold text-white shadow-md shadow-[#ea580c]/20 transition-all hover:bg-[#c2410c] sm:px-4"
             >
               <Plus className="h-4 w-4" />
               <span>New trip</span>
             </motion.button>
             <button
               onClick={handleSignOut}
-              className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 shadow-sm animate-fade-in"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-xs font-semibold text-stone-700 shadow-sm hover:bg-stone-50 sm:px-3.5"
             >
               <LogOut className="h-4 w-4 text-stone-400" />
               <span className="hidden sm:inline">Sign out</span>
@@ -827,8 +827,8 @@ export default function DashboardPage() {
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
         {/* Welcome Dashboard Banner */}
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="relative overflow-hidden rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-[0_24px_50px_rgba(234,88,12,0.03)] backdrop-blur-md flex flex-col justify-between">
+        <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="relative flex flex-col justify-between overflow-hidden rounded-[28px] border border-stone-200 bg-white p-5 shadow-[0_24px_50px_rgba(234,88,12,0.03)] backdrop-blur-md sm:rounded-[32px] sm:p-8">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
               <SlidersHorizontal className="h-48 w-44" />
             </div>
@@ -837,7 +837,7 @@ export default function DashboardPage() {
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Admin Console
               </span>
-              <h1 className="mt-4 text-3xl font-black text-stone-900 tracking-tight sm:text-5xl leading-[1.12]">
+              <h1 className="mt-4 text-3xl font-black leading-[1.08] tracking-tight text-stone-900 sm:text-5xl sm:leading-[1.12]">
                 Manage every Wayflo surface from one place.
               </h1>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#7c6a72] sm:text-base">
@@ -848,7 +848,7 @@ export default function DashboardPage() {
 
           {/* Glowing Metrics Grid Header */}
           {overview && (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
               {[
                 { label: 'Trips planned', value: overview.stats.trips.toString(), color: '#ea580c', bg: 'bg-[#ea580c]/5', border: 'border-[#ea580c]/10' },
                 { label: 'Active shares', value: overview.stats.activeShares.toString(), color: '#f43f5e', bg: 'bg-[#f43f5e]/5', border: 'border-[#f43f5e]/10' },
@@ -857,8 +857,8 @@ export default function DashboardPage() {
                 { label: 'Confirmed emails', value: overview.stats.confirmedUsers.toString(), color: '#10B981', bg: 'bg-emerald-50', border: 'border-emerald-100' },
                 { label: 'User profiles', value: overview.profiles.length.toString(), color: '#d97706', bg: 'bg-amber-50', border: 'border-amber-100' },
               ].map(card => (
-                <div key={card.label} className={`flex flex-col justify-center rounded-[24px] border ${card.border} ${card.bg} p-4 shadow-sm hover:shadow-md transition-all`}>
-                  <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#9b8b92]">{card.label}</div>
+                <div key={card.label} className={`flex flex-col justify-center rounded-[22px] border ${card.border} ${card.bg} p-3 shadow-sm transition-all hover:shadow-md sm:rounded-[24px] sm:p-4`}>
+                  <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#9b8b92] sm:tracking-[0.18em]">{card.label}</div>
                   <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
                     {card.value}
                   </div>
@@ -877,14 +877,14 @@ export default function DashboardPage() {
 
         {/* Premium Active Tab Bar */}
         <div className="mt-10 border-b border-stone-200">
-          <div className="flex flex-wrap gap-2 pb-px overflow-x-auto scrollbar-none">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-px sm:mx-0 sm:flex-wrap sm:px-0">
             {DASHBOARD_TABS.map(tab => {
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className="relative px-5 py-4 pb-4 text-left transition-all outline-none"
+                  className="relative min-w-[112px] px-4 py-4 pb-4 text-left outline-none transition-all sm:min-w-0 sm:px-5"
                 >
                   {isActive && (
                     <motion.div
@@ -917,8 +917,8 @@ export default function DashboardPage() {
                 transition={{ duration: 0.2 }}
                 className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]"
               >
-                <div className="rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-stone-100 pb-5">
+                <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm sm:rounded-[32px] sm:p-8">
+                  <div className="flex items-center justify-between gap-3 border-b border-stone-100 pb-5">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">Overview</span>
                       <h2 className="mt-0.5 text-2xl font-black text-stone-950 tracking-tight">Active operations summary</h2>
@@ -931,7 +931,7 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                  <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-3">
                     <div className="rounded-2xl border border-stone-100 bg-stone-50/50 p-5">
                       <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-stone-400">Recent trips</h3>
                       <div className="mt-3.5 space-y-2.5">
@@ -972,7 +972,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-sm flex flex-col justify-between">
+                <div className="flex flex-col justify-between rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm sm:rounded-[32px] sm:p-8">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">Shortcuts</span>
                     <h2 className="mt-0.5 text-xl font-black text-stone-900 tracking-tight">HQ management guides</h2>
@@ -997,9 +997,9 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-sm"
+                className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm sm:rounded-[32px] sm:p-8"
               >
-                <div className="flex items-center justify-between border-b border-stone-100 pb-5">
+                <div className="flex items-center justify-between gap-3 border-b border-stone-100 pb-5">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">All records</span>
                     <h2 className="mt-0.5 text-2xl font-black text-stone-950 tracking-tight">Active trips catalog</h2>
@@ -1012,7 +1012,7 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                <div className="mt-8 grid gap-6 md:grid-cols-2">
+                <div className="mt-6 grid gap-5 md:grid-cols-2 lg:gap-6">
                   {overview?.trips.length ? (
                     overview.trips.map(trip => (
                       <motion.article
@@ -1040,12 +1040,12 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          <div className="mt-auto flex flex-wrap gap-2 text-xs">
+                            <div className="mt-auto grid gap-2 text-xs sm:flex sm:flex-wrap">
                             <motion.button
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={() => router.push(`/trip/${trip.id}`)}
-                              className="flex-1 min-w-[100px] rounded-xl bg-[#ea580c] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#ea580c]/25 hover:bg-[#c2410c] transition-all flex items-center justify-center gap-1.5"
+                              className="flex min-w-[100px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#ea580c] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#ea580c]/25 transition-all hover:bg-[#c2410c]"
                             >
                               <Compass className="h-4 w-4" />
                               Open
@@ -1055,7 +1055,7 @@ export default function DashboardPage() {
                                 href={trip.share.share_url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex-none flex items-center justify-center rounded-xl border border-stone-200 bg-white px-4 py-3 text-xs font-bold text-stone-700 hover:bg-stone-50 shadow-sm transition-all"
+                                className="flex items-center justify-center rounded-xl border border-stone-200 bg-white px-4 py-3 text-xs font-bold text-stone-700 shadow-sm transition-all hover:bg-stone-50 sm:flex-none"
                               >
                                 View Share
                               </a>
@@ -1063,7 +1063,7 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleDeleteTrip(trip.id)}
                               disabled={actionId === `trip-${trip.id}`}
-                              className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
+                              className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-center text-xs font-black text-rose-600 transition-colors hover:bg-rose-100 disabled:opacity-50 sm:flex-none"
                             >
                               {actionId === `trip-${trip.id}` ? '...' : 'Del'}
                             </button>
@@ -1110,7 +1110,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-sm"
+                className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm sm:rounded-[32px] sm:p-8"
               >
                 <div className="border-b border-stone-100 pb-5">
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">Shares</span>
@@ -1170,7 +1170,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-sm"
+                className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm sm:rounded-[32px] sm:p-8"
               >
                 <div className="border-b border-stone-100 pb-5">
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">suggestions</span>
@@ -1181,7 +1181,7 @@ export default function DashboardPage() {
                   {overview?.suggestions.length ? (
                     overview.suggestions.map(suggestion => (
                       <div key={suggestion.id} className="rounded-2xl border border-stone-100 bg-[#fffbf2] p-5 shadow-xs">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                           <div>
                             <div className="font-bold text-stone-900 text-sm">{suggestion.destination}</div>
                             <div className="text-xs text-[#7c6a72] mt-1">
@@ -1220,7 +1220,7 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="rounded-[32px] border border-stone-200 bg-white p-6 sm:p-8 shadow-sm"
+                className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm sm:rounded-[32px] sm:p-8"
               >
                 <div className="border-b border-stone-100 pb-5">
                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b8b92]">accounts</span>

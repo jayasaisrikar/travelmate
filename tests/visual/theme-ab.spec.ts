@@ -165,6 +165,15 @@ test('landing', async ({ page }) => {
   await setConsent(page);
   await page.route('**/api/social/destinations**', r => json(r, destinationPulses));
   await page.goto('/');
+  // scroll through so whileInView reveal sections trigger (once:true keeps them shown)
+  await page.evaluate(async () => {
+    const step = window.innerHeight * 0.8;
+    for (let y = 0; y <= document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise(r => setTimeout(r, 120));
+    }
+    window.scrollTo(0, 0);
+  });
   await shot(page, '01-landing');
 });
 

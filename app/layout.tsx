@@ -1,11 +1,18 @@
 import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import { CookieConsentModal } from '@/components/common/CookieConsentModal';
 import './globals.css';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   display: 'swap',
+  variable: '--font-sans',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-mono',
 });
 
 function getMetadataBase() {
@@ -58,7 +65,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${plusJakartaSans.className} bg-background text-foreground`}>
+      <body className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} ${plusJakartaSans.className} bg-background text-foreground`}>
         {children}
         <CookieConsentModal />
       </body>

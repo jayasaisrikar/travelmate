@@ -186,13 +186,13 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-[#fffcf6] text-[#3a2540]">
       {/* ── Nav ─────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-40 border-b border-[#eaddc7] bg-[rgba(249,249,252,0.9)] px-5 py-3 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <Brand href="/dashboard" />
-          <div className="flex items-center gap-3">
+      <nav className="sticky top-0 z-40 border-b border-[#eaddc7] bg-[rgba(249,249,252,0.9)] px-4 py-3 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <Brand href="/dashboard" compact className="min-w-0 shrink-0 sm:[&_svg]:h-12 sm:[&_svg]:w-12" />
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
             <Link
               href="/dashboard"
-              className="text-sm font-semibold text-[#7c6a72] hover:text-[#3a2540]"
+              className="hidden text-sm font-semibold text-[#7c6a72] hover:text-[#3a2540] sm:inline"
             >
               Dashboard
             </Link>
@@ -204,7 +204,7 @@ export default function ExplorePage() {
             </Link>
             <Link
               href="/explore"
-              className="rounded-xl bg-[#ea580c] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(234,88,12,0.2)]"
+              className="rounded-xl bg-[#ea580c] px-3 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(234,88,12,0.2)] sm:px-4"
             >
               Explore
             </Link>
@@ -212,7 +212,7 @@ export default function ExplorePage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
         {/* ── Hero header ─────────────────────────────────── */}
         <section className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-end">
           <div className="space-y-5">
@@ -220,7 +220,7 @@ export default function ExplorePage() {
               <Compass size={13} />
               Wayflo Community
             </div>
-            <h1 className="max-w-3xl text-4xl font-black tracking-tight text-[#1c1018] sm:text-5xl lg:text-6xl">
+            <h1 className="max-w-3xl text-4xl font-black leading-[1.02] tracking-tight text-[#1c1018] sm:text-5xl lg:text-6xl">
               Find your travel
               <span className="block text-[#ea580c]">companions.</span>
             </h1>
@@ -229,10 +229,10 @@ export default function ExplorePage() {
               experience privacy-first from the first wave to the shared itinerary.
             </p>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="grid gap-3 sm:flex sm:flex-wrap">
               <Link
                 href="/rooms"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#3a2540] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2c1b33]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#3a2540] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2c1b33]"
               >
                 View your rooms
                 <ArrowRight size={15} />
@@ -240,7 +240,7 @@ export default function ExplorePage() {
               <button
                 type="button"
                 onClick={openCreateRoom}
-                className="inline-flex items-center gap-2 rounded-xl border border-[#eaddc7] bg-white px-5 py-3 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#eaddc7] bg-white px-5 py-3 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4]"
               >
                 <Plus size={15} />
                 Start a room
@@ -273,7 +273,7 @@ export default function ExplorePage() {
             transition={{ duration: 0.4 }}
             className="overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(135deg,#ffedd5_0%,#FFFFFF_48%,#ffe4e6_100%)] p-5 shadow-[0_24px_80px_rgba(234,88,12,0.12)] sm:p-6"
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#8c7882]">
                   Destination pulse
@@ -398,20 +398,20 @@ export default function ExplorePage() {
           <button
             type="button"
             onClick={openCreateRoom}
-            className="shrink-0 rounded-xl bg-[#ea580c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#9a3412]"
+            className="min-h-11 shrink-0 rounded-xl bg-[#ea580c] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#9a3412]"
           >
             + Start a room
           </button>
         </div>
 
         {/* ── Tabs ────────────────────────────────────────── */}
-        <div className="mb-5 flex gap-1 rounded-2xl border border-[#eaddc7] bg-white p-1 w-fit">
+        <div className="mb-5 grid w-full grid-cols-2 gap-1 rounded-2xl border border-[#eaddc7] bg-white p-1 sm:inline-grid sm:w-auto">
           {TABS.map(t => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                 tab === t.id
                   ? 'bg-[#ea580c] text-white shadow-sm'
                   : 'text-[#7c6a72] hover:text-[#3a2540]'
@@ -430,7 +430,7 @@ export default function ExplorePage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-5 flex flex-wrap items-center gap-2"
+              className="mb-5 flex flex-wrap items-center gap-2 overflow-x-auto pb-1"
             >
               <SlidersHorizontal size={14} className="text-[#9b8b92]" />
               {STYLE_FILTERS.map(f => (
@@ -527,7 +527,7 @@ export default function ExplorePage() {
               initial={{ opacity: 0, scale: 0.97, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.97, y: 12 }}
-              className="w-full max-w-md rounded-2xl border border-[#eaddc7] bg-white p-6 shadow-[0_30px_80px_rgba(46,40,51,0.22)]"
+              className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#eaddc7] bg-white p-5 shadow-[0_30px_80px_rgba(46,40,51,0.22)] sm:p-6"
             >
               <div className="mb-5 flex items-start justify-between">
                 <div>
@@ -578,19 +578,19 @@ export default function ExplorePage() {
                   </p>
                 )}
 
-                <div className="flex gap-3 pt-1">
+                <div className="grid gap-3 pt-1 sm:flex">
                   <button
                     type="button"
                     onClick={handleCreateRoom}
                     disabled={creating}
-                    className="flex-1 rounded-xl bg-[#ea580c] py-2.5 text-sm font-semibold text-white transition hover:bg-[#9a3412] disabled:opacity-60"
+                    className="min-h-11 flex-1 rounded-xl bg-[#ea580c] py-2.5 text-sm font-semibold text-white transition hover:bg-[#9a3412] disabled:opacity-60"
                   >
                     {creating ? 'Creating…' : 'Create room'}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setShowCreate(false); setCreateError(''); }}
-                    className="rounded-xl border border-[#eaddc7] px-4 py-2.5 text-sm font-semibold text-[#3a2540]"
+                    className="min-h-11 rounded-xl border border-[#eaddc7] px-4 py-2.5 text-sm font-semibold text-[#3a2540]"
                   >
                     Cancel
                   </button>

@@ -1,460 +1,382 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Compass, MapPinned, Sparkles, Users, Waves } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  ArrowRight,
+  Calendar,
+  MapPin,
+  Users,
+  Search,
+  Route,
+  Share2,
+  Compass,
+  Plane,
+  ShieldCheck,
+} from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
-import { BoardingPass } from '@/components/home/BoardingPass';
-import { Footer } from '@/components/common/Footer';
+import { DestinationGlobe } from '@/components/home/DestinationGlobe';
 import { listDestinationPulses, type DestinationPulse } from '@/services/social';
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 18 },
+const fadeUp = {
+  initial: { opacity: 0, y: 22 },
   whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.45 },
-  viewport: { once: true, margin: '-40px' },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+  viewport: { once: true, margin: '-60px' },
 };
 
-const planningSignals = [
+const SEED_PULSES: DestinationPulse[] = [
+  { destination: 'Bali', destination_slug: 'bali', traveler_count: 128, room_count: 9, travel_months: [], recent_travelers: [] },
+  { destination: 'Tokyo', destination_slug: 'tokyo', traveler_count: 96, room_count: 6, travel_months: [], recent_travelers: [] },
+  { destination: 'Lisbon', destination_slug: 'lisbon', traveler_count: 74, room_count: 5, travel_months: [], recent_travelers: [] },
+  { destination: 'Paris', destination_slug: 'paris', traveler_count: 61, room_count: 4, travel_months: [], recent_travelers: [] },
+  { destination: 'Cape Town', destination_slug: 'cape-town', traveler_count: 43, room_count: 3, travel_months: [], recent_travelers: [] },
+  { destination: 'Sydney', destination_slug: 'sydney', traveler_count: 38, room_count: 2, travel_months: [], recent_travelers: [] },
+];
+
+const STEPS = [
   {
-    title: 'Real route inputs',
-    body: 'Search a live destination, then anchor the trip around the dates and rhythm that actually matter.',
-    icon: MapPinned,
+    n: '01',
+    tag: 'Search',
+    icon: Search,
+    title: 'Real destinations, real dates',
+    body: 'Start from a live place and a trip window — not a template city. Wayflo grounds the whole plan in where and when you are actually going.',
   },
   {
-    title: 'Smarter timing',
-    body: 'Wayflo keeps arrival windows, departures, stay context, and daily flow visible from the start.',
-    icon: Waves,
+    n: '02',
+    tag: 'Plan',
+    icon: Route,
+    title: 'An itinerary that holds up',
+    body: 'Budget, pace, and timing stay connected, so the route reads clearly and still works once you close the tab and start moving.',
   },
   {
-    title: 'Saved momentum',
-    body: 'Keep the itinerary, map view, and trip notes together so a plan stays usable after you close the tab.',
-    icon: Sparkles,
+    n: '03',
+    tag: 'Connect',
+    icon: Share2,
+    title: 'Share it, or go together',
+    body: 'Publish a clean trip page, collect suggestions, or match with travelers heading the same way and plan in a shared room.',
   },
 ];
 
-const productMoments = [
-  'Search real places instead of seeded demos',
-  'Build around when the trip starts and ends',
-  'Save a trip page that still works well on your phone',
-  'Share a route and collect practical suggestions',
-];
-
-const showcaseCards = [
+const AUDIENCES = [
   {
-    eyebrow: 'Explore freely',
-    title: 'A planner that feels lighter on first use.',
-    body: 'Minimal inputs, calm copy, and rounded surfaces keep the experience moving instead of making travel planning feel like paperwork.',
-    accent: '#ea580c',
+    n: '01',
+    title: 'Solo explorers',
+    body: 'Build a calm, legible plan you can trust on the ground — and find verified travelers going your way when you want company.',
+    icon: Compass,
   },
   {
-    eyebrow: 'Flow better',
-    title: 'Plans stay connected to time, place, and stay details.',
-    body: 'Each itinerary is grounded in a route, not a vague destination idea. That makes the output easier to trust and easier to reuse.',
-    accent: '#f43f5e',
+    n: '02',
+    title: 'Trip groups',
+    body: 'Plan together in a shared room: one destination, one window, every traveler on the same itinerary instead of a messy thread.',
+    icon: Users,
   },
 ];
 
-const tripFlowSteps = [
-  'Pick the destination you really want, not a template city.',
-  'Set the arrival and departure window so the trip reflects your schedule.',
-  'Let the itinerary form around your pace, budget, and interests.',
+const STATS = [
+  ['40+', 'Live destinations'],
+  ['1-tap', 'Tripmate requests'],
+  ['Privacy', 'first by default'],
 ];
 
 export default function Home() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [destinations, setDestinations] = useState<DestinationPulse[]>([]);
+  const [scrolled, setScrolled] = useState(false);
+  const [pulses, setPulses] = useState<DestinationPulse[]>(SEED_PULSES);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll);
     onScroll();
-
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-
-    listDestinationPulses(4)
+    let active = true;
+    listDestinationPulses(6)
       .then(data => {
-        if (mounted) {
-          setDestinations(data);
-        }
+        if (active && data.length) setPulses(data);
       })
-      .catch(() => {
-        if (mounted) {
-          setDestinations([]);
-        }
-      });
-
+      .catch(() => {});
     return () => {
-      mounted = false;
+      active = false;
     };
   }, []);
 
+  const maxTravelers = Math.max(...pulses.map(p => p.traveler_count), 1);
+
   return (
-    <main className="min-h-screen overflow-x-hidden text-[#3a2540]">
+    <main className="min-h-screen overflow-x-hidden bg-[#0B0A0F] text-[#F5F0EA] antialiased">
+      {/* ── ambient grid + glows ── */}
+      <div className="pointer-events-none fixed inset-0 z-0 opacity-[0.5]">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute -top-40 right-0 h-[620px] w-[620px] rounded-full bg-[radial-gradient(circle,rgba(234,88,12,0.16),transparent_65%)] blur-3xl" />
+        <div className="absolute top-1/3 -left-40 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(244,63,94,0.1),transparent_65%)] blur-3xl" />
+      </div>
+
+      {/* ── nav ── */}
       <nav
-        className={`fixed top-0 z-50 w-full transition-all duration-200 ${
-          isScrolled
-            ? 'border-b border-[#eaddc7] bg-[rgba(251,242,230,0.85)] py-3 backdrop-blur-xl'
-            : 'bg-transparent py-5'
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-200 ${
+          scrolled ? 'border-b border-white/10 bg-[#0B0A0F]/85 py-2.5 backdrop-blur-xl sm:py-3' : 'py-3.5 sm:py-5'
         }`}
       >
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:flex-nowrap sm:px-6">
-          <div className="sm:hidden">
-            <Brand href="/" compact showWordmark={false} className="shrink-0" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 sm:px-8">
+          <Brand href="/" compact className="min-w-0 shrink-0 [&_*]:!text-[#F5F0EA] sm:[&_svg]:h-12 sm:[&_svg]:w-12" />
+          <div className="hidden items-center gap-8 font-mono text-[12px] uppercase tracking-[0.18em] text-[#A89B92] md:flex">
+            <Link href="/explore" className="transition hover:text-[#F5F0EA]">Explore</Link>
+            <a href="#how" className="transition hover:text-[#F5F0EA]">How it works</a>
+            <Link href="/dashboard/community" className="transition hover:text-[#F5F0EA]">Community</Link>
           </div>
-          <div className="hidden sm:block">
-            <Brand href="/" className="shrink-0" />
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <Link
               href="/login"
-              className="rounded-xl border border-[#ea580c]/30 bg-white/80 px-3 py-2 text-[13px] font-semibold text-[#ea580c] shadow-[0_10px_24px_rgba(234,88,12,0.08)] sm:px-4 sm:text-sm"
+              className="hidden rounded-full border border-white/15 px-4 py-2 text-[13px] font-semibold text-[#F5F0EA] transition hover:bg-white/5 sm:inline-flex"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="bg-sunset shadow-sunset rounded-xl px-3 py-2 text-[13px] font-semibold text-white transition hover:brightness-105 sm:px-4 sm:text-sm"
+              className="bg-sunset rounded-full px-3.5 py-2 text-[12px] font-bold text-[#1a0d05] shadow-[0_0_28px_-6px_rgba(234,88,12,0.7)] transition hover:brightness-110 sm:px-4 sm:text-[13px]"
             >
-              Explore now
+              Get started
             </Link>
           </div>
         </div>
       </nav>
 
-      <section className="mx-auto max-w-6xl px-4 pb-10 pt-24 sm:px-6 sm:pb-12 sm:pt-32 lg:pt-36">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <motion.div {...fadeInUp} className="space-y-6">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border-2 border-dashed border-[#ea580c]/40 bg-[#ffedd5] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#ea580c] sm:px-4 sm:text-[11px] sm:tracking-[0.24em]">
-              <Compass className="h-3.5 w-3.5" />
-              travel. flow. freedom.
-            </div>
+      {/* ── hero ── */}
+      <section className="relative z-10 mx-auto grid max-w-7xl items-center gap-8 px-4 pb-14 pt-24 sm:gap-10 sm:px-8 sm:pt-32 lg:grid-cols-[1.05fr_0.95fr] lg:pb-24 lg:pt-36">
+        <motion.div {...fadeUp}>
+          <div className="mb-5 inline-flex max-w-full items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#fb923c] sm:mb-6 sm:text-[11px] sm:tracking-[0.32em]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#fb923c] shadow-[0_0_10px_#fb923c]" />
+            Smart travel planning
+          </div>
+          <h1 className="max-w-[11ch] text-[clamp(2.7rem,12vw,4.25rem)] font-black leading-[0.98] tracking-tight sm:max-w-none sm:text-6xl lg:text-[76px] lg:leading-[0.95]">
+            PLAN THE TRIP.
+            <span className="text-sunset block">FLOW THE ROUTE.</span>
+          </h1>
+          <p className="mt-5 max-w-xl text-[15px] leading-7 text-[#A89B92] sm:mt-7 sm:text-base">
+            Wayflo turns real destinations, trip windows, and budgets into itineraries that
+            stay usable on the ground — then connects you with travelers heading the same way.
+          </p>
 
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-semibold leading-[0.98] tracking-[-0.05em] text-[#3a2540] sm:text-5xl lg:text-7xl">
-                Explore freely.
-                <span className="text-sunset block">Plan with more flow.</span>
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-[#7c6a72] sm:text-base sm:leading-8 sm:text-lg">
-                Wayflo turns real destinations, trip windows, budgets, and preferences into saved itineraries that
-                feel calm, clear, and ready to use when travel gets real.
-              </p>
-            </div>
+          <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row">
+            <Link
+              href="/signup"
+              className="bg-sunset group inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-[#1a0d05] shadow-[0_0_36px_-8px_rgba(234,88,12,0.8)] transition hover:brightness-110"
+            >
+              Start planning
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/explore"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/15 px-6 py-3.5 text-sm font-semibold text-[#F5F0EA] transition hover:bg-white/5"
+            >
+              Browse destinations
+            </Link>
+          </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/signup"
-                className="bg-sunset shadow-sunset group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105 sm:py-3.5"
-              >
-                Explore now
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <Link
-                href="/dashboard/onboarding"
-                className="inline-flex items-center justify-center rounded-xl border border-[#ea580c]/30 bg-white px-5 py-3 text-sm font-semibold text-[#ea580c] sm:py-3.5"
-              >
-                Learn more
-              </Link>
-            </div>
-
-            <div className="rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_18px_48px_rgba(58,37,64,0.08)] backdrop-blur">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882]">
-                    Live social proof
-                  </div>
-                  <h2 className="mt-1 text-lg font-medium tracking-[-0.03em] text-[#3a2540]">
-                    Travelers are already clustering by destination.
-                  </h2>
-                </div>
-                <Link href="/explore" className="text-sm font-semibold text-[#ea580c] hover:underline">
-                  Explore
-                </Link>
+          <div className="mt-9 grid grid-cols-3 gap-3 sm:mt-12 sm:flex sm:flex-wrap sm:gap-x-10 sm:gap-y-5">
+            {STATS.map(([big, small]) => (
+              <div key={small} className="min-w-0">
+                <div className="text-sunset text-xl font-black tracking-tight sm:text-3xl">{big}</div>
+                <div className="mt-1 text-wrap font-mono text-[9px] uppercase tracking-[0.1em] text-[#8C8079] sm:text-[11px] sm:tracking-[0.18em]">{small}</div>
               </div>
+            ))}
+          </div>
+        </motion.div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {(destinations.length > 0 ? destinations : []).map((pulse) => (
-                  <Link
-                    key={pulse.destination_slug}
-                    href={`/explore/${pulse.destination_slug}`}
-                    className="rounded-2xl border border-[#f0e2d0] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="text-sm font-bold text-[#1c1018]">{pulse.destination}</div>
-                    <div className="mt-1 text-sm text-[#7c6a72]">
-                      {pulse.traveler_count} traveler{pulse.traveler_count !== 1 ? 's' : ''} going
-                      {pulse.room_count > 0 ? ` · ${pulse.room_count} room${pulse.room_count !== 1 ? 's' : ''}` : ''}
-                    </div>
-                  </Link>
-                ))}
+        {/* globe + floating trip card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto w-full max-w-[420px] sm:max-w-[520px]"
+        >
+          <DestinationGlobe />
 
-                {destinations.length === 0 && productMoments.map(point => (
-                  <div
-                    key={point}
-                    className="rounded-2xl border border-[#f0e2d0] bg-white px-4 py-4 text-sm font-medium text-[#5b4a55]"
-                  >
-                    {point}
-                  </div>
-                ))}
-              </div>
+          <div className="absolute right-0 top-2 w-[min(70vw,218px)] rounded-2xl border border-white/10 bg-[#121017]/85 p-3 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:right-2 sm:top-4 sm:w-[230px] sm:p-4">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#fb923c]">Trip</span>
+              <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#7CDB9B]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#7CDB9B] shadow-[0_0_8px_#7CDB9B]" /> Ready
+              </span>
             </div>
-          </motion.div>
+            <div className="mt-3 space-y-2.5">
+              <Row icon={MapPin} label="Destination" value="Bali, Indonesia" />
+              <Row icon={Calendar} label="Window" value="Jun 14 – Jun 21" />
+              <Row icon={Users} label="Tripmates" value="3 going" />
+            </div>
+          </div>
 
-          <div className="relative">
-            <BoardingPass />
+          <div className="absolute -left-2 bottom-6 hidden items-center gap-2 rounded-full border border-white/10 bg-[#121017]/85 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#A89B92] backdrop-blur-xl sm:flex">
+            <Plane className="h-3.5 w-3.5 -rotate-45 text-[#fb923c]" /> Live routes
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── trusted strip ── */}
+      <section className="relative z-10 border-y border-white/10 bg-white/[0.015]">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-4 px-4 py-6 sm:flex-row sm:items-center sm:gap-10 sm:px-8 sm:py-7">
+          <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.22em] text-[#8C8079]">
+            Travelers planning now
+          </span>
+          <div className="flex max-w-full flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12px] tracking-[0.08em] text-[#A89B92] sm:gap-x-7 sm:text-[13px] sm:tracking-[0.12em]">
+            {['BALI', 'TOKYO', 'LISBON', 'PARIS', 'CAPE TOWN', 'SYDNEY', 'KYOTO'].map(d => (
+              <span key={d} className="transition hover:text-[#F5F0EA]">{d}</span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Social / Explore feature highlight ─────────────── */}
-      <section className="px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mx-auto max-w-6xl">
-          <motion.div
-            {...fadeInUp}
-            className="overflow-hidden rounded-[34px] border border-[#fed7aa] bg-[#3a2540] p-5 shadow-[0_24px_80px_rgba(58,37,64,0.18)] sm:p-8"
-          >
-            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-              {/* Left copy */}
-              <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
-                  <Users className="h-3.5 w-3.5" />
-                  New — Wayflo Social
+      {/* ── live destinations snapshot ── */}
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-8 sm:py-28">
+        <motion.div {...fadeUp} className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div>
+            <div className="mb-3 font-mono text-[11px] uppercase tracking-[0.3em] text-[#fb923c]">Live now</div>
+            <h2 className="max-w-xl text-3xl font-black leading-[1.05] tracking-tight sm:text-5xl">
+              Where travelers are<span className="text-sunset"> clustering.</span>
+            </h2>
+          </div>
+          <Link href="/explore" className="group inline-flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.18em] text-[#fb923c]">
+            Browse all
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </motion.div>
+
+        <motion.div {...fadeUp} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+          <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-white/10 px-4 py-3.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8C8079] sm:grid-cols-[1.4fr_0.8fr_0.7fr_1.3fr] sm:px-7 sm:tracking-[0.16em]">
+            <span>Destination</span>
+            <span className="text-right sm:text-left">Travelers</span>
+            <span className="hidden sm:block">Rooms</span>
+            <span className="hidden text-right sm:block">Activity</span>
+          </div>
+          {pulses.map((p, i) => (
+            <Link
+              key={p.destination_slug}
+              href={`/explore/${p.destination_slug}`}
+              className={`grid grid-cols-[1fr_auto] items-center gap-4 px-4 py-4 transition hover:bg-white/[0.03] sm:grid-cols-[1.4fr_0.8fr_0.7fr_1.3fr] sm:px-7 ${
+                i !== pulses.length - 1 ? 'border-b border-white/5' : ''
+              }`}
+            >
+              <span className="min-w-0 flex items-center gap-3 font-bold">
+                <span className="text-sunset font-mono text-[11px]">{String(i + 1).padStart(2, '0')}</span>
+                <span className="truncate">{p.destination}</span>
+              </span>
+              <span className="text-right font-mono text-sm text-[#F5F0EA] sm:text-left">{p.traveler_count}</span>
+              <span className="hidden font-mono text-sm text-[#A89B92] sm:block">{p.room_count}</span>
+              <span className="hidden items-center justify-end gap-3 sm:flex">
+                <span className="h-1.5 w-28 overflow-hidden rounded-full bg-white/10">
+                  <span
+                    className="bg-sunset block h-full rounded-full"
+                    style={{ width: `${Math.max(12, (p.traveler_count / maxTravelers) * 100)}%` }}
+                  />
+                </span>
+              </span>
+            </Link>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ── how it works ── */}
+      <section id="how" className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-8 sm:py-28">
+        <motion.div {...fadeUp} className="mx-auto mb-10 max-w-2xl text-left sm:mb-14 sm:text-center">
+          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[#fb923c] sm:text-[11px] sm:tracking-[0.3em]">How it works</div>
+          <h2 className="text-3xl font-black leading-[1.05] tracking-tight sm:text-5xl">
+            Three steps from idea<span className="text-sunset"> to itinerary.</span>
+          </h2>
+        </motion.div>
+
+        <div className="grid gap-5 lg:grid-cols-3">
+          {STEPS.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <motion.div
+                key={s.n}
+                {...fadeUp}
+                transition={{ ...fadeUp.transition, delay: i * 0.08 }}
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-[#EA580C]/40 sm:p-7"
+              >
+                <div className="relative mb-5 flex h-32 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[radial-gradient(circle_at_50%_120%,rgba(234,88,12,0.22),transparent_60%)] sm:mb-7 sm:h-40">
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:22px_22px]" />
+                  <Icon className="relative h-12 w-12 text-[#fb923c] transition-transform duration-500 group-hover:scale-110" strokeWidth={1.4} />
+                  <span className="absolute right-3 top-3 font-mono text-[42px] font-black leading-none text-white/[0.06]">{s.n}</span>
                 </div>
-                <h2 className="text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">
-                  Find travelers heading
-                  <span className="block text-[#fdba74]"> to the same place.</span>
-                </h2>
-                <p className="text-sm leading-7 text-white/70">
-                  See who else is planning a trip to your destination. Wave to connect,
-                  join a trip room, and plan the route together — or just share notes.
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    href="/signup"
-                    className="bg-sunset shadow-sunset group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
-                  >
-                    Join the community
+                <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#fb923c]">
+                  {s.n} / {s.tag}
+                </div>
+                <h3 className="mt-3 text-xl font-bold tracking-tight">{s.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#A89B92]">{s.body}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── built for ── */}
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-8 sm:py-28">
+        <motion.div {...fadeUp} className="mb-10 max-w-2xl sm:mb-14">
+          <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[#fb923c] sm:text-[11px] sm:tracking-[0.3em]">Built for</div>
+          <h2 className="text-3xl font-black leading-[1.05] tracking-tight sm:text-5xl">
+            However you<span className="text-sunset"> travel.</span>
+          </h2>
+        </motion.div>
+
+        <div className="space-y-5">
+          {AUDIENCES.map((a, i) => {
+            const Icon = a.icon;
+            const reversed = i % 2 === 1;
+            return (
+              <motion.div
+                key={a.n}
+                {...fadeUp}
+                className="grid items-center gap-5 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:gap-6 sm:p-8 lg:grid-cols-2"
+              >
+                <div className={reversed ? 'lg:order-2' : ''}>
+                  <div className="font-mono text-[12px] uppercase tracking-[0.22em] text-[#8C8079]">{a.n}</div>
+                  <h3 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">{a.title}</h3>
+                  <p className="mt-4 max-w-md text-sm leading-7 text-[#A89B92] sm:text-base">{a.body}</p>
+                  <Link href="/signup" className="group mt-6 inline-flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.18em] text-[#fb923c]">
+                    Get started
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
-                  <Link
-                    href="/explore"
-                    className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-                  >
-                    Browse travelers
-                  </Link>
                 </div>
-              </div>
-
-              {/* Right visual — feature cards */}
-              <div className="space-y-3">
-                {[
-                  {
-                    icon: (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#fdba74]">
-                        <path d="M18 11V6a2 2 0 0 0-4 0v5" />
-                        <path d="M14 10V4a2 2 0 0 0-4 0v6" />
-                        <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
-                        <path d="M6 14a4 4 0 0 0 4 4h4a6 6 0 0 0 6-6v-1a2 2 0 0 0-4 0" />
-                      </svg>
-                    ),
-                    label: 'Wave to connect',
-                    body: 'Anonymous one-tap interest — only visible if both sides wave back.',
-                  },
-                  {
-                    icon: (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#fdba74]">
-                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-                        <line x1="9" y1="3" x2="9" y2="18" />
-                        <line x1="15" y1="6" x2="15" y2="21" />
-                      </svg>
-                    ),
-                    label: 'Trip rooms',
-                    body: 'Start a shared planning space for up to 6 travelers going the same way.',
-                  },
-                  {
-                    icon: (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#fdba74]">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                    ),
-                    label: 'Privacy first',
-                    body: 'Nothing is public until you opt in. Exact dates are never shared.',
-                  },
-                ].map(item => (
-                  <div key={item.label} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white">{item.label}</p>
-                      <p className="mt-0.5 text-sm leading-6 text-white/60">{item.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto max-w-6xl">
-          <motion.div {...fadeInUp} className="mb-6 max-w-2xl">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882] sm:text-[11px] sm:tracking-[0.24em]">
-              Why wayflo
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3a2540] sm:text-4xl">
-              The route, the timing, and the mood stay connected.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-[#7c6a72] sm:text-base">
-              You get a calmer way to plan, with the important details easy to spot and the next step always obvious.
-            </p>
-          </motion.div>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {planningSignals.map((item, index) => {
-              const Icon = item.icon;
-
-              return (
-                <motion.article
-                  key={item.title}
-                  {...fadeInUp}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(58,37,64,0.08)] sm:p-6"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffedd5] text-[#ea580c] sm:h-12 sm:w-12">
-                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                  <h3 className="mt-4 text-xl font-medium tracking-[-0.03em] text-[#3a2540] sm:mt-5 sm:text-2xl">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[#7c6a72]">{item.body}</p>
-                </motion.article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <motion.div
-            {...fadeInUp}
-            className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#fffbf2_100%)] p-5 shadow-[0_18px_60px_rgba(58,37,64,0.08)] sm:p-6"
-          >
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882] sm:text-[11px] sm:tracking-[0.24em]">
-              Feels clear
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3a2540] sm:text-3xl">
-              It stays easy to read when you are planning fast.
-            </h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                ['Fast to scan', '#ea580c', 'The main action stands out so you do not have to hunt for the next step.'],
-                ['Easy on the eyes', '#3a2540', 'Trip details stay legible even when there is a lot to review.'],
-                ['Calm background', '#fbf4ea', 'The page feels light, so the planning flow does not feel crowded.'],
-                ['Helpful emphasis', '#f43f5e', 'Important moments are highlighted without making the screen feel loud.'],
-              ].map(([label, color, body]) => (
-                <div key={label} className="rounded-2xl border border-[#f0e2d0] bg-white p-4">
-                  <div className="h-10 w-full rounded-xl sm:h-11" style={{ backgroundColor: color }} />
-                  <div className="mt-3 text-sm font-medium text-[#3a2540] sm:text-base">{label}</div>
-                  <p className="mt-1 text-sm leading-6 text-[#7c6a72]">{body}</p>
+                <div className={`relative flex h-40 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[radial-gradient(circle_at_70%_120%,rgba(244,63,94,0.18),rgba(234,88,12,0.12),transparent_65%)] sm:h-52 ${reversed ? 'lg:order-1' : ''}`}>
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:26px_26px]" />
+                  <Icon className="relative h-16 w-16 text-[#fdba74]" strokeWidth={1.2} />
                 </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            {...fadeInUp}
-            transition={{ duration: 0.45, delay: 0.05 }}
-            className="rounded-[30px] border border-[#4a3354] bg-[#3a2540] p-5 text-white shadow-[0_20px_70px_rgba(58,37,64,0.18)] sm:p-6"
-          >
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-[11px] sm:tracking-[0.24em]">
-              Journey rhythm
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] sm:text-3xl">
-              From idea to route without breaking momentum
-            </h2>
-            {/* Route map — vertical dashed flight path with pin stops */}
-            <div className="relative mt-6 pl-10">
-              <div
-                className="absolute bottom-3 left-[14px] top-3 w-0.5"
-                style={{ backgroundImage: 'repeating-linear-gradient(180deg, rgba(255,255,255,0.45) 0 6px, transparent 6px 12px)' }}
-                aria-hidden
-              />
-              {tripFlowSteps.map((step, index) => (
-                <div key={step} className="relative pb-7 last:pb-0">
-                  <span
-                    className={`absolute -left-10 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-white shadow-lg ${
-                      index === tripFlowSteps.length - 1 ? 'bg-sunset' : 'bg-white/15 ring-1 ring-white/30'
-                    }`}
-                  >
-                    {index === tripFlowSteps.length - 1 ? '★' : index + 1}
-                  </span>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#fb923c]">
-                    {index === 0 ? 'Departure' : index === tripFlowSteps.length - 1 ? 'Arrival' : `Stop ${index}`}
-                  </div>
-                  <p className="mt-1.5 text-sm leading-6 text-white/88">{step}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-2">
-          {showcaseCards.map((card, index) => (
-            <motion.article
-              key={card.title}
-              {...fadeInUp}
-              transition={{ duration: 0.4, delay: index * 0.06 }}
-              className="rounded-[30px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(58,37,64,0.08)] sm:p-6"
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px] sm:tracking-[0.22em]" style={{ color: card.accent }}>
-                {card.eyebrow}
-              </div>
-              <h3 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3a2540] sm:text-3xl">{card.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#7c6a72]">{card.body}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 pb-10 pt-2 sm:px-6 sm:pb-14">
+      {/* ── CTA ── */}
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pb-20 sm:px-8 sm:pb-24">
         <motion.div
-          {...fadeInUp}
-          className="mx-auto max-w-6xl rounded-[34px] border border-[#fed7aa] bg-[linear-gradient(135deg,#ffedd5_0%,#FFFFFF_52%,#ffe4e6_100%)] p-5 shadow-[0_24px_80px_rgba(234,88,12,0.12)] sm:p-8"
+          {...fadeUp}
+          className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0E0C13] px-5 py-12 text-center sm:px-12 sm:py-24"
         >
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882] sm:text-[11px] sm:tracking-[0.24em]">
-                Ready to move
-              </div>
-              <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3a2540] sm:text-4xl">
-                Start planning in the new wayflo system.
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-[#7c6a72] sm:text-base">
-                Create an account, save your itinerary, and keep the route flowing from research to the trip itself.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="pointer-events-none absolute inset-0 opacity-60">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(234,88,12,0.18),transparent_60%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(rgba(251,146,60,0.08)_1px,transparent_1px)] bg-[size:100%_18px]" />
+          </div>
+          <div className="relative">
+            <div className="mb-4 font-mono text-[11px] uppercase tracking-[0.32em] text-[#fb923c]">Ready when you are</div>
+            <h2 className="mx-auto max-w-2xl text-[clamp(2rem,10vw,3.75rem)] font-black uppercase leading-[1] tracking-tight sm:text-6xl">
+              Let&apos;s plan<br />your next trip.
+            </h2>
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/signup"
-                className="bg-sunset shadow-sunset inline-flex items-center justify-center rounded-xl px-5 py-3.5 text-sm font-semibold text-white transition hover:brightness-105"
+                className="bg-sunset inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-[#1a0d05] shadow-[0_0_40px_-8px_rgba(234,88,12,0.8)] transition hover:brightness-110 sm:w-auto"
               >
-                Book trip
+                Create your first trip
+                <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center justify-center rounded-xl border border-[#ea580c]/25 bg-white px-5 py-3.5 text-sm font-semibold text-[#ea580c]"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-white/15 px-7 py-3.5 text-sm font-semibold text-[#F5F0EA] transition hover:bg-white/5 sm:w-auto"
               >
                 Open dashboard
               </Link>
@@ -463,7 +385,52 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <Footer />
+      {/* ── footer ── */}
+      <footer className="relative z-10 border-t border-white/10">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-8 sm:py-14 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
+          <div>
+            <Brand href="/" className="[&_*]:!text-[#F5F0EA]" />
+            <p className="mt-4 max-w-xs text-sm leading-6 text-[#8C8079]">
+              Smart travel planning that keeps your routes, timing, and ideas in flow.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-[#A89B92]">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#7CDB9B]" /> Privacy-first by default
+            </div>
+          </div>
+          {[
+            { h: 'Product', links: [['Explore', '/explore'], ['Community', '/dashboard/community'], ['Dashboard', '/dashboard']] },
+            { h: 'Company', links: [['Privacy', '/privacy-policy'], ['Terms', '/terms-of-service']] },
+            { h: 'Get started', links: [['Log in', '/login'], ['Sign up', '/signup']] },
+          ].map(col => (
+            <div key={col.h}>
+              <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8C8079]">{col.h}</div>
+              <ul className="mt-4 space-y-3 text-sm text-[#A89B92]">
+                {col.links.map(([label, href]) => (
+                  <li key={label}>
+                    <Link href={href} className="transition hover:text-[#F5F0EA]">{label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-white/10">
+          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-2 px-4 py-5 font-mono text-[10px] uppercase tracking-[0.1em] text-[#6B635D] sm:flex-row sm:items-center sm:px-8 sm:text-[11px] sm:tracking-[0.14em]">
+            <span>© {new Date().getFullYear()} Wayflo</span>
+            <span>Travel · Flow · Freedom</span>
+          </div>
+        </div>
+      </footer>
     </main>
+  );
+}
+
+function Row({ icon: Icon, label, value }: { icon: typeof MapPin; label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <Icon className="h-3.5 w-3.5 shrink-0 text-[#fb923c]" />
+      <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.12em] text-[#8C8079] sm:tracking-[0.16em]">{label}</span>
+      <span className="ml-auto min-w-0 truncate text-right text-[12px] font-semibold text-[#F5F0EA]">{value}</span>
+    </div>
   );
 }

@@ -48,16 +48,16 @@ export default function RoomsPage() {
 
   return (
     <main className="min-h-screen bg-[#fffcf6] text-[#3a2540]">
-      <nav className="sticky top-0 z-40 border-b border-[#eaddc7] bg-[rgba(249,249,252,0.9)] px-5 py-3 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <Brand href="/dashboard" />
-          <div className="flex items-center gap-3">
+      <nav className="sticky top-0 z-40 border-b border-[#eaddc7] bg-[rgba(249,249,252,0.9)] px-4 py-3 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <Brand href="/dashboard" compact className="min-w-0 shrink-0 sm:[&_svg]:h-12 sm:[&_svg]:w-12" />
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Link href="/explore" className="text-sm font-semibold text-[#7c6a72] hover:text-[#3a2540]">
               Explore
             </Link>
             <Link
               href="/dashboard"
-              className="rounded-xl border border-[#eaddc7] bg-white px-4 py-2 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4]"
+              className="rounded-xl border border-[#eaddc7] bg-white px-3 py-2 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4] sm:px-4"
             >
               Dashboard
             </Link>
@@ -65,14 +65,14 @@ export default function RoomsPage() {
         </div>
       </nav>
 
-      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#eaddc7] bg-white px-3 py-1.5 text-xs font-semibold text-[#ea580c] shadow-sm">
               <Sparkles size={13} />
               Your trip rooms
             </div>
-            <h1 className="mt-4 max-w-2xl text-4xl font-black tracking-tight text-[#1c1018] sm:text-5xl">
+            <h1 className="mt-4 max-w-2xl text-4xl font-black leading-[1.04] tracking-tight text-[#1c1018] sm:text-5xl">
               Keep the room that turns a trip into a plan.
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-[#7c6a72]">
@@ -80,17 +80,17 @@ export default function RoomsPage() {
               then jump into the shared route when you want to keep momentum going.
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
               <Link
                 href="/explore"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#ea580c] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(234,88,12,0.24)] transition hover:bg-[#9a3412]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ea580c] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(234,88,12,0.24)] transition hover:bg-[#9a3412]"
               >
                 Browse travelers
                 <ArrowRight size={15} />
               </Link>
               <Link
                 href="/explore"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#eaddc7] bg-white px-5 py-3 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#eaddc7] bg-white px-5 py-3 text-sm font-semibold text-[#3a2540] transition hover:bg-[#fffbf4]"
               >
                 <Plus size={15} />
                 Start a room
@@ -110,7 +110,7 @@ export default function RoomsPage() {
                 return (
                   <div key={item.label} className="rounded-2xl border border-[#f0e2d0] bg-white/90 p-4">
                     <div className="flex items-center justify-between">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8c7882]">
+                      <div className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[#8c7882] sm:text-[10px] sm:tracking-[0.18em]">
                         {item.label}
                       </div>
                       <Icon size={14} className="text-[#ea580c]" />
@@ -132,7 +132,7 @@ export default function RoomsPage() {
         </section>
 
         <section className="mt-10">
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-2xl font-black tracking-tight text-[#1c1018]">Your rooms</h2>
               <p className="mt-1 text-sm text-[#7c6a72]">Rooms you host or joined show up here with the latest membership state.</p>
@@ -152,7 +152,7 @@ export default function RoomsPage() {
               {error}
             </p>
           ) : rooms.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-[#eaddc7] bg-white p-8 text-center">
+            <div className="rounded-[28px] border border-dashed border-[#eaddc7] bg-white p-6 text-center sm:p-8">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff7ed]">
                 <Users size={24} className="text-[#ea580c]" />
               </div>

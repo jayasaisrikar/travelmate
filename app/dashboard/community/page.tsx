@@ -27,8 +27,8 @@ export default function CommunitySettingsPage() {
   return (
     <main className="min-h-screen bg-[#fbf6ef] text-[#3a2540]">
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Brand href="/" compact className="shrink-0" />
             <div className="hidden h-6 w-px bg-stone-200 sm:block" />
             <div className="hidden sm:block">
@@ -37,7 +37,7 @@ export default function CommunitySettingsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Link
               href="/explore"
               className="inline-flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#ea580c] shadow-sm transition hover:bg-[#fff7ed]"
@@ -62,7 +62,7 @@ export default function CommunitySettingsPage() {
             <Heart className="h-3 w-3" />
             Community visibility
           </div>
-          <h1 className="mt-4 text-3xl font-black tracking-tight text-stone-950 sm:text-5xl">
+          <h1 className="mt-4 text-3xl font-black leading-[1.05] tracking-tight text-stone-950 sm:text-5xl">
             Find travel companions
           </h1>
           <p className="mt-3 text-sm leading-6 text-[#7c6a72] sm:text-base">

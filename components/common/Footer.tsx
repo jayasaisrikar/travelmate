@@ -9,12 +9,12 @@ interface FooterProps {
 export function Footer({ className = '' }: FooterProps) {
   return (
     <footer className={`border-t border-white/60 px-4 py-8 sm:px-6 ${className}`.trim()}>
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-[#7c6a72] sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 text-sm text-[#7c6a72] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <Brand href="/" compact className="shrink-0" />
-          <p>© 2026 wayflo</p>
+          <p className="shrink-0">© 2026 wayflo</p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
           <Link href="/dashboard" className="transition hover:text-[#3a2540]">
             Dashboard
           </Link>
