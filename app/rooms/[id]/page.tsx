@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { ArrowLeft, Crown, LoaderCircle, LogOut, MapPin, Users } from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
 import { MessageButton } from '@/components/social/MessageButton';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 import {
   getTripRoom,
   joinTripRoom,
@@ -21,6 +24,8 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
   const [error, setError] = useState('');
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const toast = useToast();
 
   const loadRoom = useCallback(async () => {
     setLoading(true);
@@ -56,20 +61,24 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
     setError('');
     try {
       await leaveTripRoom(id);
+      setConfirmLeave(false);
+      toast.success('You left the room.');
       await loadRoom();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to leave room');
+      const messageText = err instanceof Error ? err.message : 'Failed to leave room';
+      setError(messageText);
+      toast.error(messageText);
     } finally {
       setAction('');
     }
   };
 
   return (
-    <main className="min-h-screen bg-[#F9F9FC] text-[#3F3D56]">
-      <header className="sticky top-0 z-30 border-b border-[#DDDCE8] bg-white/85 backdrop-blur-md">
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b-2 border-ink bg-background">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <Brand href="/dashboard" />
-          <Link href="/explore" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#6F6C82] hover:text-[#3F3D56]">
+          <Link href="/explore" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
             <ArrowLeft size={15} />
             Back to Explore
           </Link>
@@ -78,27 +87,27 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
 
       <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
         {loading ? (
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#6F6C82]">
-            <LoaderCircle size={16} className="animate-spin text-[#6C63FF]" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <LoaderCircle size={16} className="animate-spin text-primary" />
             Loading room...
           </div>
         ) : !room ? (
-          <div className="rounded-2xl border border-[#C14D72] bg-[#FFF0F4] p-5 text-sm text-[#C14D72]">
+          <div className="rounded-md border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
             {error || 'Room not found'}
           </div>
         ) : (
           <>
-            <section className="rounded-[28px] border border-[#DDDCE8] bg-white p-6 shadow-sm sm:p-8">
+            <section className="rounded-lg border-2 border-ink bg-card p-6 shadow-brutal sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F3FF] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#6C63FF]">
+                  <div className="inline-flex items-center gap-1.5 border-2 border-ink bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-primary-foreground">
                     <Users size={12} />
                     Trip room
                   </div>
-                  <h1 className="mt-4 text-3xl font-black tracking-tight text-[#1A1726] sm:text-4xl">
+                  <h1 className="mt-4 text-headline text-foreground">
                     {room.title ?? `Trip to ${room.destination}`}
                   </h1>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-[#6F6C82]">
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
                     <MapPin size={15} />
                     <span>{room.destination}</span>
                     {room.travel_month && <span>· {room.travel_month}</span>}
@@ -106,63 +115,63 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
                 </div>
 
                 {room.is_member ? (
-                  <button
+                  <Button
                     type="button"
-                    onClick={() => void handleLeave()}
+                    variant="outline"
+                    onClick={() => setConfirmLeave(true)}
                     disabled={action === 'leave'}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#DDDCE8] bg-white px-4 py-2.5 text-sm font-semibold text-[#6F6C82] transition hover:bg-[#FFF0F4] hover:text-[#C14D72] disabled:opacity-60"
                   >
                     {action === 'leave' ? <LoaderCircle size={15} className="animate-spin" /> : <LogOut size={15} />}
                     Leave room
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     type="button"
+                    variant="brutal"
                     onClick={() => void handleJoin()}
                     disabled={action === 'join' || !room.is_open || room.member_count >= room.max_members}
-                    className="rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5a52d5] disabled:opacity-60"
                   >
                     {action === 'join' ? 'Joining...' : 'Join room'}
-                  </button>
+                  </Button>
                 )}
               </div>
 
-              <p className="mt-5 text-sm text-[#6F6C82]">
+              <p className="mt-5 text-sm text-muted-foreground">
                 {room.member_count} / {room.max_members} members
               </p>
 
               {error && (
-                <p className="mt-4 rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm text-[#C14D72]">
+                <p className="mt-4 rounded-md border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
                   {error}
                 </p>
               )}
             </section>
 
-            <section className="mt-6 rounded-[28px] border border-[#DDDCE8] bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-black tracking-tight text-[#1A1726]">Room travelers</h2>
+            <section className="mt-6 rounded-lg border-2 border-ink bg-card p-6 shadow-brutal">
+              <h2 className="text-title text-foreground">Room travelers</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {room.members.map(member => (
-                  <article key={member.user_id} className="rounded-2xl border border-[#DDDCE8] bg-[#FBFAFF] p-4">
+                  <article key={member.user_id} className="rounded-md border-2 border-ink bg-muted p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-[#1A1726]">
+                          <span className="text-sm font-bold text-foreground">
                             {member.profile?.display_name ?? 'Traveler'}
                           </span>
-                          {member.role === 'host' && <Crown size={14} className="text-[#A07800]" />}
+                          {member.role === 'host' && <Crown size={14} className="text-accent" />}
                         </div>
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#8A869C]">
+                        <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                           {member.role}
                         </p>
                       </div>
                       {member.is_self ? (
-                        <span className="rounded-full bg-[#F4F3FF] px-2.5 py-1 text-[11px] font-semibold text-[#6C63FF]">You</span>
+                        <span className="rounded-md border-2 border-ink bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">You</span>
                       ) : (
                         <MessageButton userId={member.user_id} travelerName={member.profile?.display_name ?? null} />
                       )}
                     </div>
                     {member.profile?.bio && (
-                      <p className="mt-3 text-sm leading-5 text-[#6F6C82]">{member.profile.bio}</p>
+                      <p className="mt-3 text-sm leading-5 text-muted-foreground">{member.profile.bio}</p>
                     )}
                   </article>
                 ))}
@@ -171,6 +180,17 @@ export default function RoomPage({ params }: { params: Promise<{ id: string }> }
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmLeave}
+        onClose={() => { if (action !== 'leave') setConfirmLeave(false); }}
+        onConfirm={() => void handleLeave()}
+        title="Leave this room?"
+        description="You'll stop receiving updates from this trip room. You can rejoin later if it's still open."
+        confirmLabel="Leave room"
+        destructive
+        loading={action === 'leave'}
+      />
     </main>
   );
 }

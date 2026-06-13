@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { Brand } from '@/components/common/Brand';
+import { Button } from '@/components/ui/button';
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -76,36 +77,43 @@ export function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2] px-4 py-8 text-[#3F3D56] sm:px-6">
+    <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="border border-[#3F3D56] bg-white p-6 shadow-none sm:p-8">
-            <Brand href="/" className="mb-5" />
-            <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">Set a new password</h1>
-            <p className="mt-4 max-w-lg text-base leading-7 text-[#6F6C82]">
-              Choose a new password for your wayflo account. After saving, you will be sent back to the login page.
+          <div className="flex flex-col justify-center border-2 border-ink bg-secondary p-8 text-secondary-foreground shadow-brutal-lg">
+            <Brand href="/" className="mb-8" />
+            <h1 className="text-headline text-secondary-foreground">Set a new password.</h1>
+            <p className="mt-4 max-w-lg text-base leading-7 text-secondary-foreground/70">
+              Choose a new password for your wayflo account. After saving, you&apos;ll be sent back to the login page.
             </p>
           </div>
 
-          <div className="border border-[#3F3D56] bg-white p-6 shadow-none sm:p-8">
-            <div className="flex items-center justify-between border-b border-[#DDDCE8] pb-4">
+          <div className="surface-brutal p-6 sm:p-8">
+            <div className="flex items-center justify-between border-b-2 border-ink pb-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">New password</div>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">Reset form</h2>
+                <div className="eyebrow">New password</div>
+                <h2 className="mt-1 text-title">Reset form</h2>
               </div>
-              <div className="h-10 w-10 border border-[#3F3D56] bg-[#FF6584]" />
+              <div className="h-10 w-10 border-2 border-ink bg-accent" />
             </div>
 
             {checking && (
-              <div className="mt-6 border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm font-medium text-[#3F3D56]">
-                Checking your reset session...
+              <div className="mt-6 border-2 border-ink bg-muted px-4 py-3 text-sm font-medium">
+                Checking your reset session…
               </div>
             )}
 
-            {!checking && ready && (
+            {!checking && ready && (() => {
+              const mismatch =
+                confirmPassword.length > 0 && password !== confirmPassword;
+              const fieldBase =
+                'w-full rounded-md border-2 bg-background px-4 py-3 text-base outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-offset-2 focus:ring-offset-background';
+              const okField = `${fieldBase} border-ink focus:ring-ring`;
+              const errField = `${fieldBase} border-destructive focus:ring-destructive`;
+              return (
               <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     New password
                   </label>
                   <input
@@ -115,13 +123,13 @@ export function ResetPasswordForm() {
                     onChange={event => setPassword(event.target.value)}
                     required
                     minLength={6}
-                    className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
+                    className={mismatch ? errField : okField}
                     placeholder="At least 6 characters"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     Confirm password
                   </label>
                   <input
@@ -131,43 +139,46 @@ export function ResetPasswordForm() {
                     onChange={event => setConfirmPassword(event.target.value)}
                     required
                     minLength={6}
-                    className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
+                    className={mismatch ? errField : okField}
                     placeholder="Repeat the new password"
+                    aria-invalid={mismatch}
                   />
+                  {mismatch && (
+                    <p className="mt-2 text-xs font-semibold text-destructive">
+                      Passwords don’t match yet.
+                    </p>
+                  )}
                 </div>
 
                 {error && (
-                  <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
-                    {error}
+                  <div role="alert" className="border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+                    ✕ {error}
                   </div>
                 )}
 
-                {message && (
-                  <div className="border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
-                    {message}
+                {message && !error && (
+                  <div role="status" className="border-2 border-primary bg-primary/10 px-4 py-3 text-sm font-semibold text-foreground">
+                    ✓ {message}
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {loading ? 'Updating...' : 'Save new password'}
-                </button>
+                <Button type="submit" variant="brutal" size="lg" disabled={loading || mismatch} className="w-full">
+                  {loading ? 'Updating…' : 'Save new password'}
+                </Button>
               </form>
-            )}
+              );
+            })()}
 
             {!checking && !ready && (
-              <div className="mt-6 border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm font-medium text-[#3F3D56]">
-                <Link href="/forgot-password" className="underline">
+              <div className="mt-6 border-2 border-ink bg-muted px-4 py-3 text-sm font-medium">
+                <Link href="/forgot-password" className="font-bold text-primary underline">
                   Request a new reset link
                 </Link>
               </div>
             )}
 
-            <div className="mt-6 border-t border-[#DDDCE8] pt-4 text-sm text-[#6F6C82]">
-              <Link href="/login" className="font-semibold text-[#3F3D56] underline">
+            <div className="mt-6 border-t-2 border-ink pt-4 text-sm text-muted-foreground">
+              <Link href="/login" className="font-bold text-primary underline">
                 Back to login
               </Link>
             </div>

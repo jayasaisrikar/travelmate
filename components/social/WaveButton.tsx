@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Hand } from 'lucide-react';
 import { sendWave, retractWave } from '@/services/social';
+import { useToast } from '@/components/ui/toast';
 
 interface WaveButtonProps {
   userId: string;
@@ -22,6 +23,7 @@ const labels: Record<string, string> = {
 export function WaveButton({ userId, initialStatus, onStatusChange }: WaveButtonProps) {
   const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const handleClick = async () => {
     if (loading || status === 'connected' || status === 'blocked') return;
@@ -32,21 +34,26 @@ export function WaveButton({ userId, initialStatus, onStatusChange }: WaveButton
         await retractWave(userId);
         setStatus('none');
         onStatusChange?.('none');
+        toast.info('Wave retracted.');
       } else {
         await sendWave(userId);
         const next = status === 'wave_received' ? 'connected' : 'wave_sent';
         setStatus(next);
         onStatusChange?.(next);
+        toast.success(next === 'connected' ? "You're connected!" : 'Wave sent 👋');
       }
-    } catch {
-      // silently ignore — the parent page will show errors if needed
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update wave. Try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const isActive    = status === 'wave_sent' || status === 'connected';
-  const isDisabled  = loading || status === 'connected' || status === 'blocked';
+  // `wave_sent` is active (and retractable). `connected`/`blocked` are terminal —
+  // they should read as muted/inert rather than as a clickable active button.
+  const isActive    = status === 'wave_sent';
+  const isInert     = status === 'connected' || status === 'blocked';
+  const isDisabled  = loading || isInert;
 
   return (
     <motion.button
@@ -54,14 +61,17 @@ export function WaveButton({ userId, initialStatus, onStatusChange }: WaveButton
       whileTap={isDisabled ? {} : { scale: 0.93 }}
       onClick={handleClick}
       disabled={isDisabled}
+      aria-live="polite"
       className={`
         inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold
         transition-all duration-150 select-none
-        ${isActive
+        ${isInert
+          ? 'border border-[#E4E3EC] bg-[#F4F3F8] text-[#8A869C]'
+          : isActive
           ? 'bg-[#6C63FF] text-white shadow-[0_2px_12px_rgba(108,99,255,0.35)]'
           : 'border border-[#DDDCE8] bg-white text-[#3F3D56] hover:border-[#6C63FF] hover:text-[#6C63FF]'
         }
-        disabled:cursor-not-allowed disabled:opacity-60
+        disabled:cursor-not-allowed
       `}
     >
       <AnimatePresence mode="wait" initial={false}>

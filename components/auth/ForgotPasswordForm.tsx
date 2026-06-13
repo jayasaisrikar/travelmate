@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { Brand } from '@/components/common/Brand';
+import { Button } from '@/components/ui/button';
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
@@ -31,7 +32,10 @@ export function ForgotPasswordForm() {
         throw new Error(data?.error || 'Failed to send reset email');
       }
 
-      setMessage(data?.message || 'Check your email for a password reset link.');
+      setMessage(
+        data?.message ||
+          'Check your email for a password reset link (it may take a minute to arrive). Then come back here to log in.'
+      );
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send reset email');
     } finally {
@@ -40,15 +44,17 @@ export function ForgotPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2] px-4 py-8 text-[#3F3D56] sm:px-6">
+    <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="border border-[#3F3D56] bg-white p-6 shadow-none sm:p-8">
-            <Brand href="/" className="mb-5" />
-            <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">Reset your password</h1>
-            <p className="mt-4 max-w-lg text-base leading-7 text-[#6F6C82]">
-              We will send a secure link to your email. Open it to set a new password and return to your account.
-            </p>
+          <div className="flex flex-col justify-between border-2 border-ink bg-secondary p-8 text-secondary-foreground shadow-brutal-lg">
+            <div>
+              <Brand href="/" className="mb-8" />
+              <h1 className="text-headline text-secondary-foreground">Reset your password.</h1>
+              <p className="mt-4 max-w-lg text-base leading-7 text-secondary-foreground/70">
+                We&apos;ll send a secure link to your email. Open it to set a new password and return to your account.
+              </p>
+            </div>
 
             <div className="mt-8 space-y-3">
               {[
@@ -56,65 +62,57 @@ export function ForgotPasswordForm() {
                 'You can log back in after changing it.',
                 'Passwords are handled through Supabase auth.',
               ].map(item => (
-                <div key={item} className="border border-[#DDDCE8] bg-[#FBFAFF] px-4 py-3 text-sm font-medium text-[#3F3D56]">
+                <div key={item} className="border-2 border-secondary-foreground/20 bg-secondary-foreground/5 px-4 py-3 text-sm font-medium">
                   {item}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="border border-[#3F3D56] bg-white p-6 shadow-none sm:p-8">
-            <div className="flex items-center justify-between border-b border-[#DDDCE8] pb-4">
+          <div className="surface-brutal p-6 sm:p-8">
+            <div className="flex items-center justify-between border-b-2 border-ink pb-4">
               <div>
-                <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Password reset</div>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">Send reset link</h2>
+                <div className="eyebrow">Password reset</div>
+                <h2 className="mt-1 text-title">Send reset link</h2>
               </div>
-              <div className="h-10 w-10 border border-[#3F3D56] bg-[#6C63FF]" />
+              <div className="h-10 w-10 border-2 border-ink bg-primary" />
             </div>
 
             <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
               <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
-                  Email
-                </label>
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Email</label>
                 <input
                   type="email"
                   autoComplete="email"
                   value={email}
                   onChange={event => setEmail(event.target.value)}
                   required
-                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:bg-white"
+                  className="w-full rounded-md border-2 border-ink bg-background px-4 py-3 text-base outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                   placeholder="you@example.com"
                 />
               </div>
 
               {error && (
-                <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
-                  {error}
+                <div role="alert" className="border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+                  ✕ {error}
                 </div>
               )}
 
-              {message && (
-                <div className="border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
-                  {message}
+              {message && !error && (
+                <div role="status" className="border-2 border-primary bg-primary/10 px-4 py-3 text-sm font-semibold text-foreground">
+                  ✓ {message}
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {loading ? 'Sending...' : 'Send reset email'}
-              </button>
+              <Button type="submit" variant="brutal" size="lg" disabled={loading} className="w-full">
+                {loading ? 'Sending…' : 'Send reset email'}
+              </Button>
             </form>
 
-            <div className="mt-6 border-t border-[#DDDCE8] pt-4 text-sm text-[#6F6C82]">
+            <div className="mt-6 border-t-2 border-ink pt-4 text-sm text-muted-foreground">
               <span>
                 Remembered it?{' '}
-                <Link href="/login" className="font-semibold text-[#3F3D56] underline">
-                  Back to login
-                </Link>
+                <Link href="/login" className="font-bold text-primary underline">Back to login</Link>
               </span>
             </div>
           </div>

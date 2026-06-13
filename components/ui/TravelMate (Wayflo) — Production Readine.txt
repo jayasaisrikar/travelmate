@@ -1,0 +1,51 @@
+TravelMate (Wayflo) — Production Readiness Audit
+Baseline health ✅
+Check	Result
+tsc --noEmit	Passes — no type errors
+next build	Passes — all 52 routes compile
+eslint	5 errors, 30 warnings — all trivial (unused vars, any, <img>)
+RLS coverage	10 of 11 tables protected
+Rate limiting	None anywhere
+E2E tests	Playwright configured; coverage is thin
+The app is structurally sound and builds clean. The blockers are authorization and abuse-prevention, not architecture.
+
+🔴 CRITICAL — fix before any production traffic
+1. Paid LLM endpoints have no authentication → unbounded cost.
+generate-itinerary/route.ts:5 (confirmed), plus generate-itinerary-real, -agentic, -gemini, and chat-agent/route.ts. Anyone with the URL can POST in a loop and run up your Gemini/NVIDIA bill. Fix: add getAuthenticatedUser(request) → 401 at the top of each, and rate-limit per user.
+
+2. Identity verification can be forged. didit/callback/route.ts:20-30 — the callback marks the profile named by decision.vendor_data as verified. vendor_data is attacker-influenceable, so anyone can get any profile marked "verified/trusted." Fix: never trust vendor_data — look up the profile only by the stored verification_session_id, and rely on the signed webhook (webhooks/didit/route.ts, whose signature check is correctly constant-time) as the source of truth.
+
+3. signup_verification_tokens has RLS enabled but zero policies. 20260415_...sql. If the anon key ever touches this table, token hashes leak → account takeover. Fix: add user_id-scoped select/update policies (or confirm it's only ever reached via service-role and document that).
+
+4. Admin password compared non-constant-time + bootstrap unthrottled. admin-access.ts:26 uses password !== getAdminPassword(); bootstrap/route.ts has no rate limit. Single shared admin password is brute-forceable. Fix: crypto.timingSafeEqual, rate-limit/lock the bootstrap path, and move admin authz to a Supabase app_metadata.role flag (the bootstrap already sets one) instead of email-string matching.
+
+🟠 HIGH
+IDOR on wave-accept waves/[userId] — accepting a connection doesn't verify a wave actually exists from that user; lets you force connections without consent. Verify status='wave' first.
+profile/preferences merges the whole body preferences/route.ts — falls back to body if no preferences key, no allowlist. Add a strict key allowlist (Zod).
+Service-role client silently falls back to anon key supabase-admin.ts:6 — degrades security silently. Throw if SUPABASE_SERVICE_ROLE_KEY is missing.
+App-layer ownership is the only guard on some trip routes — fine as long as trips RLS (auth.uid() = user_id) stays enabled. Don't remove it.
+🟡 MEDIUM
+No rate limiting on the whole API surface (auth, LLM, email-sending share routes). Add Upstash/@vercel/ratelimit at minimum on auth + LLM + email endpoints.
+chat-agent accepts unbounded conversationHistory → token-cost amplification. Cap to ~20 messages.
+places/pois don't clamp radius → upstream Overpass DoS. Math.min(radius, 50000).
+Room member list rooms/[id] may return profiles without requiring membership — enables traveler enumeration. Gate on membership.
+Invalid JSON silently treated as empty in preferences route — return 400.
+🟢 LOW / cleanup
+5 lint errors + 30 warnings (unused imports, any in useApi.ts and gifenc.d.ts). Run eslint --fix and clear the rest.
+<img> instead of next/image in DestinationPhotoCover.tsx:111.
+Dead code: coordinatesMatch, getDisplayFrom, coordinatesMatch, several unused vars flagged by lint.
+Validate UUID params before DB lookups; add max-length on guestName/bio before email/render.
+What's already done well ✅
+Webhook signature verification is constant-time (didit.ts).
+image-proxy has a strict host allowlist + https-only — no SSRF.
+Server-only secrets (GEMINI, NVIDIA, DIDIT) are not NEXT_PUBLIC and aren't logged.
+External fetches use AbortController timeouts.
+.env is gitignored and untracked.
+10/11 tables have RLS with real policies.
+Recommended path to production
+This week (blockers): the 4 criticals + add a rate-limiter. None are large changes — mostly adding an auth guard and fixing the Didit lookup.
+Before launch: the HIGH items (IDOR, preferences allowlist, service-role throw).
+Polish: MEDIUM/LOW, lint cleanup, expand Playwright tests around auth and trip ownership.
+I can start implementing the fixes now. The fastest high-value move is a shared auth-guard helper applied to the LLM routes + fixing the Didit callback. Want me to do the 4 criticals first, or the full critical+high set? I'll do them as small, reviewable commits.
+
+I won't write these findings to memory unless you want a persistent audit checklist tracked.
