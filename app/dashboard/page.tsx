@@ -576,14 +576,14 @@ export default function DashboardPage() {
     return (
       <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-12">
         {/* Colorful flowing vector blobs to make UI look organic & high-end */}
-        <div className="absolute -top-40 right-10 h-[500px] w-[#500px] rounded-full bg-gradient-to-tr from-[#6C63FF]/5 to-[#FF6584]/5 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 -left-20 h-[400px] w-[#400px] rounded-full bg-[#6C63FF]/3 blur-[100px] pointer-events-none" />
+        <div className="absolute -top-40 right-10 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-[#6C63FF]/5 to-[#FF6584]/5 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-10 -left-20 h-[400px] w-[400px] rounded-full bg-[#6C63FF]/3 blur-[100px] pointer-events-none" />
 
         {/* Global Nav-Bar */}
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/70 backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-4">
-              <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
+              <Brand href="/" compact className="shrink-0 transition-transform hover:scale-105" />
               <div className="hidden h-6 w-[1px] bg-slate-200 sm:block" />
               <div className="hidden sm:block">
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Dashboard</div>
@@ -715,7 +715,7 @@ export default function DashboardPage() {
                 onClick={loadUserTrips}
                 className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
               >
-                <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                <RefreshCw className={`h-4 w-4 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
               </button>
             </div>
 
@@ -751,30 +751,28 @@ export default function DashboardPage() {
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2.5 mt-auto">
+                      <div className="flex items-center gap-2.5 mt-auto">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => router.push(`/trip/${trip.id}`)}
-                          className="flex-1 min-w-[120px] rounded-xl bg-[#6C63FF] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#6C63FF]/25 hover:bg-[#5b54e7] transition-all flex items-center justify-center gap-1.5"
+                          className="flex-1 rounded-xl bg-[#6C63FF] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#6C63FF]/25 hover:bg-[#5b54e7] transition-all flex items-center justify-center gap-1.5"
                         >
                           <Compass className="h-4 w-4" />
-                          Open
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => router.push('/dashboard/onboarding')}
-                          className="flex-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-all text-center"
-                        >
-                          New
+                          Open trip
                         </motion.button>
                         <button
                           onClick={() => handleDeleteUserTrip(trip.id, trip.destination)}
                           disabled={actionId === `user-trip-${trip.id}`}
-                          className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
+                          aria-label={`Delete trip to ${trip.destination}`}
+                          title="Delete trip"
+                          className="flex-none rounded-xl bg-rose-50 border border-rose-100 p-3 text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 flex items-center justify-center"
                         >
-                          {actionId === `user-trip-${trip.id}` ? '...' : 'Del'}
+                          {actionId === `user-trip-${trip.id}` ? (
+                            <span className="block h-4 w-4 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -822,7 +820,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/70 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
+            <Brand href="/" compact className="shrink-0 transition-transform hover:scale-105" />
             <div className="hidden h-6 w-[1px] bg-slate-200 sm:block" />
             <div className="hidden sm:block">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6584]">Wayflo HQ</div>
@@ -971,7 +969,7 @@ export default function DashboardPage() {
                       onClick={loadOverview}
                       className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
                     >
-                      <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                      <RefreshCw className={`h-4 w-4 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
                     </button>
                   </div>
 
@@ -1052,7 +1050,7 @@ export default function DashboardPage() {
                     onClick={loadOverview}
                     className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
                   >
-                    <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                    <RefreshCw className={`h-4 w-4 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
                   </button>
                 </div>
 
@@ -1107,9 +1105,15 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleDeleteTrip(trip.id)}
                               disabled={actionId === `trip-${trip.id}`}
-                              className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
+                              aria-label={`Delete ${trip.destination}`}
+                              title="Delete trip"
+                              className="flex-none rounded-xl bg-rose-50 border border-rose-100 p-3 text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 flex items-center justify-center"
                             >
-                              {actionId === `trip-${trip.id}` ? '...' : 'Del'}
+                              {actionId === `trip-${trip.id}` ? (
+                                <span className="block h-4 w-4 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
                             </button>
                           </div>
 
@@ -1351,7 +1355,7 @@ export default function DashboardPage() {
                                 checked={isSelected}
                                 disabled={isCurrentUser}
                                 onChange={() => toggleUserSelection(user.id)}
-                                className="mt-1 h-4.5 w-4.5 rounded-md border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF]"
+                                className="mt-1 h-5 w-5 rounded-md border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF]"
                               />
                               <div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1361,7 +1365,7 @@ export default function DashboardPage() {
                                   </span>
                                 </div>
                                 <div className="text-xs text-[#6F6C82] mt-0.5">
-                                  {user.full_name || 'No custom display name set'} · <span className="font-mono bg-slate-100 px-1.5 py-0.2 rounded text-slate-700">{user.role || 'authenticated'}</span>
+                                  {user.full_name || 'No custom display name set'} · <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{user.role || 'authenticated'}</span>
                                 </div>
                                 <div className="mt-2 text-[10px] font-mono text-[#8A869C]">
                                   Since {formatDate(user.created_at)}
