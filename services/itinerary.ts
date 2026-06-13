@@ -1,8 +1,10 @@
+import { resolveTripCurrency } from '@/services/currency';
 import { generateJson } from '@/services/gemini';
 import {
   derivePoiTypes,
   fetchPointsOfInterest,
   resolveDestination,
+  scorePoiNotability,
 } from '@/services/places';
 import { fetchWeatherSnapshot } from '@/services/weather';
 import type {
@@ -14,6 +16,7 @@ import type {
   ItineraryDayPlan,
   ItineraryGenerationInput,
   PointOfInterest,
+  TripCurrency,
   TripTransfer,
   TravelStay,
   WeatherSnapshot,
@@ -174,7 +177,7 @@ function isValidDate(value: string | null | undefined): value is string {
   return Boolean(value && !Number.isNaN(Date.parse(value)));
 }
 
-function normalizeDuration(input: ItineraryGenerationInput): number {
+export function normalizeDuration(input: ItineraryGenerationInput): number {
   if (typeof input.duration === 'number' && Number.isFinite(input.duration) && input.duration > 0) {
     return Math.ceil(input.duration);
   }
@@ -191,9 +194,23 @@ function normalizeDuration(input: ItineraryGenerationInput): number {
   throw new Error('A valid trip duration or travel date range is required');
 }
 
-function normalizeBudgetLabel(budget: ItineraryGenerationInput['budget']): string {
-  if (typeof budget === 'number' && Number.isFinite(budget)) {
-    return `Total budget: ${budget} USD`;
+// The traveler sets a budget in their home currency, but the model plans costs
+// in the destination's currency. Convert the budget so the model has a target in
+// the same units it will write costs in, and keep the original for context.
+function normalizeBudgetLabel(budget: ItineraryGenerationInput['budget'], currency: TripCurrency): string {
+  const numericBudget =
+    typeof budget === 'number' && Number.isFinite(budget)
+      ? budget
+      : typeof budget === 'string' && Number.isFinite(Number.parseFloat(budget))
+        ? Number.parseFloat(budget)
+        : null;
+
+  if (numericBudget !== null) {
+    if (currency.display === currency.home || !currency.rateToHome) {
+      return `Total budget: ${numericBudget} ${currency.home}`;
+    }
+    const inDestination = Math.round(numericBudget / currency.rateToHome);
+    return `Total budget: about ${inDestination} ${currency.display} (traveler set ${numericBudget} ${currency.home})`;
   }
 
   if (typeof budget === 'string' && budget.trim()) {
@@ -218,7 +235,7 @@ function normalizeActivities(activities: GeminiItineraryPayload['dailyPlans'][nu
   }));
 }
 
-function normalizeDayPlans(
+export function normalizeDayPlans(
   dailyPlans: GeminiItineraryPayload['dailyPlans'],
   destination: DestinationSearchResult
 ): ItineraryDayPlan[] {
@@ -246,20 +263,6 @@ function hasCoordinates(point: { latitude: number | null; longitude: number | nu
   return normalizeCoordinate(point.latitude) !== null && normalizeCoordinate(point.longitude) !== null;
 }
 
-function coordinatesMatch(
-  left: { latitude: number | null; longitude: number | null },
-  right: { latitude: number; longitude: number }
-): boolean {
-  const leftLat = normalizeCoordinate(left.latitude);
-  const leftLon = normalizeCoordinate(left.longitude);
-
-  if (leftLat === null || leftLon === null) {
-    return false;
-  }
-
-  return Math.abs(leftLat - right.latitude) < 0.0001 && Math.abs(leftLon - right.longitude) < 0.0001;
-}
-
 function normalizeSearchText(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
@@ -272,27 +275,10 @@ interface PaceProfile {
   intensity: PaceIntensity;
   activityCount: number;
   maxFoodPerDay: number;
-  preferredCategories: Exclude<PoiCategory, 'stay'>[];
   restSlots: number;
 }
 
-const GENERIC_ACTIVITY_NAMES: Record<Exclude<PoiCategory, 'stay'>, string[]> = {
-  food: ['Lunch at a local spot', 'Easy meal break', 'Relaxed lunch stop'],
-  culture: ['Museum stop', 'Gallery visit', 'Historic district walk'],
-  park: ['Park break', 'Waterfront walk', 'Garden pause'],
-  shopping: ['Market browse', 'Street stroll', 'Local shop wander'],
-  other: ['Slow neighborhood walk', 'Easy afternoon pause', 'Sunset stroll'],
-};
-
-const GENERIC_ACTIVITY_DESCRIPTIONS: Record<Exclude<PoiCategory, 'stay'>, string[]> = {
-  food: ['Keep the meal simple and unhurried.', 'Pause for a low-key local meal.', 'Take a gentle break for lunch.'],
-  culture: ['Spend a calm stretch exploring a cultural stop.', 'Take your time at a local landmark.', 'Enjoy one anchored stop without rushing.'],
-  park: ['Keep the pace light with a scenic outdoor break.', 'Take an easy walk and reset.', 'Leave room to linger and breathe.'],
-  shopping: ['Browse without making it the whole day.', 'Keep this as a short and casual stop.', 'Move through the area at an easy pace.'],
-  other: ['Leave space for wandering and downtime.', 'Keep the day light and flexible.', 'Use this as a slow reset between anchors.'],
-};
-
-function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
+export function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
   const normalizedType = normalizeSearchText(poi.type);
   const normalizedName = normalizeSearchText(poi.name);
 
@@ -334,11 +320,23 @@ function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
     normalizedType.includes('monument') ||
     normalizedType.includes('temple') ||
     normalizedType.includes('church') ||
+    normalizedType.includes('worship') ||
+    normalizedType.includes('shrine') ||
+    normalizedType.includes('mosque') ||
     normalizedName.includes('museum') ||
     normalizedName.includes('gallery') ||
     normalizedName.includes('temple') ||
     normalizedName.includes('church') ||
-    normalizedName.includes('monument')
+    normalizedName.includes('mosque') ||
+    normalizedName.includes('shrine') ||
+    normalizedName.includes('monument') ||
+    normalizedName.includes('masjid') ||
+    normalizedName.includes('mandir') ||
+    normalizedName.includes('alayam') ||
+    normalizedName.includes('swami') ||
+    normalizedName.includes('matha') ||
+    normalizedName.includes('dargah') ||
+    normalizedName.includes('gurudwara')
   ) {
     return 'culture';
   }
@@ -369,66 +367,6 @@ function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
   return 'other';
 }
 
-function inferPoiCategoryFromActivity(activity: ItineraryActivity): PoiCategory {
-  const normalized = normalizeSearchText(`${activity.category} ${activity.name} ${activity.description}`);
-
-  if (
-    normalized.includes('hotel') ||
-    normalized.includes('stay') ||
-    normalized.includes('check in') ||
-    normalized.includes('check in') ||
-    normalized.includes('lodg')
-  ) {
-    return 'stay';
-  }
-
-  if (
-    normalized.includes('food') ||
-    normalized.includes('restaurant') ||
-    normalized.includes('cafe') ||
-    normalized.includes('lunch') ||
-    normalized.includes('dinner') ||
-    normalized.includes('breakfast') ||
-    normalized.includes('meal')
-  ) {
-    return 'food';
-  }
-
-  if (
-    normalized.includes('museum') ||
-    normalized.includes('gallery') ||
-    normalized.includes('culture') ||
-    normalized.includes('historic') ||
-    normalized.includes('temple') ||
-    normalized.includes('church') ||
-    normalized.includes('art')
-  ) {
-    return 'culture';
-  }
-
-  if (
-    normalized.includes('park') ||
-    normalized.includes('garden') ||
-    normalized.includes('nature') ||
-    normalized.includes('walk') ||
-    normalized.includes('stroll')
-  ) {
-    return 'park';
-  }
-
-  if (
-    normalized.includes('shop') ||
-    normalized.includes('market') ||
-    normalized.includes('mall') ||
-    normalized.includes('shopping') ||
-    normalized.includes('souvenir')
-  ) {
-    return 'shopping';
-  }
-
-  return 'other';
-}
-
 function isFoodInterest(interests: string[] | null | undefined): boolean {
   return (interests ?? []).some((interest) => {
     const normalized = interest.toLowerCase();
@@ -436,7 +374,7 @@ function isFoodInterest(interests: string[] | null | undefined): boolean {
   });
 }
 
-function getPaceProfile(intensity: string | null | undefined, interests: string[] | null | undefined): PaceProfile {
+export function getPaceProfile(intensity: string | null | undefined, interests: string[] | null | undefined): PaceProfile {
   const normalizedIntensity =
     intensity === 'Relaxed' || intensity === 'Balanced' || intensity === 'Packed'
       ? intensity
@@ -448,7 +386,6 @@ function getPaceProfile(intensity: string | null | undefined, interests: string[
       intensity: 'Relaxed',
       activityCount: 3,
       maxFoodPerDay: wantsFood ? 1 : 0,
-      preferredCategories: ['culture', 'park', 'shopping', 'other', 'food'],
       restSlots: 1,
     };
   }
@@ -458,7 +395,6 @@ function getPaceProfile(intensity: string | null | undefined, interests: string[
       intensity: 'Packed',
       activityCount: 5,
       maxFoodPerDay: wantsFood ? 2 : 1,
-      preferredCategories: ['culture', 'shopping', 'park', 'food', 'other'],
       restSlots: 1,
     };
   }
@@ -466,8 +402,7 @@ function getPaceProfile(intensity: string | null | undefined, interests: string[
   return {
     intensity: 'Balanced',
     activityCount: 4,
-    maxFoodPerDay: wantsFood ? 1 : 1,
-    preferredCategories: ['culture', 'park', 'food', 'shopping', 'other'],
+    maxFoodPerDay: 1,
     restSlots: 1,
   };
 }
@@ -497,161 +432,42 @@ function buildPaceGuidance(profile: PaceProfile): string {
   ].join(' ');
 }
 
-function createGenericActivity(
-  category: Exclude<PoiCategory, 'stay'>,
-  destination: DestinationSearchResult,
-  dayIndex: number,
-  activityIndex: number
-): Pick<ItineraryActivity, 'name' | 'description' | 'category'> {
-  const nameOptions = GENERIC_ACTIVITY_NAMES[category];
-  const descriptionOptions = GENERIC_ACTIVITY_DESCRIPTIONS[category];
-  const name = nameOptions[(dayIndex + activityIndex) % nameOptions.length];
-  const description = descriptionOptions[(dayIndex * 2 + activityIndex) % descriptionOptions.length];
-
-  return {
-    name: `${name} in ${destination.name}`,
-    description,
-    category,
-  };
-}
-
-function bucketPoisByCategory(pois: PointOfInterest[]) {
-  const buckets = new Map<Exclude<PoiCategory, 'stay'>, PointOfInterest[]>();
-
-  for (const category of ['food', 'culture', 'park', 'shopping', 'other'] as const) {
-    buckets.set(category, []);
-  }
-
-  for (const poi of pois) {
-    const category = inferPoiCategoryFromPoi(poi);
-
-    if (category === 'stay') {
-      continue;
-    }
-
-    const bucket = buckets.get(category as Exclude<PoiCategory, 'stay'>);
-
-    if (bucket) {
-      bucket.push(poi);
-    }
-  }
-
-  return buckets;
-}
-
-function pickPoiFromBucket(
-  buckets: Map<Exclude<PoiCategory, 'stay'>, PointOfInterest[]>,
-  category: Exclude<PoiCategory, 'stay'>,
-  usedPoiKeys: Set<string>
-): PointOfInterest | null {
-  const bucket = buckets.get(category);
-
-  if (!bucket) {
-    return null;
-  }
-
-  while (bucket.length > 0) {
-    const candidate = bucket.shift() as PointOfInterest;
-    const key = `${candidate.name.toLowerCase()}-${candidate.latitude.toFixed(4)}-${candidate.longitude.toFixed(4)}`;
-
-    if (usedPoiKeys.has(key)) {
-      continue;
-    }
-
-    usedPoiKeys.add(key);
-    return candidate;
-  }
-
-  return null;
-}
-
-function selectSlotCategories(profile: PaceProfile): Exclude<PoiCategory, 'stay'>[] {
-  const slots: Exclude<PoiCategory, 'stay'>[] = [];
-  let foodCount = 0;
-
-  for (const category of profile.preferredCategories) {
-    if (slots.length >= profile.activityCount) {
-      break;
-    }
-
-    if (category === 'food') {
-      if (foodCount >= profile.maxFoodPerDay) {
-        continue;
-      }
-
-      foodCount += 1;
-    }
-
-    slots.push(category);
-  }
-
-  while (slots.length < profile.activityCount) {
-    slots.push(slots.length % 2 === 0 ? 'other' : 'park');
-  }
-
-  return slots.slice(0, profile.activityCount);
-}
-
-function rebalanceDailyPlansForPace(
+// Lightly enforces the pace profile on the model's output without rewriting its
+// content: caps the activity count, removes duplicate venues ACROSS the whole
+// trip (so the same restaurant or shop can't reappear day after day), and
+// guarantees a rest slot and intensity tag. Stays and transfers are allowed to
+// recur (check-in/out, arrival/departure). Pacing/variety rules live in the
+// prompt; here we just trust the model's selection and de-duplicate it.
+export function rebalanceDailyPlansForPace(
   dailyPlans: ItineraryDayPlan[],
-  destination: DestinationSearchResult,
   request: ItineraryGenerationInput
 ): ItineraryDayPlan[] {
   const profile = getPaceProfile(request.activityIntensity, request.interests ?? []);
-  const wantsFood = isFoodInterest(request.interests ?? []);
-  const maxFoodPerDay = profile.intensity === 'Relaxed' && !wantsFood ? 0 : profile.maxFoodPerDay;
+  const seenNames = new Set<string>();
 
-  return dailyPlans.map((dayPlan, dayIndex) => {
-    const seenNames = new Set<string>();
-    let foodCount = 0;
-
+  return dailyPlans.map((dayPlan) => {
     const activities = dayPlan.activities
-      .slice(0, profile.activityCount)
-      .map((activity, activityIndex) => {
-        const category = inferPoiCategoryFromActivity(activity);
-        const normalizedName = normalizeSearchText(activity.name);
-        const duplicateName = seenNames.has(normalizedName);
-        const isFoodActivity = category === 'food';
-        const shouldReplace = duplicateName || (isFoodActivity && foodCount >= maxFoodPerDay);
-
-        if (!shouldReplace) {
-          seenNames.add(normalizedName);
-
-          if (isFoodActivity) {
-            foodCount += 1;
-          }
-
-          return { ...activity };
+      .filter((activity) => {
+        const category = (activity.category ?? '').toLowerCase();
+        if (category === 'stay' || category === 'transport' || category === 'transfer') {
+          return true;
         }
-
-        const fallbackCategory =
-          profile.preferredCategories[(dayIndex + activityIndex) % profile.preferredCategories.length] ?? 'other';
-        const replacementCategory =
-          fallbackCategory === 'food' && foodCount >= maxFoodPerDay
-            ? profile.preferredCategories.find((candidate) => candidate !== 'food') ?? 'other'
-            : fallbackCategory;
-
-        const generic = createGenericActivity(replacementCategory, destination, dayIndex, activityIndex);
-
-        if (replacementCategory === 'food') {
-          foodCount += 1;
+        const key = normalizeSearchText(activity.name);
+        if (key && seenNames.has(key)) {
+          return false;
         }
-
-        seenNames.add(normalizeSearchText(generic.name));
-
-        return {
-          ...activity,
-          ...generic,
-          latitude: null,
-          longitude: null,
-          address: activity.address ?? destination.address ?? destination.name,
-        };
-      });
+        if (key) {
+          seenNames.add(key);
+        }
+        return true;
+      })
+      .slice(0, profile.activityCount);
 
     return {
       ...dayPlan,
       activities,
-      restSlots: dayPlan.restSlots ?? [{ time: '14:00', duration: profile.restSlots === 1 ? '45 minutes' : '30 minutes' }],
+      restSlots:
+        dayPlan.restSlots ?? [{ time: '14:00', duration: profile.restSlots === 1 ? '45 minutes' : '30 minutes' }],
       intensity: profile.intensity,
     };
   });
@@ -666,150 +482,72 @@ function getPoiSector(destination: DestinationSearchResult, poi: PointOfInterest
   return Math.floor(normalizedAngle / 45) % 8;
 }
 
-function scorePoiForActivity(activity: ItineraryActivity, poi: PointOfInterest): number {
-  const activityName = normalizeSearchText(activity.name);
-  const activityCategory = normalizeSearchText(activity.category);
-  const poiName = normalizeSearchText(poi.name);
-  const poiType = normalizeSearchText(poi.type);
-  let score = 0;
-
-  if (activityName && poiName) {
-    if (activityName === poiName) {
-      score += 8;
-    } else if (activityName.includes(poiName) || poiName.includes(activityName)) {
-      score += 5;
-    }
-  }
-
-  if (activityName && poiType && (activityName.includes(poiType) || poiType.includes(activityName))) {
-    score += 4;
-  }
-
-  if (activityCategory && poiType && (activityCategory.includes(poiType) || poiType.includes(activityCategory))) {
-    score += 3;
-  }
-
-  if (activity.address && poi.address) {
-    const activityAddress = normalizeSearchText(activity.address);
-    const poiAddress = normalizeSearchText(poi.address);
-
-    if (activityAddress && poiAddress && (activityAddress.includes(poiAddress) || poiAddress.includes(activityAddress))) {
-      score += 2;
-    }
-  }
-
-  return score;
-}
-
-function attachPoiCoordinates(
+// Fills coordinates onto the LLM's chosen activities by matching the venue name
+// against the live POI list. The model's names and descriptions are preserved;
+// we only enrich location data. Activities that name a real place (not a generic
+// neighbourhood walk) get exact coordinates; everything else falls back to the
+// destination centre rather than being rewritten into a different venue.
+export function attachCoordinatesByName(
   dailyPlans: ItineraryDayPlan[],
   pois: PointOfInterest[],
-  destination: DestinationSearchResult,
-  options?: {
-    maxFoodPerDay?: number;
-  }
+  destination: DestinationSearchResult
 ): ItineraryDayPlan[] {
   const coordinatePois = pois.filter((poi) => hasCoordinates(poi));
-  const usedPoiIndices = new Set<number>();
-  const globalSectorCounts = new Map<number, number>();
-  const maxFoodCount = options?.maxFoodPerDay ?? 1;
+  const byName = new Map<string, PointOfInterest>();
 
-  return dailyPlans.map((dayPlan) => {
-    const daySectorCounts = new Map<number, number>();
-    let dayFoodCount = 0;
+  for (const poi of coordinatePois) {
+    const key = normalizeSearchText(poi.name);
+    if (key && !byName.has(key)) {
+      byName.set(key, poi);
+    }
+  }
 
-    return {
-      ...dayPlan,
-      activities: dayPlan.activities.map((activity) => {
-        let bestPoiIndex = -1;
-        let bestScore = Number.NEGATIVE_INFINITY;
-        const activityCategory = inferPoiCategoryFromActivity(activity);
+  const findMatch = (name: string): PointOfInterest | null => {
+    const normalized = normalizeSearchText(name);
+    if (!normalized) {
+      return null;
+    }
 
-        for (let index = 0; index < coordinatePois.length; index += 1) {
-          if (usedPoiIndices.has(index)) {
-            continue;
-          }
+    const exact = byName.get(normalized);
+    if (exact) {
+      return exact;
+    }
 
-          const poi = coordinatePois[index];
-          const poiCategory = inferPoiCategoryFromPoi(poi);
-          const sector = getPoiSector(destination, poi);
-          let score = scorePoiForActivity(activity, poi);
+    for (const poi of coordinatePois) {
+      const poiName = normalizeSearchText(poi.name);
+      if (poiName.length >= 4 && (normalized.includes(poiName) || poiName.includes(normalized))) {
+        return poi;
+      }
+    }
 
-          if (activityCategory === poiCategory) {
-            score += 5;
-          }
+    return null;
+  };
 
-          if (activityCategory === 'food' && poiCategory === 'food') {
-            score += 4;
-          } else if (activityCategory === 'food' && poiCategory !== 'food') {
-            score += 1;
-          } else if (activityCategory !== 'food' && poiCategory === 'food') {
-            score -= 5;
-          }
+  return dailyPlans.map((dayPlan) => ({
+    ...dayPlan,
+    activities: dayPlan.activities.map((activity) => {
+      const match = findMatch(activity.name);
 
-          if (dayFoodCount >= maxFoodCount && poiCategory === 'food') {
-            score -= 20;
-          }
-
-          const sectorUsage = daySectorCounts.get(sector) ?? 0;
-          const globalSectorUsage = globalSectorCounts.get(sector) ?? 0;
-
-          score += sectorUsage === 0 ? 4 : -2;
-          score += globalSectorUsage === 0 ? 2 : -globalSectorUsage * 1.25;
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestPoiIndex = index;
-          }
-        }
-
-        if (bestPoiIndex === -1) {
-          for (let index = 0; index < coordinatePois.length; index += 1) {
-            if (!usedPoiIndices.has(index)) {
-              bestPoiIndex = index;
-              break;
-            }
-          }
-        }
-
-        if (bestPoiIndex === -1) {
-          return {
-            ...activity,
-            latitude: destination.latitude,
-            longitude: destination.longitude,
-            address: activity.address ?? destination.address ?? destination.name,
-          };
-        }
-
-        usedPoiIndices.add(bestPoiIndex);
-        const poi = coordinatePois[bestPoiIndex];
-        const poiCategory = inferPoiCategoryFromPoi(poi);
-        const sector = getPoiSector(destination, poi);
-        daySectorCounts.set(sector, (daySectorCounts.get(sector) ?? 0) + 1);
-        globalSectorCounts.set(sector, (globalSectorCounts.get(sector) ?? 0) + 1);
-
-        if (poiCategory === 'food') {
-          dayFoodCount += 1;
-        }
-
+      if (match) {
         return {
           ...activity,
-          name: poi.name,
-          category: poiCategory === 'stay' ? activity.category : poiCategory,
-          latitude: poi.latitude,
-          longitude: poi.longitude,
-          address: activity.address ?? poi.address ?? destination.address ?? destination.name,
-          description:
-            poiCategory === 'stay'
-              ? activity.description
-              : `Spend time at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`,
+          latitude: match.latitude,
+          longitude: match.longitude,
+          address: activity.address ?? match.address ?? destination.address ?? destination.name,
         };
-      }),
-    };
-  });
+      }
+
+      return {
+        ...activity,
+        latitude: normalizeCoordinate(activity.latitude) ?? destination.latitude,
+        longitude: normalizeCoordinate(activity.longitude) ?? destination.longitude,
+        address: activity.address ?? destination.address ?? destination.name,
+      };
+    }),
+  }));
 }
 
-function normalizeBudgetBreakdown(
+export function normalizeBudgetBreakdown(
   budgetBreakdown: Partial<BudgetBreakdown> | undefined,
   totalEstimatedCost: number | null
 ): BudgetBreakdown {
@@ -824,20 +562,24 @@ function normalizeBudgetBreakdown(
   };
 }
 
-function prioritizePois(
+export function prioritizePois(
   pois: PointOfInterest[],
   interests: string[],
-  destination: DestinationSearchResult
+  destination: DestinationSearchResult,
+  maxResults = 8
 ): PointOfInterest[] {
   const searchTerms = new Set(interests.map((interest) => interest.toLowerCase()));
   const categoryOrder: PoiCategory[] = ['culture', 'park', 'shopping', 'food', 'other'];
+  // Scale the per-category quotas with the requested size so long trips get a
+  // sight-led, varied pool (culture-heavy) rather than a handful of repeats.
+  const tier = Math.max(1, Math.ceil(maxResults / 8));
   const categoryQuotas: Record<PoiCategory, number> = {
-    food: 1,
-    culture: 3,
-    park: 2,
-    shopping: 1,
+    food: 1 * tier,
+    culture: 3 * tier,
+    park: 2 * tier,
+    shopping: 1 * tier,
     stay: 0,
-    other: 1,
+    other: 1 * tier,
   };
   const wantsFood = Array.from(searchTerms).some((term) => term.includes('food') || term.includes('nightlife'));
 
@@ -862,6 +604,7 @@ function prioritizePois(
       score -= 6;
     }
 
+    score += scorePoiNotability(poi);
     score += categoryOrder.length - categoryOrder.indexOf(inferPoiCategoryFromPoi(poi));
     score += Math.max(0, 4 - Math.min(4, haversineDistanceKm(destination, poi) / 3));
     score += 2 / (1 + getPoiSector(destination, poi));
@@ -900,11 +643,11 @@ function prioritizePois(
     return null;
   };
 
-  while (selected.size < 8) {
+  while (selected.size < maxResults) {
     let progressed = false;
 
     for (const category of categoryOrder) {
-      if (selected.size >= 8) {
+      if (selected.size >= maxResults) {
         break;
       }
 
@@ -928,12 +671,12 @@ function prioritizePois(
     }
   }
 
-  if (selected.size < 8) {
+  if (selected.size < maxResults) {
     const leftovers = [...buckets.values()].flat();
     leftovers.sort((left, right) => scorePoi(right) - scorePoi(left) || left.name.localeCompare(right.name));
 
     for (const poi of leftovers) {
-      if (selected.size >= 8) {
+      if (selected.size >= maxResults) {
         break;
       }
 
@@ -944,10 +687,10 @@ function prioritizePois(
     }
   }
 
-  return Array.from(selected.values()).slice(0, 8);
+  return Array.from(selected.values()).slice(0, maxResults);
 }
 
-function haversineDistanceKm(
+export function haversineDistanceKm(
   left: { latitude: number; longitude: number },
   right: { latitude: number; longitude: number }
 ): number {
@@ -1026,7 +769,7 @@ function buildTransferHint(label: string, context: string | null | undefined, st
   return `${label}: ${trimmedContext}`;
 }
 
-function normalizeStay(
+export function normalizeStay(
   stay: GeminiItineraryPayload['stay'],
   fallback: PointOfInterest | null,
   request: ItineraryGenerationInput
@@ -1067,7 +810,7 @@ function normalizeStay(
   };
 }
 
-function normalizeTransfers(
+export function normalizeTransfers(
   transfers: GeminiItineraryPayload['transfers'],
   request: ItineraryGenerationInput,
   stay: TravelStay | null
@@ -1126,66 +869,117 @@ function buildPoiContext(pois: PointOfInterest[]): string {
   }
 
   return pois
-    .map(
-      (poi, index) =>
-        `${index + 1}. ${poi.name} | ${poi.type} | ${poi.latitude},${poi.longitude}${poi.address ? ` | ${poi.address}` : ''}`
-    )
+    .map((poi, index) => {
+      const tags = poi.tags ?? {};
+      const detail = [
+        tags.cuisine ? `cuisine: ${tags.cuisine}` : null,
+        tags.opening_hours ? `hours: ${tags.opening_hours}` : null,
+        tags.fee === 'yes' ? 'paid entry' : null,
+        tags.website || tags['contact:website'] ? 'has website' : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
+      return `${index + 1}. ${poi.name} | ${poi.type} | ${poi.latitude},${poi.longitude}${poi.address ? ` | ${poi.address}` : ''}${detail ? ` | ${detail}` : ''}`;
+    })
     .join('\n');
 }
 
-function buildFallbackDailyPlans(input: {
+// Round-robins POIs across categories so a sequential day-by-day layout mixes a
+// sight, a meal, a park, etc. each day instead of clustering all temples on one
+// day and all restaurants on another.
+function interleaveByCategory(pois: PointOfInterest[]): PointOfInterest[] {
+  const buckets = new Map<PoiCategory, PointOfInterest[]>();
+  for (const poi of pois) {
+    const category = inferPoiCategoryFromPoi(poi);
+    const bucket = buckets.get(category) ?? [];
+    bucket.push(poi);
+    buckets.set(category, bucket);
+  }
+
+  const order: PoiCategory[] = ['culture', 'food', 'park', 'shopping', 'other'];
+  const result: PointOfInterest[] = [];
+  let progressed = true;
+
+  while (progressed) {
+    progressed = false;
+    for (const category of order) {
+      const next = buckets.get(category)?.shift();
+      if (next) {
+        result.push(next);
+        progressed = true;
+      }
+    }
+  }
+
+  return result;
+}
+
+// Deterministic safety net used only when every AI provider fails. It lays the
+// real, already-prioritised POIs out across the days with honest, concrete
+// descriptions — no invented venue names and no flowery filler. When the live
+// POIs run out, the remaining time is left as honest open exploration rather than
+// padded with fictional stops.
+export function buildFallbackDailyPlans(input: {
   destination: DestinationSearchResult;
   pois: PointOfInterest[];
   duration: number;
   request: ItineraryGenerationInput;
   profile: PaceProfile;
 }): ItineraryDayPlan[] {
-  const buckets = bucketPoisByCategory(input.pois);
-  const usedPoiKeys = new Set<string>();
+  const sights = interleaveByCategory(input.pois.filter((poi) => inferPoiCategoryFromPoi(poi) !== 'stay'));
+  const times =
+    input.profile.intensity === 'Relaxed'
+      ? ['09:30', '13:00', '16:30']
+      : ['09:00', '11:30', '14:00', '16:30', '19:00'];
   const plans: ItineraryDayPlan[] = [];
-  const slotCategories = selectSlotCategories(input.profile);
+  let cursor = 0;
 
   for (let dayIndex = 0; dayIndex < input.duration; dayIndex += 1) {
     const activities: ItineraryActivity[] = [];
 
-    slotCategories.forEach((slotCategory, activityIndex) => {
-      const time =
-        input.profile.intensity === 'Relaxed'
-          ? ['09:30', '13:00', '16:30'][activityIndex] ?? `${10 + activityIndex * 2}:00`
-          : ['09:00', '12:00', '15:30', '18:00', '20:00'][activityIndex] ?? `${9 + activityIndex * 2}:00`;
-      const poi = pickPoiFromBucket(buckets, slotCategory, usedPoiKeys);
+    for (let slot = 0; slot < input.profile.activityCount; slot += 1) {
+      const time = times[slot] ?? `${9 + slot * 2}:00`;
+      const poi = sights[cursor];
 
-      if (poi) {
-        const poiCategory = inferPoiCategoryFromPoi(poi);
-        activities.push({
-          time,
-          name: poi.name,
-          description:
-            poiCategory === 'food'
-              ? `Keep the meal simple and easy at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`
-              : `Spend a calm stretch at ${poi.name}${poi.address ? ` near ${poi.address}` : ''}.`,
-          duration: activityIndex === 0 ? 90 : 75,
-          cost: poiCategory === 'food' ? 20 : 0,
-          estimated_cost: poiCategory === 'food' ? 20 : 0,
-          category: poiCategory,
-          latitude: poi.latitude,
-          longitude: poi.longitude,
-          address: poi.address ?? input.destination.address ?? input.destination.name,
-        });
-        return;
+      if (!poi) {
+        // Out of live anchors: keep the day honest instead of inventing a venue.
+        if (activities.length === 0) {
+          activities.push({
+            time,
+            name: `Explore ${input.destination.name}`,
+            description: `Open time to wander ${input.destination.name} at your own pace or revisit a favourite spot.`,
+            duration: 60,
+            cost: null,
+            estimated_cost: null,
+            category: 'other',
+            latitude: input.destination.latitude ?? null,
+            longitude: input.destination.longitude ?? null,
+            address: input.destination.address ?? input.destination.name,
+          });
+        }
+        break;
       }
 
+      cursor += 1;
+      const category = inferPoiCategoryFromPoi(poi);
+      const locationHint = poi.address ? ` (${poi.address})` : '';
       activities.push({
         time,
-        ...createGenericActivity(slotCategory, input.destination, dayIndex, activityIndex),
-        duration: activityIndex === 0 ? 90 : 75,
-        cost: slotCategory === 'food' ? 20 : 0,
-        estimated_cost: slotCategory === 'food' ? 20 : 0,
-        latitude: input.destination.latitude ?? null,
-        longitude: input.destination.longitude ?? null,
-        address: input.destination.address ?? input.destination.name,
+        name: poi.name,
+        description:
+          category === 'food'
+            ? `Stop for a meal at ${poi.name}${locationHint}.`
+            : `Visit ${poi.name}${locationHint}, one of the notable ${category === 'other' ? 'spots' : `${category} spots`} in ${input.destination.name}.`,
+        duration: slot === 0 ? 90 : 75,
+        cost: category === 'food' ? 20 : 0,
+        estimated_cost: category === 'food' ? 20 : 0,
+        category,
+        latitude: poi.latitude,
+        longitude: poi.longitude,
+        address: poi.address ?? input.destination.address ?? input.destination.name,
       });
-    });
+    }
 
     plans.push({
       day: dayIndex + 1,
@@ -1221,6 +1015,7 @@ function buildFallbackItinerary(input: {
   duration: number;
   stay: TravelStay | null;
   profile: PaceProfile;
+  currency: TripCurrency;
 }): GeneratedItinerary {
   const dailyPlans = buildFallbackDailyPlans({
     destination: input.destination,
@@ -1269,6 +1064,7 @@ function buildFallbackItinerary(input: {
       input.weather ? `Weather: ${input.weather.description}.` : 'Weather data was unavailable for this run.',
       input.stay ? `Stay: ${input.stay.name}.` : 'No live stay was selected, so the trip stays flexible.',
     ],
+    currency: input.currency,
     sourceData: {
       destination: input.destination,
       weather: input.weather,
@@ -1294,6 +1090,7 @@ function buildItineraryPrompt(input: {
   stayOptions: PointOfInterest[];
   duration: number;
   profile: PaceProfile;
+  currency: TripCurrency;
 }): string {
   const interestList = input.request.interests?.filter(Boolean).join(', ') || 'No interests provided';
   const dietaryRestrictions =
@@ -1311,7 +1108,8 @@ You are generating a production travel itinerary as strict JSON.
 Trip request:
 - destination: ${input.destination.name}
 - duration_days: ${input.duration}
-- budget_context: ${normalizeBudgetLabel(input.request.budget)}
+- budget_context: ${normalizeBudgetLabel(input.request.budget, input.currency)}
+- cost_currency: ${input.currency.display} (express every cost in this currency)
 - interests: ${interestList}
 - activity_intensity: ${input.request.activityIntensity ?? 'Not provided'}
 - arrival_method: ${input.request.arrivalMethod ?? 'Not provided'}
@@ -1350,13 +1148,18 @@ Rules:
 - The departure transfer should move the traveler from the stay to their provided departure context.
 - Do not invent station, airport, or hotel names that were not provided by the user or live data.
 - Return one itinerary covering all ${input.duration} days.
-- All costs must be numeric or null.
+- All costs must be numeric or null, expressed in ${input.currency.display} (the destination's local currency), not converted to any other currency.
 - All coordinates must come from the POI list when the activity is a venue.
+- Never schedule the same venue on more than one day: each named place appears at most once across the entire trip (the stay and arrival/departure transfers may recur).
+- Do not use everyday-errand places as activities — no general stores, convenience stores, grocery/oil shops, supermarkets, pharmacies, ATMs, banks, or fuel stations. Use sightseeing, cultural, outdoor, dining, or genuine market/bazaar destinations only.
+- On a multi-day trip, lead with distinct attractions, temples, museums, parks, and viewpoints spread across the days; do not pad days with repeated meals.
 - Avoid repeating the same venue type across the whole trip unless the destination genuinely lacks variety.
 - If the itinerary is relaxed, do not turn every day into restaurant stops; use scenic, cultural, park, or neighborhood activities for most of the plan.
 - Spread the trip across different neighborhoods or city sectors instead of clustering all stops in one area.
 - ${activityCap}
-- Keep each activity description to one short sentence.
+- Write each activity description as one or two sentences that give a concrete reason to go and a useful, specific detail (what to see, eat, or know) drawn from the POI data when available.
+- When a POI lists opening hours or paid entry, reflect it in the timing or description and do not schedule it when closed.
+- Do not use filler phrases like "spend time at" or "explore the area"; be specific to the place.
 `.trim();
 }
 
@@ -1427,7 +1230,7 @@ export async function generateItineraryFromLiveData(
         longitude: request.longitude,
       }, {
         skipReverseGeocode: hasCoordinates,
-      }).catch(() => ({
+      }).catch((): DestinationSearchResult => ({
         name: request.destination.trim(),
         latitude: request.latitude ?? 0,
         longitude: request.longitude ?? 0,
@@ -1435,13 +1238,16 @@ export async function generateItineraryFromLiveData(
         address: request.destination.trim(),
       }));
   const poiTypes = derivePoiTypes(request.interests ?? []);
-  const poiLimit = duration <= 2 ? 5 : duration > 7 ? 8 : duration > 3 ? 10 : 12;
+  // Scale the candidate pool with trip length so longer trips have enough
+  // distinct sights to fill every day without repeating venues. A 5-day trip
+  // needs far more than a weekend; ~5 candidates per day, capped.
+  const poiLimit = Math.min(34, Math.max(14, duration * 6));
   const stayLimit = duration <= 2 ? 2 : duration > 7 ? 3 : 4;
   const poiPromise = hasCoordinates
     ? fetchPointsOfInterest({
         latitude: request.latitude as number,
         longitude: request.longitude as number,
-        radius: duration <= 2 ? 6_000 : 8_000,
+        radius: duration <= 2 ? 10_000 : 9_000,
         types: poiTypes,
         limit: poiLimit,
         timeoutMs: fastMode ? 5_000 : 8_000,
@@ -1475,19 +1281,32 @@ export async function generateItineraryFromLiveData(
   const destination =
     destinationResult.status === 'fulfilled'
       ? destinationResult.value
-      : {
+      : ({
           name: request.destination.trim(),
           latitude: request.latitude ?? 0,
           longitude: request.longitude ?? 0,
           type: 'destination',
           address: request.destination.trim(),
-      };
+        } satisfies DestinationSearchResult);
   const pois = poIResult.status === 'fulfilled' ? poIResult.value : [];
   const stayCandidatesRaw = stayResult.status === 'fulfilled' ? stayResult.value : [];
   const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
-  const prioritizedPois = prioritizePois(pois, request.interests ?? [], destination);
+  // Give the model enough distinct venues to fill every day without repeating:
+  // roughly one per activity slot across the whole trip, plus a small buffer.
+  const promptPoiTarget = Math.min(poiLimit, duration * paceProfile.activityCount + 4);
+  const prioritizedPois = prioritizePois(pois, request.interests ?? [], destination, promptPoiTarget);
   const prioritizedStayCandidates = prioritizeStayCandidates(stayCandidatesRaw, destination);
-  const maxTokens = duration <= 2 ? 800 : Math.min(3200, 1600 + duration * 320);
+  // Gemini 2.5 Flash-Lite supports 8k output tokens. The schema marks every field
+  // required, so the JSON is verbose; an undersized budget truncates mid-array and
+  // forces the deterministic fallback. Keep a generous floor so short trips with
+  // rich descriptions still complete.
+  const maxTokens = Math.min(8192, Math.max(3500, 1400 + duration * 700));
+  // Item costs are written in the destination's currency; the budget headline is
+  // converted to the traveler's home currency for a familiar total.
+  const currency = await resolveTripCurrency({
+    destinationCountryCode: request.destinationCountryCode ?? destination.countryCode,
+    homeCurrency: request.homeCurrency,
+  });
 
   try {
     const payload = await generateJson<GeminiItineraryPayload>(
@@ -1499,28 +1318,27 @@ export async function generateItineraryFromLiveData(
         stayOptions: prioritizedStayCandidates,
         duration,
         profile: paceProfile,
+        currency,
       }),
       {
         maxTokens,
-        repairMaxTokens: Math.max(700, Math.floor(maxTokens / 2)),
+        repairMaxTokens: Math.max(900, Math.floor(maxTokens / 2)),
         skipRepair: false,
-        timeoutMs: duration <= 2 ? 8_000 : 18_000,
+        timeoutMs: duration <= 2 ? 22_000 : duration <= 4 ? 30_000 : 42_000,
         responseSchema: geminiItineraryResponseSchema as Record<string, unknown>,
+        temperature: 0.6,
       }
     );
 
     if (!payload.dailyPlans?.length) {
-      throw new Error('Kimi 2.5 did not return any itinerary days');
+      throw new Error('The model did not return any itinerary days');
     }
 
     const rebalancePlans = rebalanceDailyPlansForPace(
       normalizeDayPlans(payload.dailyPlans, destination),
-      destination,
       request
     );
-    const dailyPlans = attachPoiCoordinates(rebalancePlans, prioritizedPois, destination, {
-      maxFoodPerDay: paceProfile.maxFoodPerDay,
-    });
+    const dailyPlans = attachCoordinatesByName(rebalancePlans, prioritizedPois, destination);
     const totalEstimatedCost = payload.totalEstimatedCost ?? null;
     const budgetBreakdown = normalizeBudgetBreakdown(payload.budgetBreakdown, totalEstimatedCost);
     const stay = normalizeStay(payload.stay, prioritizedStayCandidates[0] ?? null, request);
@@ -1540,6 +1358,7 @@ export async function generateItineraryFromLiveData(
       budgetBreakdown,
       budget_breakdown: budgetBreakdown,
       tips: payload.tips ?? [],
+      currency,
       sourceData: {
         destination,
         weather,
@@ -1567,6 +1386,7 @@ export async function generateItineraryFromLiveData(
       pois: prioritizedPois,
       duration,
       stay,
+      currency,
       profile: paceProfile,
     });
   }

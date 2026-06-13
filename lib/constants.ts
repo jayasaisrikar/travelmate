@@ -51,7 +51,7 @@ export const OPEN_METEO_WEATHER_CODES: Record<number, { description: string; ico
 };
 
 export const INTEREST_TO_POI_TYPES: Record<string, string[]> = {
-  culture: ['museum', 'gallery', 'attraction', 'viewpoint'],
+  culture: ['attraction', 'museum', 'gallery', 'place_of_worship', 'viewpoint'],
   food: ['restaurant', 'cafe', 'market'],
   adventure: ['attraction', 'viewpoint', 'park'],
   nature: ['park', 'viewpoint', 'beach'],
@@ -63,7 +63,7 @@ export const INTEREST_TO_POI_TYPES: Record<string, string[]> = {
   beach: ['beach', 'viewpoint'],
 };
 
-export const DEFAULT_POI_TYPES = ['attraction', 'museum', 'gallery', 'park', 'viewpoint', 'market'];
+export const DEFAULT_POI_TYPES = ['attraction', 'place_of_worship', 'museum', 'gallery', 'park', 'viewpoint', 'market'];
 
 export const POI_TYPE_ALIASES: Record<string, string[]> = {
   restaurant: ['amenity=restaurant', 'amenity=fast_food'],
@@ -81,6 +81,6 @@ export const POI_TYPE_ALIASES: Record<string, string[]> = {
   viewpoint: ['tourism=viewpoint'],
   attraction: ['tourism=attraction'],
   bar: ['amenity=bar', 'amenity=pub'],
-  place_of_worship: ['amenity=place_of_worship'],
+  place_of_worship: ['amenity=place_of_worship', 'building=temple', 'historic=temple'],
   spa: ['leisure=spa'],
 };

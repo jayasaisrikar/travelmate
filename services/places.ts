@@ -35,6 +35,16 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   }
 }
 
+function extractCountryCode(address: unknown): string | undefined {
+  if (address && typeof address === 'object') {
+    const code = (address as Record<string, unknown>).country_code;
+    if (typeof code === 'string' && code.trim()) {
+      return code.trim().toLowerCase();
+    }
+  }
+  return undefined;
+}
+
 function toNumber(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) {
     return null;
@@ -55,6 +65,24 @@ function buildOverpassClause(type: string, latitude: number, longitude: number, 
       relation${selector}(around:${radius},${latitude},${longitude});
     `;
   });
+}
+
+export function scorePoiNotability(poi: PointOfInterest): number {
+  const tags = poi.tags ?? {};
+  let score = 0;
+
+  if (tags.wikidata) score += 6;
+  if (tags.wikipedia) score += 5;
+  if (tags.wikimedia_commons) score += 2;
+  if (tags.website || tags['contact:website']) score += 1;
+  if (tags.opening_hours) score += 1;
+
+  const tourism = (tags.tourism ?? '').toLowerCase();
+  if (['attraction', 'museum', 'gallery', 'viewpoint'].includes(tourism)) score += 2;
+  if (tags.historic) score += 2;
+  if (poi.address) score += 1;
+
+  return score;
 }
 
 function chunkTypes(types: string[], size: number): string[][] {
@@ -225,6 +253,7 @@ export async function searchDestinations(query: string): Promise<DestinationSear
           ? result.boundingbox.map((item) => String(item))
           : undefined,
         importance: toNumber(result.importance as string | number | null | undefined) ?? undefined,
+        countryCode: extractCountryCode(result.address),
       };
 
       if (normalizedResult.name) {
@@ -253,6 +282,76 @@ function destinationToPoi(result: DestinationSearchResult): PointOfInterest {
     address: result.address ?? undefined,
     tags: {},
   };
+}
+
+// Everyday-errand places that are not travel-worthy stops. They sometimes slip
+// in through marketplace/shop tags or the Nominatim text fallback; a general
+// store or pharmacy should never become an itinerary activity.
+const JUNK_POI_PATTERN =
+  /general store|provision|kirana|grocery|supermarket|convenience|departmental|oils?\b|medical|pharmac|chemist|\batm\b|\bbank\b|petrol|fuel|gas station|hardware|mobile|electronics|xerox|stationery|wine shop|liquor|grinding|seva kendra|aadha?ar|\bseeds?\b|development|corporation|\boffice\b|department|govt|government|municipal|enrol|registration|godown|warehouse|depot|panchayat|tahsil|\brto\b|passport|\bclinic\b|hospital|workshop|service cent|repair/i;
+
+function isJunkPoi(poi: PointOfInterest): boolean {
+  const tags = poi.tags ?? {};
+  const shop = String(tags.shop ?? '').toLowerCase();
+  if (['convenience', 'general', 'kiosk', 'supermarket', 'chemist', 'variety_store'].includes(shop)) {
+    return true;
+  }
+  if (tags.amenity && ['pharmacy', 'fuel', 'atm', 'bank'].includes(String(tags.amenity).toLowerCase())) {
+    return true;
+  }
+  return JUNK_POI_PATTERN.test(poi.name);
+}
+
+// Restaurants carry website/opening_hours tags far more often than temples,
+// monuments, or viewpoints, so a pure notability sort buries the real sights
+// under food before the limit is applied. Instead, round-robin across categories
+// (sights first) so every category keeps representation in the candidate pool and
+// no single category — usually food — starves the others out.
+function selectDiverseByCategory(pois: PointOfInterest[], limit: number): PointOfInterest[] {
+  const order: Array<ReturnType<typeof classifyPoiCategory>> = [
+    'culture',
+    'park',
+    'shopping',
+    'food',
+    'other',
+    'stay',
+  ];
+  const buckets = new Map<ReturnType<typeof classifyPoiCategory>, PointOfInterest[]>();
+
+  for (const poi of pois) {
+    const category = classifyPoiCategory(poi);
+    const bucket = buckets.get(category) ?? [];
+    bucket.push(poi);
+    buckets.set(category, bucket);
+  }
+
+  for (const bucket of buckets.values()) {
+    bucket.sort(
+      (left, right) =>
+        scorePoiNotability(right) - scorePoiNotability(left) || left.name.localeCompare(right.name)
+    );
+  }
+
+  const selected: PointOfInterest[] = [];
+  let progressed = true;
+
+  while (selected.length < limit && progressed) {
+    progressed = false;
+
+    for (const category of order) {
+      if (selected.length >= limit) {
+        break;
+      }
+
+      const next = buckets.get(category)?.shift();
+      if (next) {
+        selected.push(next);
+        progressed = true;
+      }
+    }
+  }
+
+  return selected;
 }
 
 function classifyPoiCategory(poi: PointOfInterest): 'food' | 'culture' | 'park' | 'shopping' | 'stay' | 'other' {
@@ -288,7 +387,10 @@ function classifyPoiCategory(poi: PointOfInterest): 'food' | 'culture' | 'park' 
     type.includes('historic') ||
     type.includes('monument') ||
     type.includes('temple') ||
-    type.includes('church')
+    type.includes('church') ||
+    type.includes('worship') ||
+    type.includes('shrine') ||
+    type.includes('mosque')
   ) {
     return 'culture';
   }
@@ -574,7 +676,7 @@ export async function resolveDestination(
     const longitude = coordinates.longitude as number;
 
     const reverseResponse = await fetchWithTimeout(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${latitude}&lon=${longitude}`,
       {
         headers: NOMINATIM_HEADERS,
         next: { revalidate: 300 },
@@ -592,6 +694,7 @@ export async function resolveDestination(
         longitude,
         type: String(reverseData.type ?? 'destination'),
         address: displayName,
+        countryCode: extractCountryCode(reverseData.address),
       };
 
       reverseDestinationCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, result });
@@ -608,6 +711,69 @@ export async function resolveDestination(
 
   reverseDestinationCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, result: topResult });
   return topResult;
+}
+
+// Rule-based, per-destination interest chips: sample the live POIs around a
+// place and rank our known interest vocabulary by what actually exists there
+// (temple towns surface culture/history, coastal cities surface beach/nature),
+// then pad with sensible defaults so there are always at least a few chips.
+export async function suggestInterestsForLocation(options: {
+  latitude: number;
+  longitude: number;
+}): Promise<string[]> {
+  const pois = await fetchPointsOfInterest({
+    latitude: options.latitude,
+    longitude: options.longitude,
+    radius: 12_000,
+    types: [
+      'attraction', 'place_of_worship', 'museum', 'gallery', 'park',
+      'viewpoint', 'market', 'restaurant', 'cafe', 'beach', 'bar',
+    ],
+    limit: 40,
+    timeoutMs: 7_000,
+  }).catch(() => [] as PointOfInterest[]);
+
+  const score = new Map<string, number>();
+  const bump = (interest: string, amount = 1) => score.set(interest, (score.get(interest) ?? 0) + amount);
+
+  for (const poi of pois) {
+    const haystack = `${poi.type} ${poi.name} ${Object.values(poi.tags ?? {}).join(' ')}`.toLowerCase();
+
+    if (/temple|worship|shrine|mosque|church|monument|historic|mandir|gurudwara/.test(haystack)) {
+      bump('culture');
+      bump('history');
+    }
+    if (/museum|gallery|\bart\b/.test(haystack)) {
+      bump('culture');
+      bump('art');
+    }
+    if (/attraction/.test(haystack)) bump('culture');
+    if (/restaurant|cafe|food|bakery|bistro|cuisine/.test(haystack)) bump('food');
+    if (/\bbar\b|pub|night|club/.test(haystack)) bump('nightlife');
+    if (/beach|coast|seaside/.test(haystack)) {
+      bump('beach', 2);
+      bump('nature');
+    }
+    if (/park|garden|forest|lake/.test(haystack)) bump('nature');
+    if (/viewpoint|peak|hill|trail|trek/.test(haystack)) {
+      bump('nature');
+      bump('adventure');
+    }
+    if (/market|mall|shop|bazaar|store/.test(haystack)) bump('shopping');
+    if (/spa|wellness|yoga/.test(haystack)) bump('wellness');
+  }
+
+  const ranked = [...score.entries()].sort((left, right) => right[1] - left[1]).map(([interest]) => interest);
+  const defaults = ['food', 'culture', 'nature', 'shopping', 'history', 'nightlife'];
+  const result: string[] = [];
+
+  for (const interest of [...ranked, ...defaults]) {
+    if (!result.includes(interest)) {
+      result.push(interest);
+    }
+  }
+
+  return result.slice(0, 6);
 }
 
 export function derivePoiTypes(interests: string[]): string[] {
@@ -681,7 +847,9 @@ export async function fetchPointsOfInterest(options: {
         }
       }
 
-      if (unique.size >= (options.limit ?? 48)) {
+      // Gather a richer raw pool than the final limit so junk-filtering and the
+      // category-balanced selection have enough material to pick a varied set.
+      if (unique.size >= (options.limit ?? 48) * 3) {
         break;
       }
     } catch (error) {
@@ -722,9 +890,8 @@ export async function fetchPointsOfInterest(options: {
     }
   }
 
-  const results = Array.from(unique.values())
-    .sort((left, right) => left.name.localeCompare(right.name))
-    .slice(0, options.limit ?? 48);
+  const candidates = Array.from(unique.values()).filter(poi => !isJunkPoi(poi));
+  const results = selectDiverseByCategory(candidates, options.limit ?? 48);
 
   poiCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, results });
   return results;
