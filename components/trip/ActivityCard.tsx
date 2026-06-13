@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, RefreshCcw, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatTripMoney } from '@/lib/utils';
 import type { TripCurrency } from '@/lib/travel-types';
