@@ -273,7 +273,7 @@ export async function generateJson<T>(
       text = await callGeminiJson(
         geminiPrompt,
         maxTokens,
-        Math.min(timeoutMs, 28_000),
+        Math.min(timeoutMs, 45_000),
         options?.responseSchema,
         temperature
       );
@@ -286,7 +286,9 @@ export async function generateJson<T>(
 
   if (!sourceProvider && hasNvidiaConfig()) {
     try {
-      text = await callNvidia(messages, temperature, true, maxTokens, timeoutMs);
+      // Cap the NVIDIA fallback independently so a long Gemini timeout budget
+      // doesn't make users wait tens of seconds on the secondary provider.
+      text = await callNvidia(messages, temperature, true, maxTokens, Math.min(timeoutMs, 20_000));
       sourceProvider = 'nvidia';
     } catch (error) {
       generationErrors.push(formatProviderError('nvidia', error));

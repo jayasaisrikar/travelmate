@@ -15,12 +15,13 @@ import { TimelineView } from '@/components/trip/TimelineView';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
-import { formatCurrency } from '@/lib/utils';
+import { formatTripMoney } from '@/lib/utils';
 import type {
   GeneratedItinerary,
   ItineraryActivity,
   ItineraryDayPlan,
   TravelStay,
+  TripCurrency,
   TripSuggestion,
 } from '@/lib/travel-types';
 
@@ -238,12 +239,46 @@ export default function TripDetailsPage() {
     () => trip?.itinerary?.budgetBreakdown ?? trip?.itinerary?.budget_breakdown ?? null,
     [trip]
   );
-  const tripCurrency = useMemo(() => trip?.itinerary?.currency ?? null, [trip]);
-  const currencyCode = tripCurrency?.display ?? 'USD';
+  const [tripCurrency, setTripCurrency] = useState<TripCurrency | null>(null);
   const totalEstimatedCostValue = useMemo(() => {
     if (!totalEstimatedCost) return Number.NaN;
     return Number.parseFloat(totalEstimatedCost.replace(/[^0-9.]+/g, ''));
   }, [totalEstimatedCost]);
+
+  // Use the trip's own currency when present; otherwise backfill — older trips
+  // have no currency block and their costs were generated in USD, so we convert
+  // them to the viewer's detected home currency for a consistent symbol.
+  useEffect(() => {
+    if (!trip) {
+      return;
+    }
+    const existing = trip.itinerary?.currency ?? null;
+    if (existing) {
+      setTripCurrency(existing);
+      return;
+    }
+
+    let cancelled = false;
+    fetch('/api/locale/currency')
+      .then(response => (response.ok ? response.json() : null))
+      .then(data => {
+        if (cancelled || typeof data?.currency !== 'string') {
+          return;
+        }
+        setTripCurrency({
+          display: 'USD',
+          home: data.currency,
+          rateToHome: typeof data.usdToHome === 'number' && data.usdToHome > 0 ? data.usdToHome : 1,
+        });
+      })
+      .catch(() => {
+        /* leave as USD */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trip]);
 
   const scrollToMap = () => {
     mapSectionRef.current?.scrollIntoView({
@@ -477,7 +512,7 @@ export default function TripDetailsPage() {
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Estimated cost</div>
               <div className="mt-2 text-2xl font-black text-[#FF6584]">
                 {Number.isFinite(totalEstimatedCostValue)
-                  ? formatCurrency(totalEstimatedCostValue, currencyCode)
+                  ? formatTripMoney(totalEstimatedCostValue, tripCurrency)
                   : totalEstimatedCost || 'Not set'}
               </div>
             </div>
@@ -502,10 +537,7 @@ export default function TripDetailsPage() {
           stay={stay}
           selectedActivityIndex={selectedStopIndex}
           focusStayTrigger={focusStayTrigger}
-          onSelectActivity={index => {
-            setSelectedStopIndex(index);
-            scrollToMap();
-          }}
+          onSelectActivity={setSelectedStopIndex}
           onOpenStayRetry={() => setIsStayRetryOpen(true)}
           onFocusStay={() => {
             setFocusStayTrigger(current => current + 1);

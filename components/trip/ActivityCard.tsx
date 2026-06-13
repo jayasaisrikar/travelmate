@@ -2,7 +2,8 @@
 
 import { ChevronDown, ChevronUp, RefreshCcw, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { formatCurrency } from '@/lib/utils';
+import { formatTripMoney } from '@/lib/utils';
+import type { TripCurrency } from '@/lib/travel-types';
 
 type ActivityCardProps = {
   dayLabel: string;
@@ -12,7 +13,7 @@ type ActivityCardProps = {
   description?: string;
   address?: string | null;
   cost?: number | null;
-  currencyCode?: string;
+  currency?: TripCurrency | null;
   latitude?: number | null;
   longitude?: number | null;
   selected?: boolean;
@@ -31,7 +32,7 @@ export function ActivityCard({
   description,
   address,
   cost,
-  currencyCode = 'USD',
+  currency,
   latitude,
   longitude,
   selected = false,
@@ -75,7 +76,7 @@ export function ActivityCard({
         <div className="flex flex-wrap items-center gap-2">
           {cost !== null && cost !== undefined && (
             <div className="rounded-full bg-[#FFEAF0] px-3 py-1 text-sm font-bold text-[#FF6584]">
-              {formatCurrency(cost, currencyCode)}
+              {formatTripMoney(cost, currency)}
             </div>
           )}
 

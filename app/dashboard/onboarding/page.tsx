@@ -6,7 +6,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { loadTrip, regenerateFullTrip, saveTrip } from '@/lib/supabase-trips';
 import { Brand } from '@/components/common/Brand';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import { currencyForCountryCode } from '@/services/currency';
+import { formatCurrency } from '@/lib/utils';
 import type { TravelerPreferences } from '@/lib/travel-types';
+
+function currencyFromBrowserLocale(): string | null {
+  try {
+    const language = typeof navigator !== 'undefined' ? navigator.language : '';
+    if (!language) {
+      return null;
+    }
+    const region = new Intl.Locale(language).maximize().region;
+    return region ? currencyForCountryCode(region) : null;
+  } catch {
+    return null;
+  }
+}
 
 const STEPS = ['Destination', 'Trip details', 'Review'];
 const DEFAULT_ARRIVAL_TIME = '10:00';
@@ -438,9 +453,40 @@ export default function OnboardingPage() {
     return () => window.clearTimeout(timer);
   }, [form.destination, form.latitude, form.longitude]);
 
-  // Ask for location once on load and localise the budget to the traveler's home
-  // currency. If permission is denied or unavailable we silently keep USD.
+  // Localise all money to the traveler's home currency, with escalating accuracy
+  // so it works no matter what: (1) instant guess from the browser locale, then
+  // (2) IP-based detection (no permission, reflects real location), then (3)
+  // precise GPS if the user grants location access. Later, more-accurate signals
+  // win — but a GPS result is never clobbered by a slower IP response.
   useEffect(() => {
+    let gpsResolved = false;
+
+    const applyCurrency = (currency: unknown, fromGps: boolean) => {
+      if (typeof currency !== 'string' || !currency) {
+        return;
+      }
+      if (gpsResolved && !fromGps) {
+        return;
+      }
+      if (fromGps) {
+        gpsResolved = true;
+      }
+      setForm(previous => ({ ...previous, homeCurrency: currency.toUpperCase() }));
+    };
+
+    const localeCurrency = currencyFromBrowserLocale();
+    if (localeCurrency) {
+      applyCurrency(localeCurrency, false);
+    }
+
+    // IP-based baseline — no permission prompt, reflects the user's real location.
+    void fetch('/api/locale/currency')
+      .then(response => (response.ok ? response.json() : null))
+      .then(data => applyCurrency(data?.currency, false))
+      .catch(() => {
+        /* keep the locale guess */
+      });
+
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       return;
     }
@@ -454,15 +500,13 @@ export default function OnboardingPage() {
             return;
           }
           const data = await response.json();
-          if (typeof data?.currency === 'string' && data.currency) {
-            setForm(previous => ({ ...previous, homeCurrency: data.currency }));
-          }
+          applyCurrency(data?.currency, true);
         } catch {
-          /* keep the USD default */
+          /* keep the IP/locale result */
         }
       },
       () => {
-        /* permission denied — keep the USD default */
+        /* permission denied — keep the IP/locale result */
       },
       { timeout: 8_000, maximumAge: 10 * 60 * 1000 }
     );
@@ -998,7 +1042,7 @@ export default function OnboardingPage() {
                         cursor: 'pointer',
                       }}
                     >
-                      ${preset}
+                      {formatCurrency(Number.parseFloat(preset), form.homeCurrency)}
                     </button>
                   ))}
                 </div>
@@ -1062,7 +1106,14 @@ export default function OnboardingPage() {
               { label: 'Departure pick-up', value: form.departureTransferContext },
               { label: 'Arriving by', value: form.arrivalMethod || '' },
               { label: 'Intensity', value: form.activityIntensity || '' },
-              { label: 'Budget', value: form.budget ? `$${form.budget}` : '' },
+              {
+                label: 'Budget',
+                value: form.budget
+                  ? Number.isFinite(Number.parseFloat(form.budget))
+                    ? formatCurrency(Number.parseFloat(form.budget), form.homeCurrency)
+                    : form.budget
+                  : '',
+              },
               { label: 'Interests', value: parsedInterests.join(', ') },
             ].map(({ label, value }) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '16px 18px', background: '#ffffff', border: '1px solid #DDDCE8', borderRadius: 18, boxShadow: '0 10px 28px rgba(67,32,79,0.06)', flexWrap: 'wrap' }}>

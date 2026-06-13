@@ -329,7 +329,14 @@ export function inferPoiCategoryFromPoi(poi: PointOfInterest): PoiCategory {
     normalizedName.includes('church') ||
     normalizedName.includes('mosque') ||
     normalizedName.includes('shrine') ||
-    normalizedName.includes('monument')
+    normalizedName.includes('monument') ||
+    normalizedName.includes('masjid') ||
+    normalizedName.includes('mandir') ||
+    normalizedName.includes('alayam') ||
+    normalizedName.includes('swami') ||
+    normalizedName.includes('matha') ||
+    normalizedName.includes('dargah') ||
+    normalizedName.includes('gurudwara')
   ) {
     return 'culture';
   }
@@ -426,24 +433,32 @@ function buildPaceGuidance(profile: PaceProfile): string {
 }
 
 // Lightly enforces the pace profile on the model's output without rewriting its
-// content: caps the activity count, drops exact duplicate venues within a day,
-// and guarantees a rest slot and intensity tag. The pacing/variety rules live in
-// the prompt, so we trust the model's selection rather than substituting filler.
+// content: caps the activity count, removes duplicate venues ACROSS the whole
+// trip (so the same restaurant or shop can't reappear day after day), and
+// guarantees a rest slot and intensity tag. Stays and transfers are allowed to
+// recur (check-in/out, arrival/departure). Pacing/variety rules live in the
+// prompt; here we just trust the model's selection and de-duplicate it.
 export function rebalanceDailyPlansForPace(
   dailyPlans: ItineraryDayPlan[],
   request: ItineraryGenerationInput
 ): ItineraryDayPlan[] {
   const profile = getPaceProfile(request.activityIntensity, request.interests ?? []);
+  const seenNames = new Set<string>();
 
   return dailyPlans.map((dayPlan) => {
-    const seenNames = new Set<string>();
     const activities = dayPlan.activities
       .filter((activity) => {
+        const category = (activity.category ?? '').toLowerCase();
+        if (category === 'stay' || category === 'transport' || category === 'transfer') {
+          return true;
+        }
         const key = normalizeSearchText(activity.name);
         if (key && seenNames.has(key)) {
           return false;
         }
-        seenNames.add(key);
+        if (key) {
+          seenNames.add(key);
+        }
         return true;
       })
       .slice(0, profile.activityCount);
@@ -550,17 +565,21 @@ export function normalizeBudgetBreakdown(
 export function prioritizePois(
   pois: PointOfInterest[],
   interests: string[],
-  destination: DestinationSearchResult
+  destination: DestinationSearchResult,
+  maxResults = 8
 ): PointOfInterest[] {
   const searchTerms = new Set(interests.map((interest) => interest.toLowerCase()));
   const categoryOrder: PoiCategory[] = ['culture', 'park', 'shopping', 'food', 'other'];
+  // Scale the per-category quotas with the requested size so long trips get a
+  // sight-led, varied pool (culture-heavy) rather than a handful of repeats.
+  const tier = Math.max(1, Math.ceil(maxResults / 8));
   const categoryQuotas: Record<PoiCategory, number> = {
-    food: 1,
-    culture: 3,
-    park: 2,
-    shopping: 1,
+    food: 1 * tier,
+    culture: 3 * tier,
+    park: 2 * tier,
+    shopping: 1 * tier,
     stay: 0,
-    other: 1,
+    other: 1 * tier,
   };
   const wantsFood = Array.from(searchTerms).some((term) => term.includes('food') || term.includes('nightlife'));
 
@@ -624,11 +643,11 @@ export function prioritizePois(
     return null;
   };
 
-  while (selected.size < 8) {
+  while (selected.size < maxResults) {
     let progressed = false;
 
     for (const category of categoryOrder) {
-      if (selected.size >= 8) {
+      if (selected.size >= maxResults) {
         break;
       }
 
@@ -652,12 +671,12 @@ export function prioritizePois(
     }
   }
 
-  if (selected.size < 8) {
+  if (selected.size < maxResults) {
     const leftovers = [...buckets.values()].flat();
     leftovers.sort((left, right) => scorePoi(right) - scorePoi(left) || left.name.localeCompare(right.name));
 
     for (const poi of leftovers) {
-      if (selected.size >= 8) {
+      if (selected.size >= maxResults) {
         break;
       }
 
@@ -668,7 +687,7 @@ export function prioritizePois(
     }
   }
 
-  return Array.from(selected.values()).slice(0, 8);
+  return Array.from(selected.values()).slice(0, maxResults);
 }
 
 export function haversineDistanceKm(
@@ -866,6 +885,36 @@ function buildPoiContext(pois: PointOfInterest[]): string {
     .join('\n');
 }
 
+// Round-robins POIs across categories so a sequential day-by-day layout mixes a
+// sight, a meal, a park, etc. each day instead of clustering all temples on one
+// day and all restaurants on another.
+function interleaveByCategory(pois: PointOfInterest[]): PointOfInterest[] {
+  const buckets = new Map<PoiCategory, PointOfInterest[]>();
+  for (const poi of pois) {
+    const category = inferPoiCategoryFromPoi(poi);
+    const bucket = buckets.get(category) ?? [];
+    bucket.push(poi);
+    buckets.set(category, bucket);
+  }
+
+  const order: PoiCategory[] = ['culture', 'food', 'park', 'shopping', 'other'];
+  const result: PointOfInterest[] = [];
+  let progressed = true;
+
+  while (progressed) {
+    progressed = false;
+    for (const category of order) {
+      const next = buckets.get(category)?.shift();
+      if (next) {
+        result.push(next);
+        progressed = true;
+      }
+    }
+  }
+
+  return result;
+}
+
 // Deterministic safety net used only when every AI provider fails. It lays the
 // real, already-prioritised POIs out across the days with honest, concrete
 // descriptions — no invented venue names and no flowery filler. When the live
@@ -878,7 +927,7 @@ export function buildFallbackDailyPlans(input: {
   request: ItineraryGenerationInput;
   profile: PaceProfile;
 }): ItineraryDayPlan[] {
-  const sights = input.pois.filter((poi) => inferPoiCategoryFromPoi(poi) !== 'stay');
+  const sights = interleaveByCategory(input.pois.filter((poi) => inferPoiCategoryFromPoi(poi) !== 'stay'));
   const times =
     input.profile.intensity === 'Relaxed'
       ? ['09:30', '13:00', '16:30']
@@ -1101,6 +1150,9 @@ Rules:
 - Return one itinerary covering all ${input.duration} days.
 - All costs must be numeric or null, expressed in ${input.currency.display} (the destination's local currency), not converted to any other currency.
 - All coordinates must come from the POI list when the activity is a venue.
+- Never schedule the same venue on more than one day: each named place appears at most once across the entire trip (the stay and arrival/departure transfers may recur).
+- Do not use everyday-errand places as activities — no general stores, convenience stores, grocery/oil shops, supermarkets, pharmacies, ATMs, banks, or fuel stations. Use sightseeing, cultural, outdoor, dining, or genuine market/bazaar destinations only.
+- On a multi-day trip, lead with distinct attractions, temples, museums, parks, and viewpoints spread across the days; do not pad days with repeated meals.
 - Avoid repeating the same venue type across the whole trip unless the destination genuinely lacks variety.
 - If the itinerary is relaxed, do not turn every day into restaurant stops; use scenic, cultural, park, or neighborhood activities for most of the plan.
 - Spread the trip across different neighborhoods or city sectors instead of clustering all stops in one area.
@@ -1186,9 +1238,10 @@ export async function generateItineraryFromLiveData(
         address: request.destination.trim(),
       }));
   const poiTypes = derivePoiTypes(request.interests ?? []);
-  // Fetch a wider candidate pool than we ultimately prompt with; prioritizePois
-  // trims to its category-balanced top 8, so a richer pool means better sights.
-  const poiLimit = duration <= 2 ? 16 : duration > 7 ? 14 : 12;
+  // Scale the candidate pool with trip length so longer trips have enough
+  // distinct sights to fill every day without repeating venues. A 5-day trip
+  // needs far more than a weekend; ~5 candidates per day, capped.
+  const poiLimit = Math.min(34, Math.max(14, duration * 6));
   const stayLimit = duration <= 2 ? 2 : duration > 7 ? 3 : 4;
   const poiPromise = hasCoordinates
     ? fetchPointsOfInterest({
@@ -1238,13 +1291,16 @@ export async function generateItineraryFromLiveData(
   const pois = poIResult.status === 'fulfilled' ? poIResult.value : [];
   const stayCandidatesRaw = stayResult.status === 'fulfilled' ? stayResult.value : [];
   const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
-  const prioritizedPois = prioritizePois(pois, request.interests ?? [], destination);
+  // Give the model enough distinct venues to fill every day without repeating:
+  // roughly one per activity slot across the whole trip, plus a small buffer.
+  const promptPoiTarget = Math.min(poiLimit, duration * paceProfile.activityCount + 4);
+  const prioritizedPois = prioritizePois(pois, request.interests ?? [], destination, promptPoiTarget);
   const prioritizedStayCandidates = prioritizeStayCandidates(stayCandidatesRaw, destination);
   // Gemini 2.5 Flash-Lite supports 8k output tokens. The schema marks every field
   // required, so the JSON is verbose; an undersized budget truncates mid-array and
   // forces the deterministic fallback. Keep a generous floor so short trips with
   // rich descriptions still complete.
-  const maxTokens = Math.min(7168, Math.max(3200, 1800 + duration * 500));
+  const maxTokens = Math.min(8192, Math.max(3500, 1400 + duration * 700));
   // Item costs are written in the destination's currency; the budget headline is
   // converted to the traveler's home currency for a familiar total.
   const currency = await resolveTripCurrency({
@@ -1268,7 +1324,7 @@ export async function generateItineraryFromLiveData(
         maxTokens,
         repairMaxTokens: Math.max(900, Math.floor(maxTokens / 2)),
         skipRepair: false,
-        timeoutMs: duration <= 2 ? 22_000 : 28_000,
+        timeoutMs: duration <= 2 ? 22_000 : duration <= 4 ? 30_000 : 42_000,
         responseSchema: geminiItineraryResponseSchema as Record<string, unknown>,
         temperature: 0.6,
       }

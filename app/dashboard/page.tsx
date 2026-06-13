@@ -37,6 +37,7 @@ import {
 import { Brand } from '@/components/common/Brand';
 import { deleteTrip, listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
+import { formatCurrency } from '@/lib/utils';
 import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { BookingConfirmationImportCard } from '@/components/dashboard/BookingConfirmationImportCard';
@@ -737,7 +738,11 @@ export default function DashboardPage() {
                     <div className="flex flex-col flex-1 p-5 sm:p-6 bg-white/60 backdrop-blur-3xl">
                       <div className="flex flex-wrap items-center gap-3 text-xs text-[#6F6C82] mb-6">
                         <span className="font-semibold text-[#6C63FF] bg-[#6C63FF]/10 text-[11px] rounded-full px-3 py-1 font-mono ring-1 ring-[#6C63FF]/20">
-                          {trip.budget || 'Custom budget'}
+                          {trip.budget
+                            ? Number.isFinite(Number.parseFloat(trip.budget))
+                              ? formatCurrency(Number.parseFloat(trip.budget), trip.itinerary?.currency?.home ?? 'USD')
+                              : trip.budget
+                            : 'Custom budget'}
                         </span>
                         <span className="text-slate-300">•</span>
                         <span className="inline-flex items-center gap-1.5 font-medium text-slate-500">

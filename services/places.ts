@@ -284,6 +284,24 @@ function destinationToPoi(result: DestinationSearchResult): PointOfInterest {
   };
 }
 
+// Everyday-errand places that are not travel-worthy stops. They sometimes slip
+// in through marketplace/shop tags or the Nominatim text fallback; a general
+// store or pharmacy should never become an itinerary activity.
+const JUNK_POI_PATTERN =
+  /general store|provision|kirana|grocery|supermarket|convenience|departmental|oils?\b|medical|pharmac|chemist|\batm\b|\bbank\b|petrol|fuel|gas station|hardware|mobile|electronics|xerox|stationery|wine shop|liquor|grinding|seva kendra|aadha?ar|\bseeds?\b|development|corporation|\boffice\b|department|govt|government|municipal|enrol|registration|godown|warehouse|depot|panchayat|tahsil|\brto\b|passport|\bclinic\b|hospital|workshop|service cent|repair/i;
+
+function isJunkPoi(poi: PointOfInterest): boolean {
+  const tags = poi.tags ?? {};
+  const shop = String(tags.shop ?? '').toLowerCase();
+  if (['convenience', 'general', 'kiosk', 'supermarket', 'chemist', 'variety_store'].includes(shop)) {
+    return true;
+  }
+  if (tags.amenity && ['pharmacy', 'fuel', 'atm', 'bank'].includes(String(tags.amenity).toLowerCase())) {
+    return true;
+  }
+  return JUNK_POI_PATTERN.test(poi.name);
+}
+
 // Restaurants carry website/opening_hours tags far more often than temples,
 // monuments, or viewpoints, so a pure notability sort buries the real sights
 // under food before the limit is applied. Instead, round-robin across categories
@@ -829,7 +847,9 @@ export async function fetchPointsOfInterest(options: {
         }
       }
 
-      if (unique.size >= (options.limit ?? 48)) {
+      // Gather a richer raw pool than the final limit so junk-filtering and the
+      // category-balanced selection have enough material to pick a varied set.
+      if (unique.size >= (options.limit ?? 48) * 3) {
         break;
       }
     } catch (error) {
@@ -870,7 +890,8 @@ export async function fetchPointsOfInterest(options: {
     }
   }
 
-  const results = selectDiverseByCategory(Array.from(unique.values()), options.limit ?? 48);
+  const candidates = Array.from(unique.values()).filter(poi => !isJunkPoi(poi));
+  const results = selectDiverseByCategory(candidates, options.limit ?? 48);
 
   poiCache.set(cacheKey, { expiresAt: Date.now() + CACHE_TTL_MS, results });
   return results;
