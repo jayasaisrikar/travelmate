@@ -17,7 +17,7 @@ interface NvidiaChatCompletionResponse {
   }>;
 }
 
-const DEFAULT_NVIDIA_CHAT_MODEL = 'moonshotai/kimi-k2-instruct-0905';
+const DEFAULT_NVIDIA_CHAT_MODEL = 'meta/llama-3.3-70b-instruct';
 const DEFAULT_NVIDIA_CHAT_ENDPOINT = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const GEMINI_JSON_MODEL = 'gemini-2.5-flash-lite';
 
@@ -116,7 +116,6 @@ async function callNvidia(
         top_p: 0.8,
         max_tokens: maxTokens,
         ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
-        chat_template_kwargs: { thinking: false },
       }),
     });
     if (!response.ok) {
@@ -131,7 +130,7 @@ async function callNvidia(
     const text = extractContent(data.choices?.[0]?.message?.content);
 
     if (!text) {
-      throw new Error('Kimi 2.5 returned an empty response');
+      throw new Error(`NVIDIA model ${model} returned an empty response`);
     }
 
     return text;
@@ -195,7 +194,8 @@ async function callGeminiJson(
   prompt: string,
   maxTokens = 3000,
   timeoutMs = 12_000,
-  responseSchema?: Record<string, unknown>
+  responseSchema?: Record<string, unknown>,
+  temperature = 0
 ): Promise<string> {
   const { apiKey, model } = getGeminiConfig();
   const client = new GoogleGenerativeAI(apiKey);
@@ -206,7 +206,7 @@ async function callGeminiJson(
     const generativeModel = client.getGenerativeModel({
       model,
       generationConfig: {
-        temperature: 0,
+        temperature,
         topP: 0.8,
         maxOutputTokens: maxTokens,
         responseMimeType: 'application/json',
@@ -246,12 +246,14 @@ export async function generateJson<T>(
     skipRepair?: boolean;
     timeoutMs?: number;
     responseSchema?: Record<string, unknown>;
+    temperature?: number;
   }
 ): Promise<T> {
   const maxTokens = options?.maxTokens ?? 3000;
   const repairMaxTokens = options?.repairMaxTokens ?? Math.max(900, Math.floor(maxTokens / 2));
   const skipRepair = options?.skipRepair ?? false;
   const timeoutMs = options?.timeoutMs ?? 18_000;
+  const temperature = options?.temperature ?? 0;
   const repairPrompt = (payload: string) =>
     `Fix the following JSON so it is valid. Preserve the structure and data exactly. Return only valid JSON with no markdown.\n\n${payload}`;
   const messages: NvidiaChatMessage[] = [
@@ -271,8 +273,9 @@ export async function generateJson<T>(
       text = await callGeminiJson(
         geminiPrompt,
         maxTokens,
-        Math.min(timeoutMs, 12_000),
-        options?.responseSchema
+        Math.min(timeoutMs, 28_000),
+        options?.responseSchema,
+        temperature
       );
       sourceProvider = 'gemini';
     } catch (error) {
@@ -283,7 +286,7 @@ export async function generateJson<T>(
 
   if (!sourceProvider && hasNvidiaConfig()) {
     try {
-      text = await callNvidia(messages, 0, true, maxTokens, timeoutMs);
+      text = await callNvidia(messages, temperature, true, maxTokens, timeoutMs);
       sourceProvider = 'nvidia';
     } catch (error) {
       generationErrors.push(formatProviderError('nvidia', error));
@@ -305,19 +308,19 @@ export async function generateJson<T>(
   } catch (primaryError) {
     if (skipRepair) {
       throw new Error(
-        `Kimi 2.5 returned invalid JSON. Parse error: ${primaryError instanceof Error ? primaryError.message : 'unknown'}`
+        `${sourceProvider} returned invalid JSON. Parse error: ${primaryError instanceof Error ? primaryError.message : 'unknown'}`
       );
     }
 
     const repairErrors: string[] = [];
-    const repairTimeoutMs = Math.max(6_000, Math.floor(repairMaxTokens * 8));
+    const repairTimeoutMs = Math.max(15_000, Math.floor(repairMaxTokens * 8));
 
     if (hasGeminiConfig()) {
       try {
         const repairText = await callGeminiJson(
           repairPrompt(text),
           repairMaxTokens,
-          Math.min(repairTimeoutMs, 12_000),
+          Math.min(repairTimeoutMs, 20_000),
           options?.responseSchema
         );
 

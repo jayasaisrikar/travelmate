@@ -8,7 +8,11 @@ import { Brand } from '@/components/common/Brand';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import type { TravelerPreferences } from '@/lib/travel-types';
 
-const STEPS = ['Destination', 'Trip window', 'Preferences', 'Review'];
+const STEPS = ['Destination', 'Trip details', 'Review'];
+const DEFAULT_ARRIVAL_TIME = '10:00';
+const DEFAULT_DEPARTURE_TIME = '18:00';
+const DEFAULT_ARRIVAL_METHOD = 'flight' as const;
+const DEFAULT_ACTIVITY_INTENSITY = 'Balanced' as const;
 const ARRIVAL_METHODS = ['flight', 'train', 'drive'] as const;
 const ACTIVITY_LEVELS = ['Relaxed', 'Balanced', 'Packed'] as const;
 const BUDGET_PRESETS = ['500', '1000', '1500', '2500'];
@@ -25,6 +29,7 @@ interface SearchResult {
   latitude: number;
   longitude: number;
   address: string;
+  countryCode?: string;
 }
 
 interface TripFormState {
@@ -42,6 +47,10 @@ interface TripFormState {
   budget: string;
   interests: string[];
   interestsText: string;
+  /** Destination's ISO 3166-1 alpha-2 country code, from the selected result. */
+  countryCode: string | null;
+  /** Traveler's home currency (ISO 4217), detected from their location. */
+  homeCurrency: string;
 }
 
 const INITIAL_FORM: TripFormState = {
@@ -59,6 +68,8 @@ const INITIAL_FORM: TripFormState = {
   budget: '',
   interests: [],
   interestsText: '',
+  countryCode: null,
+  homeCurrency: 'USD',
 };
 
 function preferencesToForm(preferences: TravelerPreferences | null | undefined): Partial<TripFormState> {
@@ -165,6 +176,7 @@ export default function OnboardingPage() {
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [curatedInterests, setCuratedInterests] = useState<string[] | null>(null);
   const [form, setForm] = useState<TripFormState>(INITIAL_FORM);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [prefillLoading, setPrefillLoading] = useState(isEditMode);
@@ -194,23 +206,20 @@ export default function OnboardingPage() {
     }
 
     if (step === 1) {
-      const arrivalMinutes = timeToMinutes(form.arrivalTime);
-      const departureMinutes = timeToMinutes(form.departureTime);
+      // Only the dates are required; times, arrival method, interests, budget,
+      // and pace all fall back to sensible defaults at submit time so a traveler
+      // can generate a trip with just a destination and a date range.
       const sameDayTrip = form.arrivalDate === form.departureDate;
+      const bothTimesProvided = Boolean(form.arrivalTime && form.departureTime);
+      const departureAfterArrival =
+        !bothTimesProvided || timeToMinutes(form.departureTime) > timeToMinutes(form.arrivalTime);
 
       return Boolean(
         form.arrivalDate &&
           form.departureDate &&
-          form.arrivalTime &&
-          form.departureTime &&
           form.departureDate >= form.arrivalDate &&
-          form.arrivalMethod &&
-          (!sameDayTrip || departureMinutes > arrivalMinutes)
+          (!sameDayTrip || departureAfterArrival)
       );
-    }
-
-    if (step === 2) {
-      return Boolean(form.interestsText.trim() && parsedBudget > 0 && form.activityIntensity);
     }
 
     return true;
@@ -223,9 +232,11 @@ export default function OnboardingPage() {
       destination: value,
       latitude: null,
       longitude: null,
+      countryCode: null,
     }));
     setResults([]);
     setHasSearched(false);
+    setCuratedInterests(null);
   };
 
   const handleSelectDestination = (result: SearchResult) => {
@@ -234,10 +245,23 @@ export default function OnboardingPage() {
       destination: result.name,
       latitude: result.latitude,
       longitude: result.longitude,
+      countryCode: result.countryCode ?? null,
     }));
     setResults([]);
     setHasSearched(true);
     setError('');
+
+    // Curate the interest chips to this destination from its live POIs.
+    void fetch(`/api/destination-interests?lat=${result.latitude}&lon=${result.longitude}`)
+      .then(response => (response.ok ? response.json() : null))
+      .then(data => {
+        if (Array.isArray(data?.interests) && data.interests.length > 0) {
+          setCuratedInterests(data.interests as string[]);
+        }
+      })
+      .catch(() => {
+        /* keep the generic suggestions on failure */
+      });
   };
 
   const parsedInterests = useMemo(() => {
@@ -397,6 +421,53 @@ export default function OnboardingPage() {
     }
   };
 
+  // Debounced autocomplete: search as the traveler types, but skip once a live
+  // result is selected (coordinates present) or while editing an existing trip's
+  // prefilled destination, so we don't re-query a confirmed selection.
+  useEffect(() => {
+    const query = form.destination.trim();
+
+    if (query.length < 2 || form.latitude !== null || form.longitude !== null) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void searchDestinations(query);
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [form.destination, form.latitude, form.longitude]);
+
+  // Ask for location once on load and localise the budget to the traveler's home
+  // currency. If permission is denied or unavailable we silently keep USD.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async position => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(`/api/locale/currency?lat=${latitude}&lon=${longitude}`);
+          if (!response.ok) {
+            return;
+          }
+          const data = await response.json();
+          if (typeof data?.currency === 'string' && data.currency) {
+            setForm(previous => ({ ...previous, homeCurrency: data.currency }));
+          }
+        } catch {
+          /* keep the USD default */
+        }
+      },
+      () => {
+        /* permission denied — keep the USD default */
+      },
+      { timeout: 8_000, maximumAge: 10 * 60 * 1000 }
+    );
+  }, []);
+
   useEffect(() => {
     if (!loading) {
       setLoadingPhase(0);
@@ -416,13 +487,17 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (!form.activityIntensity || !form.arrivalMethod) {
-      setError('Complete every required field before generating your itinerary.');
-      return;
-    }
-
     setLoading(true);
     setError('');
+
+    // Apply sensible defaults so the only things a traveler must choose are a
+    // destination and a date range. Everything else is optional and editable.
+    const arrivalMethod = form.arrivalMethod ?? DEFAULT_ARRIVAL_METHOD;
+    const activityIntensity = form.activityIntensity ?? DEFAULT_ACTIVITY_INTENSITY;
+    const arrivalTime = form.arrivalTime || DEFAULT_ARRIVAL_TIME;
+    const departureTime = form.departureTime || DEFAULT_DEPARTURE_TIME;
+    const arrivalTransferContext = form.arrivalTransferContext.trim();
+    const departureTransferContext = form.departureTransferContext.trim();
 
     try {
       const duration = Math.max(
@@ -440,21 +515,21 @@ export default function OnboardingPage() {
           duration,
           arrivalDate: form.arrivalDate,
           departureDate: form.departureDate,
-          arrivalTime: form.arrivalTime,
-          departureTime: form.departureTime,
-          arrivalMethod: form.arrivalMethod,
-          activityIntensity: form.activityIntensity,
-          arrivalTransferContext: form.arrivalTransferContext.trim(),
-          departureTransferContext: form.departureTransferContext.trim(),
+          arrivalTime,
+          departureTime,
+          arrivalMethod,
+          activityIntensity,
+          arrivalTransferContext,
+          departureTransferContext,
           budget: form.budget,
           interests: parsedInterests,
           preferences: {
-            arrivalMethod: form.arrivalMethod,
-            activityIntensity: form.activityIntensity,
+            arrivalMethod,
+            activityIntensity,
             budget: form.budget,
             interests: parsedInterests,
-            arrivalTransferContext: form.arrivalTransferContext.trim(),
-            departureTransferContext: form.departureTransferContext.trim(),
+            arrivalTransferContext,
+            departureTransferContext,
           },
         });
 
@@ -462,16 +537,22 @@ export default function OnboardingPage() {
         return;
       }
 
-      const response = await fetch('/api/generate-itinerary-gemini', {
+      const response = await fetch('/api/generate-itinerary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          arrivalMethod,
+          activityIntensity,
+          arrivalTime,
+          departureTime,
           budget: parsedBudget,
           interests: parsedInterests,
           duration,
-          arrivalTransferContext: form.arrivalTransferContext.trim(),
-          departureTransferContext: form.departureTransferContext.trim(),
+          arrivalTransferContext,
+          departureTransferContext,
+          destinationCountryCode: form.countryCode,
+          homeCurrency: form.homeCurrency,
         }),
       });
 
@@ -488,12 +569,12 @@ export default function OnboardingPage() {
         interests: parsedInterests,
         itinerary: data.itinerary,
         preferences: {
-          arrivalMethod: form.arrivalMethod,
-          activityIntensity: form.activityIntensity,
+          arrivalMethod,
+          activityIntensity,
           budget: form.budget,
           interests: parsedInterests,
-          arrivalTransferContext: form.arrivalTransferContext.trim(),
-          departureTransferContext: form.departureTransferContext.trim(),
+          arrivalTransferContext,
+          departureTransferContext,
         },
       });
 
@@ -595,8 +676,8 @@ export default function OnboardingPage() {
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.4rem)', fontWeight: 900, marginBottom: 10, letterSpacing: -1.5, lineHeight: 1 }}>
           {(
             isEditMode
-              ? ['Edit your destination', 'Edit your trip window', 'Update your preferences', 'Review before saving']
-              : ['Search for your destination', 'Choose your trip window', 'Set your preferences', 'Review before generating']
+              ? ['Edit your destination', 'Edit your trip details', 'Review before saving']
+              : ['Search for your destination', 'Plan your trip', 'Review before generating']
           )[step]}
         </h1>
         <p style={{ color: '#6F6C82', marginBottom: 28, fontSize: 'clamp(0.98rem, 2.5vw, 1.05rem)', lineHeight: 1.65, maxWidth: 640 }}>
@@ -604,20 +685,18 @@ export default function OnboardingPage() {
             isEditMode
               ? [
                   'Update the destination from live search results so we can regenerate the trip with verified place data.',
-                  'Set your trip window and optional transfer notes so the route starts and ends cleanly.',
-                  'Change your interests, budget, and pace. Anything you edit here will be used for the regenerated trip.',
+                  'Adjust your dates and, if you like, your pace, budget, and interests. Anything you leave alone keeps its current value.',
                   'Confirm the updated trip details before we call the regeneration API.',
                 ]
               : [
                   'Select a real destination from live search results so we can generate your trip with verified place data.',
-                  'Tell us your trip window and any optional transfer notes that help the route feel right.',
-                  'Choose your interests, budget, and pace with quick presets or your own words.',
+                  'Pick your dates to get started. Times, pace, budget, and interests are optional — we fill in sensible defaults.',
                   'Confirm the trip details pulled from your choices before we call the itinerary API.',
                 ]
           )[step]}
         </p>
 
-        {preferencesLoaded && form.budget && step <= 2 && (
+        {preferencesLoaded && form.budget && step <= 1 && (
           <div style={{ marginBottom: 24, padding: '12px 14px', borderRadius: 18, border: '1px solid #DDDCE8', background: '#FBFAFF', color: '#6F6C82', fontSize: 14 }}>
             Saved preferences loaded where available. We will reuse your budget and pacing defaults unless you change them.
           </div>
@@ -702,7 +781,7 @@ export default function OnboardingPage() {
                 </p>
               ) : (
                 <p style={{ margin: 0, color: '#6F6C82', fontSize: 14 }}>
-                  Search and then pick one of the live results. We do not prefill destinations anymore.
+                  Start typing and pick one of the live results as they appear. We use the exact place you select for accurate coordinates.
                 </p>
               )}
             </div>
@@ -791,7 +870,7 @@ export default function OnboardingPage() {
 
             <div>
               <label style={{ display: 'block', marginBottom: 12, fontSize: 13, fontWeight: 700, color: '#6F6C82', textTransform: 'uppercase', letterSpacing: 1.1 }}>
-                Arriving by
+                Arriving by <span style={{ color: '#8A869C', textTransform: 'none', letterSpacing: 0 }}>(optional, defaults to flight)</span>
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
                 {ARRIVAL_METHODS.map(method => (
@@ -808,8 +887,8 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {step === 2 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {step === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, marginTop: 24, paddingTop: 24, borderTop: '1px solid #DDDCE8' }}>
             <div>
               <label
                 style={{
@@ -822,7 +901,7 @@ export default function OnboardingPage() {
                   letterSpacing: 1.1,
                 }}
               >
-                Interests
+                Interests <span style={{ color: '#8A869C', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
               </label>
               <input
                 type="text"
@@ -842,10 +921,12 @@ export default function OnboardingPage() {
                 }}
               />
               <p style={{ marginTop: 8, fontSize: 13, color: '#8A869C' }}>
-                You can type your own interests or tap a suggestion to add it quickly.
+                {curatedInterests
+                  ? `Suggestions tailored to ${form.destination || 'your destination'} — tap to add, or type your own.`
+                  : 'You can type your own interests or tap a suggestion to add it quickly.'}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                {INTEREST_SUGGESTIONS.map(interest => (
+                {(curatedInterests ?? INTEREST_SUGGESTIONS).map(interest => (
                   <button
                     key={interest}
                     type="button"
@@ -880,7 +961,7 @@ export default function OnboardingPage() {
                     letterSpacing: 1.1,
                   }}
                 >
-                  Budget
+                  Budget <span style={{ color: '#8A869C', textTransform: 'none', letterSpacing: 0 }}>(optional, in {form.homeCurrency})</span>
                 </label>
                 <input
                   type="number"
@@ -935,7 +1016,7 @@ export default function OnboardingPage() {
                     letterSpacing: 1.1,
                   }}
                 >
-                  Intensity
+                  Intensity <span style={{ color: '#8A869C', textTransform: 'none', letterSpacing: 0 }}>(optional, defaults to Balanced)</span>
                 </label>
                 <div style={{ display: 'grid', gap: 10 }}>
                   {ACTIVITY_LEVELS.map(level => (
@@ -971,7 +1052,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
               { label: 'Destination', value: form.destination },

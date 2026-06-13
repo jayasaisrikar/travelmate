@@ -15,6 +15,7 @@ import { TimelineView } from '@/components/trip/TimelineView';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
+import { formatCurrency } from '@/lib/utils';
 import type {
   GeneratedItinerary,
   ItineraryActivity,
@@ -237,6 +238,12 @@ export default function TripDetailsPage() {
     () => trip?.itinerary?.budgetBreakdown ?? trip?.itinerary?.budget_breakdown ?? null,
     [trip]
   );
+  const tripCurrency = useMemo(() => trip?.itinerary?.currency ?? null, [trip]);
+  const currencyCode = tripCurrency?.display ?? 'USD';
+  const totalEstimatedCostValue = useMemo(() => {
+    if (!totalEstimatedCost) return Number.NaN;
+    return Number.parseFloat(totalEstimatedCost.replace(/[^0-9.]+/g, ''));
+  }, [totalEstimatedCost]);
 
   const scrollToMap = () => {
     mapSectionRef.current?.scrollIntoView({
@@ -469,14 +476,16 @@ export default function TripDetailsPage() {
             <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Estimated cost</div>
               <div className="mt-2 text-2xl font-black text-[#FF6584]">
-                {totalEstimatedCost ? `$${totalEstimatedCost}` : 'Not set'}
+                {Number.isFinite(totalEstimatedCostValue)
+                  ? formatCurrency(totalEstimatedCostValue, currencyCode)
+                  : totalEstimatedCost || 'Not set'}
               </div>
             </div>
           </div>
         </motion.section>
 
         <section className="mt-6">
-          <BudgetBreakdown breakdown={budgetBreakdown} total={totalEstimatedCost} />
+          <BudgetBreakdown breakdown={budgetBreakdown} total={totalEstimatedCost} currency={tripCurrency} />
         </section>
 
         {error && (

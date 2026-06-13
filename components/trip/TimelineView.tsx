@@ -7,6 +7,7 @@ import { regenerateTripItinerarySection, updateTripItinerary, type Trip } from '
 import type { ItineraryDayPlan } from '@/lib/travel-types';
 import { ActivityCard } from '@/components/trip/ActivityCard';
 import { StatusCard } from '@/components/common/StatusCard';
+import { formatCurrency } from '@/lib/utils';
 
 type FlatActivity = {
   dayIndex: number;
@@ -103,6 +104,9 @@ export function TimelineView({
   const [regenerationLoading, setRegenerationLoading] = useState(false);
   const [regenerationError, setRegenerationError] = useState('');
   const [regenerationStatus, setRegenerationStatus] = useState('');
+
+  // Item costs are denominated in the destination's currency (see services/currency.ts).
+  const currencyCode = itinerary?.currency?.display ?? 'USD';
 
   const flatActivities = useMemo(() => flattenActivities(dailyPlans), [dailyPlans]);
 
@@ -361,7 +365,7 @@ export function TimelineView({
                       {activities.length} stops
                       {firstTime && lastTime ? ` · ${firstTime} → ${lastTime}` : ''}
                       {day.date ? ` · ${day.date}` : ''}
-                      {totalCost > 0 ? ` · ~$${totalCost}` : ''}
+                      {totalCost > 0 ? ` · ~${formatCurrency(totalCost, currencyCode)}` : ''}
                       {day.intensity ? ` · ${day.intensity}` : ''}
                     </span>
                   </span>
@@ -441,6 +445,7 @@ export function TimelineView({
                               description={activity.description}
                               address={activity.address}
                               cost={cost}
+                              currencyCode={currencyCode}
                               latitude={activity.latitude}
                               longitude={activity.longitude}
                               selected={isSelected}

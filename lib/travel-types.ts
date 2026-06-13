@@ -6,6 +6,17 @@ export interface DestinationSearchResult {
   address?: string;
   boundingBox?: string[];
   importance?: number;
+  /** ISO 3166-1 alpha-2 country code, lower-case (e.g. "in"), when known. */
+  countryCode?: string;
+}
+
+export interface TripCurrency {
+  /** Destination currency (ISO 4217) — itinerary item costs are expressed in this. */
+  display: string;
+  /** Traveler's home currency (ISO 4217) — the budget headline is expressed in this. */
+  home: string;
+  /** Multiply a destination-currency amount by this to get the home-currency amount. */
+  rateToHome: number;
 }
 
 export interface PointOfInterest {
@@ -204,6 +215,8 @@ export interface GeneratedItinerary {
   budgetBreakdown: BudgetBreakdown;
   budget_breakdown: BudgetBreakdown;
   tips: string[];
+  /** Currency the item costs are denominated in, plus home-currency conversion. */
+  currency?: TripCurrency | null;
   sourceData: {
     destination: DestinationSearchResult;
     weather: WeatherSnapshot | null;
@@ -251,4 +264,8 @@ export interface ItineraryGenerationInput {
   interests?: string[] | null;
   dietaryRestrictions?: string[] | null;
   confirmation?: BookingConfirmationExtraction | null;
+  /** Traveler's home currency (ISO 4217), detected from their location. */
+  homeCurrency?: string | null;
+  /** Destination's ISO 3166-1 alpha-2 country code, from the selected search result. */
+  destinationCountryCode?: string | null;
 }
