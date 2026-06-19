@@ -16,17 +16,22 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const guard = await checkTrustedTraveler(user.id);
-  if (!guard.ok) {
-    return verificationRequiredResponse(guard.level);
-  }
-
   const { id } = await params;
   const body = (await request.json().catch(() => ({}))) as { action?: string };
   const action = body.action;
 
   if (!action || !['accept', 'decline', 'cancel'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  }
+
+  // Only accepting a request grants a new connection (and unlocks messaging),
+  // so only that action is gated behind trusted verification. Decline/cancel
+  // must stay reachable so a user is never trapped in a pending request.
+  if (action === 'accept') {
+    const guard = await checkTrustedTraveler(user.id);
+    if (!guard.ok) {
+      return verificationRequiredResponse(guard.level);
+    }
   }
 
   const { data: existing, error: fetchError } = await supabase
