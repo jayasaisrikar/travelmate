@@ -6,6 +6,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { Brand } from '@/components/common/Brand';
+import {
+  Counter,
+  ParallaxLayer,
+  RevealWords,
+  ScrollProgressBar,
+  TiltCard,
+  revealOnView,
+  rise,
+} from '@/components/common/motion';
 import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
 import { StatusCard } from '@/components/common/StatusCard';
 import ItineraryChat from '@/components/ItineraryChat';
@@ -419,6 +428,7 @@ export default function TripDetailsPage() {
   return (
     <AuthGate>
       <main className="min-h-screen bg-[#F2F2F2] text-[#3F3D56]">
+      <ScrollProgressBar />
       <ShareModal
         tripId={trip.id}
         destination={trip.destination}
@@ -451,9 +461,9 @@ export default function TripDetailsPage() {
           className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
         >
           <div className="relative overflow-hidden group rounded-[32px] border border-slate-200 shadow-[0_24px_50px_rgba(108,99,255,0.08)] flex flex-col justify-between min-h-[360px]">
-            <div className="absolute inset-0 z-0 scale-105 transition-transform duration-700 group-hover:scale-100">
+            <ParallaxLayer range={50} className="absolute inset-0 z-0">
               <DestinationPhotoCover destination={trip.destination} className="h-full w-full" />
-            </div>
+            </ParallaxLayer>
             <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/60 to-slate-950/20 pointer-events-none" />
             <div className="absolute inset-0 z-10 ring-1 ring-inset ring-white/10 pointer-events-none" />
 
@@ -463,7 +473,7 @@ export default function TripDetailsPage() {
                   Saved trip
                 </span>
                 <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
-                  {trip.destination}
+                  <RevealWords text={trip.destination} />
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   A trip built from live destination data, your trip window, and the places we can actually map.
@@ -493,24 +503,34 @@ export default function TripDetailsPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Duration</div>
-              <div className="mt-2 text-2xl font-black text-slate-950">{trip.duration} days</div>
-            </div>
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Map stops</div>
-              <div className="mt-2 text-2xl font-black text-[#6C63FF]">{mapActivities.length}</div>
-            </div>
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Estimated cost</div>
-              <div className="mt-2 text-2xl font-black text-[#FF6584]">
-                {Number.isFinite(totalEstimatedCostValue)
-                  ? formatTripMoney(totalEstimatedCostValue, tripCurrency)
-                  : totalEstimatedCost || 'Not set'}
-              </div>
-            </div>
-          </div>
+          <motion.div {...revealOnView} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <motion.div variants={rise}>
+              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Duration</div>
+                <div className="mt-2 text-2xl font-black text-slate-950">
+                  <Counter to={trip.duration} suffix=" days" />
+                </div>
+              </TiltCard>
+            </motion.div>
+            <motion.div variants={rise}>
+              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Map stops</div>
+                <div className="mt-2 text-2xl font-black text-[#6C63FF]">
+                  <Counter to={mapActivities.length} />
+                </div>
+              </TiltCard>
+            </motion.div>
+            <motion.div variants={rise}>
+              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Estimated cost</div>
+                <div className="mt-2 text-2xl font-black text-[#FF6584]">
+                  {Number.isFinite(totalEstimatedCostValue)
+                    ? formatTripMoney(totalEstimatedCostValue, tripCurrency)
+                    : totalEstimatedCost || 'Not set'}
+                </div>
+              </TiltCard>
+            </motion.div>
+          </motion.div>
         </motion.section>
 
         <section className="mt-6">
