@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { touchTravelerLastSeen } from '@/services/social-activity';
+import { checkTrustedTraveler, verificationRequiredResponse } from '@/services/social-guard';
 
 const SELECT = 'id, from_user, to_user, reason, message, status, match_score, expires_at, created_at';
 
@@ -13,6 +14,11 @@ export async function PATCH(
   const { user, error } = await getAuthenticatedUser(request);
   if (error || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const guard = await checkTrustedTraveler(user.id);
+  if (!guard.ok) {
+    return verificationRequiredResponse(guard.level);
   }
 
   const { id } = await params;
