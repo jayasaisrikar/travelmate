@@ -7,6 +7,7 @@ import { Brand } from '@/components/common/Brand';
 import { SocialProfileSettings } from '@/components/social/SocialProfileSettings';
 import { TripSignalSettings } from '@/components/social/TripSignalSettings';
 import { TravelerMessageInbox } from '@/components/social/TravelerMessageInbox';
+import { OpenTripsPanel } from '@/components/social/OpenTripsPanel';
 import { listTrips, type Trip } from '@/lib/supabase-trips';
 import type { TravelerProfile } from '@/services/social';
 
@@ -74,6 +75,10 @@ export default function CommunitySettingsPage() {
             {error}
           </p>
         )}
+
+        <div className="mb-5">
+          <OpenTripsPanel />
+        </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
           <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
