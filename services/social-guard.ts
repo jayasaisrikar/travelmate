@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/services/supabase';
 import { isTrustedVerificationLevel } from '@/services/didit';
 
 export type GuardResult = { ok: true; level: string } | { ok: false; level: string };
@@ -10,8 +11,6 @@ export function isVerifiedLevel(level: string | null | undefined): boolean {
 
 /** Read the traveler's verification level and decide if social mutations are allowed. */
 export async function checkTrustedTraveler(userId: string): Promise<GuardResult> {
-  const { supabase } = await import('@/services/supabase');
-
   const { data } = await supabase
     .from('traveler_profiles')
     .select('verification_level')

@@ -8,8 +8,25 @@ const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   ''
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables')
+let instance: ReturnType<typeof createClient> | null = null
+
+function initializeClient(): ReturnType<typeof createClient> {
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  if (!instance) {
+    instance = createClient(supabaseUrl, supabaseKey)
+  }
+  return instance
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Lazy-load supabase on first property access to support unit tests
+// that import modules referencing this file without env vars.
+export const supabase = new Proxy<ReturnType<typeof createClient>>(
+  {} as any,
+  {
+    get(_target, prop) {
+      return (initializeClient() as any)[prop]
+    },
+  }
+)
