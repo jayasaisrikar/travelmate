@@ -12,6 +12,21 @@ import type {
   SocialVerificationStatus,
 } from '@/services/social-verification';
 
+// ─── Error handling ──────────────────────────────────────────────────────────
+
+export class SocialApiError extends Error {
+  status: number;
+  code?: string;
+  level?: string;
+  constructor(message: string, status: number, code?: string, level?: string) {
+    super(message);
+    this.name = 'SocialApiError';
+    this.status = status;
+    this.code = code;
+    this.level = level;
+  }
+}
+
 // ─── Shared types ────────────────────────────────────────────────────────────
 
 export interface TravelerProfile {
@@ -125,9 +140,12 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(
-      (body as { error?: string } | null)?.error ??
-        `Social API error ${res.status}`
+    const b = body as { error?: string; level?: string } | null;
+    throw new SocialApiError(
+      b?.error ?? `Social API error ${res.status}`,
+      res.status,
+      b?.error,
+      b?.level
     );
   }
 
