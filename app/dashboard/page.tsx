@@ -35,6 +35,14 @@ import {
 } from 'lucide-react';
 
 import { Brand } from '@/components/common/Brand';
+import {
+  Counter,
+  RevealWords,
+  ScrollProgressBar,
+  TiltCard,
+  revealOnView,
+  rise,
+} from '@/components/common/motion';
 import { deleteTrip, listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { formatCurrency } from '@/lib/utils';
@@ -575,6 +583,7 @@ export default function DashboardPage() {
 
     return (
       <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-12">
+        <ScrollProgressBar />
         {/* Colorful flowing vector blobs to make UI look organic & high-end */}
         <div className="absolute -top-40 right-10 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-[#6C63FF]/5 to-[#FF6584]/5 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-10 -left-20 h-[400px] w-[400px] rounded-full bg-[#6C63FF]/3 blur-[100px] pointer-events-none" />
@@ -631,19 +640,29 @@ export default function DashboardPage() {
         </header>
 
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12 } } }}
+            className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"
+          >
             {/* Elegant Welcome Hero Card */}
-            <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_24px_50px_rgba(108,99,255,0.03)] backdrop-blur-md flex flex-col justify-between">
-              <div className="absolute top-0 right-0 p-8 opacity-[0.04] pointer-events-none">
+            <motion.div variants={rise} className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_24px_50px_rgba(108,99,255,0.03)] backdrop-blur-md flex flex-col justify-between">
+              <motion.div
+                aria-hidden
+                animate={{ rotate: [0, 8, 0], y: [0, -6, 0] }}
+                transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute top-0 right-0 p-8 opacity-[0.04] pointer-events-none"
+              >
                 <Compass className="h-48 w-44" />
-              </div>
+              </motion.div>
               <div className="relative z-10">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#FF6584]">
                   <Sparkles className="h-3 w-3" />
                   Welcome back
                 </span>
                 <h1 className="mt-4 text-3xl font-black text-slate-900 tracking-tight sm:text-5xl leading-[1.12]">
-                  Plan, reopen, and edit your trips from one place.
+                  <RevealWords text="Plan, reopen, and edit your trips from one place." />
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#6F6C82] sm:text-base">
                   Start a new AI-guided itinerary when you are ready, or jump back into a saved journey to customize destinations, budgets, and schedules.
@@ -670,32 +689,34 @@ export default function DashboardPage() {
                   </motion.button>
                 )}
               </div>
-            </div>
+            </motion.div>
 
             {/* Quick Metrics Grid */}
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-center">
+            <motion.div variants={rise} className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow relative overflow-hidden flex flex-col justify-center">
                 <div className="absolute right-4 bottom-2 text-slate-100 font-extrabold text-7xl select-none opacity-40">
                   {userTrips.length}
                 </div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Trips planned</div>
-                <div className="relative mt-2 text-3xl font-black text-slate-950">{userTrips.length}</div>
-              </div>
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+                <div className="relative mt-2 text-3xl font-black text-slate-950">
+                  <Counter to={userTrips.length} />
+                </div>
+              </TiltCard>
+              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Latest target</div>
                 <div className="mt-2 flex items-center gap-1.5 font-bold text-[#3F3D56] truncate">
                   <MapPin className="h-4 w-4 shrink-0 text-[#6C63FF]" />
                   <span className="truncate text-slate-900">{latestTrip ? latestTrip.destination : 'No active trips'}</span>
                 </div>
-              </div>
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
+              </TiltCard>
+              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Next Action</div>
                 <div className="mt-2 text-xs font-semibold text-slate-600">
                   {latestTrip ? 'Review recommendations or export' : 'Run the AI generation onboarding'}
                 </div>
-              </div>
-            </div>
-          </div>
+              </TiltCard>
+            </motion.div>
+          </motion.div>
 
           {error && (
             <div className="mt-6 flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm font-semibold text-rose-600 shadow-sm">
@@ -719,13 +740,11 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <motion.div {...revealOnView} className="mt-8 grid gap-6 md:grid-cols-2">
               {userTrips.length > 0 ? (
                 userTrips.map(trip => (
                   <motion.article
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35 }}
+                    variants={rise}
                     key={trip.id}
                     className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(108,99,255,0.08)] flex flex-col h-full"
                   >
@@ -795,7 +814,7 @@ export default function DashboardPage() {
                   </button>
                 </div>
               )}
-            </div>
+            </motion.div>
           </section>
 
           {/* Booking Conf. Wrapper */}
@@ -812,6 +831,7 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-16">
+      <ScrollProgressBar />
       {/* Dynamic ambient vector glows */}
       <div className="absolute -top-40 left-1/3 h-[600px] w-[600px] rounded-full bg-[#6C63FF]/3 blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-0 h-[500px] w-[500px] rounded-full bg-[#FF6584]/3 blur-[120px] pointer-events-none" />
@@ -899,12 +919,12 @@ export default function DashboardPage() {
                 { label: 'Confirmed emails', value: overview.stats.confirmedUsers.toString(), color: '#10B981', bg: 'bg-emerald-50', border: 'border-emerald-100' },
                 { label: 'User profiles', value: overview.profiles.length.toString(), color: '#A855F7', bg: 'bg-purple-50', border: 'border-purple-100' },
               ].map(card => (
-                <div key={card.label} className={`flex flex-col justify-center rounded-[24px] border ${card.border} ${card.bg} p-4 shadow-sm hover:shadow-md transition-all`}>
+                <TiltCard key={card.label} className={`flex flex-col justify-center rounded-[24px] border ${card.border} ${card.bg} p-4 shadow-sm transition-all`}>
                   <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
                   <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
-                    {card.value}
+                    <Counter to={Number(card.value) || 0} />
                   </div>
-                </div>
+                </TiltCard>
               ))}
             </div>
           )}

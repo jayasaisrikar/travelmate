@@ -1,108 +1,116 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import { ArrowRight, Compass, MapPinned, Sparkles, Users, Waves } from 'lucide-react';
+import Image from 'next/image';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Counter,
+  EASE,
+  ParallaxImage,
+  RevealWords,
+  ScrollProgressBar,
+  TiltCard,
+  rise,
+  stagger,
+} from '@/components/common/motion';
+import {
+  ArrowRight,
+  CalendarRange,
+  Compass,
+  Map,
+  MapPinned,
+  Route,
+  Shield,
+  Sparkles,
+  Users,
+  Wallet,
+  Waves,
+} from 'lucide-react';
 import { Brand } from '@/components/common/Brand';
 import { Footer } from '@/components/common/Footer';
-import { listDestinationPulses, type DestinationPulse } from '@/services/social';
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 18 },
-  whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.45 },
-  viewport: { once: true, margin: '-40px' },
+const IMG = {
+  hero: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=1920',
+  coast:
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200',
+  road: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200',
+  community:
+    'https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&q=80&w=1200',
 };
 
-const planningSignals = [
-  {
-    title: 'Real route inputs',
-    body: 'Search a live destination, then anchor the trip around the dates and rhythm that actually matter.',
-    icon: MapPinned,
-  },
-  {
-    title: 'Smarter timing',
-    body: 'Wayflo keeps arrival windows, departures, stay context, and daily flow visible from the start.',
-    icon: Waves,
-  },
-  {
-    title: 'Saved momentum',
-    body: 'Keep the itinerary, map view, and trip notes together so a plan stays usable after you close the tab.',
-    icon: Sparkles,
-  },
+const navLinks = [
+  { label: 'How it works', href: '#how' },
+  { label: 'Why Wayflo', href: '#why' },
+  { label: 'Community', href: '#community' },
 ];
 
-const productMoments = [
-  'Search real places instead of seeded demos',
-  'Build around when the trip starts and ends',
-  'Save a trip page that still works well on your phone',
-  'Share a route and collect practical suggestions',
+const stats = [
+  { to: 120, suffix: '+', label: 'destinations searchable live' },
+  { to: 6, suffix: '', label: 'travelers per shared trip room' },
+  { to: 100, suffix: '%', label: 'plans saved for offline reuse' },
 ];
 
-const showcaseCards = [
-  {
-    eyebrow: 'Explore freely',
-    title: 'A planner that feels lighter on first use.',
-    body: 'Minimal inputs, calm copy, and rounded surfaces keep the experience moving instead of making travel planning feel like paperwork.',
-    accent: '#6C63FF',
-  },
-  {
-    eyebrow: 'Flow better',
-    title: 'Plans stay connected to time, place, and stay details.',
-    body: 'Each itinerary is grounded in a route, not a vague destination idea. That makes the output easier to trust and easier to reuse.',
-    accent: '#FF6584',
-  },
+const bentoSignals = [
+  { label: 'Destination', value: 'Search a live place, not a template city.', icon: MapPinned, tone: 'primary' as const },
+  { label: 'Trip window', value: 'Lock arrival and departure so the plan fits your schedule.', icon: CalendarRange, tone: 'coral' as const },
+  { label: 'Budget', value: 'Shape the route around what you actually want to spend.', icon: Wallet, tone: 'primary' as const },
+  { label: 'Pace', value: 'Keep days balanced instead of overloaded.', icon: Waves, tone: 'coral' as const },
 ];
 
-const tripFlowSteps = [
-  'Pick the destination you really want, not a template city.',
-  'Set the arrival and departure window so the trip reflects your schedule.',
-  'Let the itinerary form around your pace, budget, and interests.',
+const steps = [
+  { title: 'Pick the real destination', body: 'Search a live place you actually want to go — Wayflo anchors everything to it.', icon: Compass },
+  { title: 'Set your travel window', body: 'Arrival, departure, and stay context stay visible from the very first input.', icon: CalendarRange },
+  { title: 'Get a route you can reuse', body: 'The itinerary forms around your pace and budget, then saves for later — phone included.', icon: Route },
+];
+
+const values = [
+  { title: 'Real route inputs', body: 'Search a live destination, then anchor the trip around the dates and rhythm that matter.', icon: Map },
+  { title: 'Smarter timing', body: 'Arrival windows, departures, and daily flow stay in sync from the start.', icon: Waves },
+  { title: 'Saved momentum', body: 'Itinerary, map view, and notes stay together so a plan survives after you close the tab.', icon: Sparkles },
+];
+
+const socialFeatures = [
+  { icon: Users, label: 'Wave to connect', body: 'Anonymous one-tap interest — only visible if both sides wave back.' },
+  { icon: Map, label: 'Trip rooms', body: 'A shared planning space for up to 6 travelers heading the same way.' },
+  { icon: Shield, label: 'Privacy first', body: 'Nothing is public until you opt in. Exact dates are never shared.' },
 ];
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [destinations, setDestinations] = useState<DestinationPulse[]>([]);
+  const reduceMotion = useReducedMotion();
+
+  // Hero parallax
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroP } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroBgY = useTransform(heroP, [0, 1], reduceMotion ? ['0%', '0%'] : ['0%', '32%']);
+  const heroBgScale = useTransform(heroP, [0, 1], reduceMotion ? [1, 1] : [1.05, 1.18]);
+  const heroContentY = useTransform(heroP, [0, 1], reduceMotion ? [0, 0] : [0, 110]);
+  const heroContentOpacity = useTransform(heroP, [0, 0.85], [1, 0]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll);
     onScroll();
-
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    listDestinationPulses(4)
-      .then(data => {
-        if (mounted) {
-          setDestinations(data);
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          setDestinations([]);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   return (
-    <main className="min-h-screen overflow-x-hidden text-[#3F3D56]">
-      <nav
-        className={`fixed top-0 z-50 w-full transition-all duration-200 ${
+    <main className="min-h-dvh overflow-x-hidden text-[#3F3D56]">
+      <ScrollProgressBar />
+
+      {/* ── Navigation ─────────────────────────────────────── */}
+      <motion.nav
+        initial={{ y: -28, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: EASE }}
+        className={`fixed top-0 z-50 w-full transition-colors duration-300 ${
           isScrolled
-            ? 'border-b border-[#DDDCE8] bg-[rgba(242,242,242,0.9)] py-3 backdrop-blur-xl'
-            : 'bg-transparent py-5'
+            ? 'border-b border-[#DDDCE8] bg-[rgba(247,246,255,0.82)] py-3 backdrop-blur-xl'
+            : 'border-b border-transparent bg-transparent py-5'
         }`}
       >
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:flex-nowrap sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="sm:hidden">
             <Brand href="/" compact showWordmark={false} className="shrink-0" />
           </div>
@@ -110,399 +118,437 @@ export default function Home() {
             <Brand href="/" className="shrink-0" />
           </div>
 
+          <div className="hidden items-center gap-1 rounded-full border border-[#E4E2F0] bg-white/70 px-1.5 py-1.5 backdrop-blur md:flex">
+            {navLinks.map(link => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="rounded-full px-4 py-1.5 text-sm font-medium text-[#53506A] transition hover:bg-[#EEEDFE] hover:text-[#6C63FF]"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/login"
-              className="rounded-xl border border-[#6C63FF]/30 bg-white/80 px-3 py-2 text-[13px] font-semibold text-[#6C63FF] shadow-[0_10px_24px_rgba(108,99,255,0.08)] sm:px-4 sm:text-sm"
+              className="rounded-xl border border-[#6C63FF]/25 bg-white/80 px-3 py-2 text-[13px] font-semibold text-[#6C63FF] transition hover:bg-white sm:px-4 sm:text-sm"
             >
               Log in
             </Link>
-            <Link
-              href="/signup"
-              className="rounded-xl bg-[#6C63FF] px-3 py-2 text-[13px] font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.28)] sm:px-4 sm:text-sm"
-            >
-              Explore now
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <section className="mx-auto max-w-6xl px-4 pb-10 pt-24 sm:px-6 sm:pb-12 sm:pt-32 lg:pt-36">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <motion.div {...fadeInUp} className="space-y-6">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#6C63FF]/15 bg-[#EEEDFE] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6C63FF] sm:px-4 sm:text-[11px] sm:tracking-[0.24em]">
-              <Compass className="h-3.5 w-3.5" />
-              travel. flow. freedom.
-            </div>
-
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-medium leading-[0.98] tracking-[-0.05em] text-[#3F3D56] sm:text-5xl lg:text-7xl">
-                Explore freely.
-                <span className="block text-[#6C63FF]">Plan with more flow.</span>
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base sm:leading-8 sm:text-lg">
-                Wayflo turns real destinations, trip windows, budgets, and preferences into saved itineraries that
-                feel calm, clear, and ready to use when travel gets real.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(108,99,255,0.28)] sm:py-3.5"
+                className="block rounded-xl bg-[#6C63FF] px-3 py-2 text-[13px] font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.28)] transition hover:bg-[#5a52d5] sm:px-4 sm:text-sm"
               >
                 Explore now
-                <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link
-                href="/dashboard/onboarding"
-                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/30 bg-white px-5 py-3 text-sm font-semibold text-[#6C63FF] sm:py-3.5"
-              >
-                Learn more
-              </Link>
-            </div>
+            </motion.div>
+          </div>
+        </div>
+      </motion.nav>
 
-            <div className="rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_18px_48px_rgba(63,61,86,0.08)] backdrop-blur">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92]">
-                    Live social proof
-                  </div>
-                  <h2 className="mt-1 text-lg font-medium tracking-[-0.03em] text-[#3F3D56]">
-                    Travelers are already clustering by destination.
-                  </h2>
-                </div>
-                <Link href="/explore" className="text-sm font-semibold text-[#6C63FF] hover:underline">
-                  Explore
+      {/* ── Hero (parallax + word reveal) ──────────────────── */}
+      <section ref={heroRef} className="relative min-h-[94vh] overflow-hidden">
+        <motion.div style={{ y: heroBgY, scale: heroBgScale }} className="absolute inset-0">
+          <Image src={IMG.hero} alt="" fill priority sizes="100vw" className="object-cover" />
+        </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1A1726]/55 via-[#1A1726]/35 to-[#F2F2F2]" />
+        <motion.div
+          aria-hidden
+          animate={reduceMotion ? undefined : { opacity: [0.55, 0.85, 0.55] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(108,99,255,0.34),transparent_55%)]"
+        />
+
+        <motion.div
+          style={{ y: heroContentY, opacity: heroContentOpacity }}
+          className="relative mx-auto flex min-h-[94vh] max-w-6xl flex-col items-center justify-center px-4 pb-24 pt-32 text-center sm:px-6"
+        >
+          <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
+            <motion.div
+              variants={rise}
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white backdrop-blur-md"
+            >
+              <Compass className="h-3.5 w-3.5" />
+              travel. flow. freedom.
+            </motion.div>
+
+            <h1 className="mt-6 text-balance text-5xl font-medium leading-[0.95] tracking-[-0.05em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,0.35)] sm:text-6xl lg:text-7xl">
+              <RevealWords text="Explore freely." />
+              <span className="mt-1 block bg-gradient-to-r from-[#C8C2FF] to-[#FFB3C4] bg-clip-text text-transparent">
+                <RevealWords text="Plan with more flow." />
+              </span>
+            </h1>
+
+            <motion.p
+              variants={rise}
+              className="mx-auto mt-6 max-w-xl text-pretty text-base leading-8 text-white/85 sm:text-lg"
+            >
+              Wayflo turns real destinations, trip windows, budgets, and preferences into saved
+              itineraries that feel calm, clear, and ready when travel gets real.
+            </motion.p>
+
+            <motion.div variants={rise} className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="w-full sm:w-auto">
+                <Link
+                  href="/signup"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(108,99,255,0.45)] transition hover:bg-[#5a52d5]"
+                >
+                  Start planning free
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
-              </div>
+              </motion.div>
+              <Link
+                href="#how"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:w-auto"
+              >
+                See how it works
+              </Link>
+            </motion.div>
+          </motion.div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {(destinations.length > 0 ? destinations : []).map((pulse) => (
-                  <Link
-                    key={pulse.destination_slug}
-                    href={`/explore/${pulse.destination_slug}`}
-                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="text-sm font-bold text-[#1A1726]">{pulse.destination}</div>
-                    <div className="mt-1 text-sm text-[#6F6C82]">
-                      {pulse.traveler_count} traveler{pulse.traveler_count !== 1 ? 's' : ''} going
-                      {pulse.room_count > 0 ? ` · ${pulse.room_count} room${pulse.room_count !== 1 ? 's' : ''}` : ''}
-                    </div>
-                  </Link>
-                ))}
-
-                {destinations.length === 0 && productMoments.map(point => (
-                  <div
-                    key={point}
-                    className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-4 text-sm font-medium text-[#53506A]"
-                  >
-                    {point}
-                  </div>
-                ))}
-              </div>
+          {/* Scroll cue */}
+          <motion.div
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 sm:block"
+          >
+            <div className="flex h-10 w-6 items-start justify-center rounded-full border-2 border-white/50 p-1.5">
+              <motion.span
+                animate={reduceMotion ? undefined : { y: [0, 8, 0], opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                className="h-1.5 w-1.5 rounded-full bg-white"
+              />
             </div>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ── Stats band ─────────────────────────────────────── */}
+      <section className="px-4 sm:px-6">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mx-auto -mt-12 grid max-w-5xl gap-4 rounded-[28px] border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_rgba(63,61,86,0.12)] backdrop-blur sm:grid-cols-3 sm:p-8"
+        >
+          {stats.map(s => (
+            <motion.div key={s.label} variants={rise} className="text-center sm:text-left">
+              <div className="bg-gradient-to-r from-[#6C63FF] to-[#FF6584] bg-clip-text text-4xl font-semibold tracking-[-0.04em] text-transparent sm:text-5xl">
+                <Counter to={s.to} suffix={s.suffix} />
+              </div>
+              <p className="mt-1.5 text-sm leading-6 text-[#6F6C82]">{s.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ── Bento: what Wayflo keeps in sync ───────────────── */}
+      <section className="px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+            className="mb-8 max-w-2xl"
+          >
+            <motion.div variants={rise} className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">
+              Trip flow
+            </motion.div>
+            <motion.h2 variants={rise} className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
+              Everything that makes a route trustworthy, in one place.
+            </motion.h2>
           </motion.div>
 
           <motion.div
-            {...fadeInUp}
-            transition={{ duration: 0.45, delay: 0.05 }}
-            className="relative overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-4 shadow-[0_30px_90px_rgba(63,61,86,0.12)] sm:p-6"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid gap-4 lg:grid-cols-3"
           >
-            <div className="absolute inset-x-4 top-0 h-20 rounded-b-[28px] bg-[radial-gradient(circle,rgba(108,99,255,0.18),transparent_72%)] sm:inset-x-6 sm:h-24" />
-
-            <div className="relative flex items-start justify-between gap-3">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-                  Trip flow
+            <motion.div variants={rise} className="relative overflow-hidden rounded-[30px] border border-[#4D4970] shadow-[0_24px_70px_rgba(63,61,86,0.2)] lg:row-span-2">
+              <ParallaxImage
+                src={IMG.coast}
+                alt="Aerial coastline view of a travel destination"
+                className="absolute inset-0 h-full w-full"
+                range={70}
+                float
+                overlay={<div className="absolute inset-0 bg-gradient-to-t from-[#1A1726]/92 via-[#1A1726]/55 to-[#1A1726]/20" />}
+              />
+              <div className="relative flex h-full min-h-[420px] flex-col justify-end p-6 text-white sm:p-7">
+                <div className="flex gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-[#6C63FF]" />
+                  <span className="h-3 w-3 rounded-full bg-[#FF6584]" />
+                  <span className="h-3 w-3 rounded-full bg-white/60" />
                 </div>
-                <h2 className="mt-2 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:text-2xl">
-                  What wayflo keeps in sync
-                </h2>
+                <h3 className="mt-5 text-2xl font-medium tracking-[-0.03em] sm:text-3xl">
+                  The itinerary stays tied to your real timing.
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-white/75">
+                  That&apos;s why the whole route feels usable instead of over-promised — every day
+                  reflects when you actually arrive, stay, and leave.
+                </p>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="mt-6 w-fit">
+                  <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#3F3D56]">
+                    Build your first route
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </motion.div>
               </div>
-              <div className="flex gap-1.5 pt-1 sm:gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#6C63FF] sm:h-3 sm:w-3" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#FF6584] sm:h-3 sm:w-3" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#3F3D56] sm:h-3 sm:w-3" />
-              </div>
-            </div>
+            </motion.div>
 
-            <div className="relative mt-4 space-y-3 sm:mt-6">
-              {[
-                ['Destination', 'Search a live place'],
-                ['Trip window', 'Set arrival and departure time'],
-                ['Budget', 'Shape the plan around real spend'],
-                ['Pace', 'Keep the route balanced, not overloaded'],
-              ].map(([label, value], index) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-3.5 shadow-[0_12px_28px_rgba(63,61,86,0.05)] sm:py-4"
-                >
-                  <div className="flex items-start gap-3">
+            {bentoSignals.map(item => {
+              const Icon = item.icon;
+              const isPrimary = item.tone === 'primary';
+              return (
+                <motion.div key={item.label} variants={rise}>
+                  <TiltCard className="h-full rounded-[28px] border border-white/80 bg-white p-6 shadow-[0_16px_48px_rgba(63,61,86,0.07)]">
                     <div
-                      className="mt-0.5 h-10 w-10 shrink-0 rounded-2xl sm:h-11 sm:w-11"
-                      style={{
-                        background:
-                          index % 2 === 0
-                            ? 'linear-gradient(180deg, #6C63FF 0%, #847DFF 100%)'
-                            : 'linear-gradient(180deg, #FF6584 0%, #FF8AA2 100%)',
-                      }}
-                    />
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7E7A92] sm:text-sm sm:tracking-[0.16em]">
-                        {label}
-                      </div>
-                      <div className="mt-1 text-sm font-medium text-[#3F3D56] sm:text-base">{value}</div>
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
+                      style={{ background: isPrimary ? 'linear-gradient(180deg,#6C63FF,#847DFF)' : 'linear-gradient(180deg,#FF6584,#FF8AA2)' }}
+                    >
+                      <Icon className="h-5 w-5" />
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="relative mt-4 rounded-2xl bg-[#3F3D56] px-4 py-4 text-white sm:mt-5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 sm:text-[11px] sm:tracking-[0.22em]">
-                Why it works
-              </div>
-              <p className="mt-2 text-sm leading-6 text-white/90">
-                The itinerary stays tied to your actual timing so the whole route feels usable, not over-promised.
-              </p>
-            </div>
+                    <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#7E7A92]">{item.label}</div>
+                    <p className="mt-1.5 text-base font-medium leading-7 text-[#3F3D56]">{item.value}</p>
+                  </TiltCard>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
 
-      {/* ── Social / Explore feature highlight ─────────────── */}
-      <section className="px-4 py-8 sm:px-6 sm:py-12">
+      {/* ── How it works (stepper + parallax image) ────────── */}
+      <section id="how" className="scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-center">
+          <div>
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: '-80px' }}
+              className="mb-10 max-w-xl"
+            >
+              <motion.div variants={rise} className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">
+                How it works
+              </motion.div>
+              <motion.h2 variants={rise} className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
+                From idea to route without breaking momentum.
+              </motion.h2>
+            </motion.div>
+
+            <motion.div
+              variants={stagger}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: '-60px' }}
+              className="relative space-y-6"
+            >
+              <motion.div
+                aria-hidden
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, ease: EASE }}
+                className="absolute bottom-4 left-7 top-4 w-px origin-top bg-gradient-to-b from-[#6C63FF]/40 via-[#FF6584]/30 to-transparent"
+              />
+              {steps.map((step, i) => {
+                const Icon = step.icon;
+                return (
+                  <motion.div key={step.title} variants={rise} className="relative flex gap-5">
+                    <motion.div
+                      whileHover={{ scale: 1.08, rotate: -4 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                      className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white bg-white text-[#6C63FF] shadow-[0_14px_30px_rgba(108,99,255,0.16)]"
+                    >
+                      <Icon className="h-6 w-6" />
+                    </motion.div>
+                    <div className="pt-1">
+                      <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#FF6584]">
+                        Step {i + 1}
+                      </div>
+                      <h3 className="mt-1.5 text-xl font-medium tracking-[-0.03em] text-[#3F3D56]">{step.title}</h3>
+                      <p className="mt-2 text-sm leading-7 text-[#6F6C82]">{step.body}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, rotate: -1.5 }}
+            whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            <ParallaxImage
+              src={IMG.road}
+              alt="Open road winding through a scenic landscape"
+              className="aspect-[4/5] rounded-[30px] border border-white/70 shadow-[0_30px_80px_rgba(63,61,86,0.18)]"
+              range={90}
+              float
+              overlay={<div className="absolute inset-0 bg-gradient-to-t from-[#3F3D56]/30 to-transparent" />}
+            />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Value props ────────────────────────────────────── */}
+      <section id="why" className="scroll-mt-24 px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <motion.div
-            {...fadeInUp}
-            className="overflow-hidden rounded-[34px] border border-[#D8D4F2] bg-[#3F3D56] p-5 shadow-[0_24px_80px_rgba(63,61,86,0.18)] sm:p-8"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+            className="mb-8 max-w-2xl"
           >
-            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-              {/* Left copy */}
-              <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
+            <motion.div variants={rise} className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">
+              Why wayflo
+            </motion.div>
+            <motion.h2 variants={rise} className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
+              The route, the timing, and the mood stay connected.
+            </motion.h2>
+          </motion.div>
+
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid gap-4 lg:grid-cols-3"
+          >
+            {values.map(item => {
+              const Icon = item.icon;
+              return (
+                <motion.div key={item.title} variants={rise}>
+                  <TiltCard className="group h-full rounded-[28px] border border-white/80 bg-white p-6 shadow-[0_16px_48px_rgba(63,61,86,0.07)]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF] transition group-hover:bg-[#6C63FF] group-hover:text-white">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="mt-5 text-xl font-medium tracking-[-0.03em] text-[#3F3D56]">{item.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{item.body}</p>
+                  </TiltCard>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Community / Social ─────────────────────────────── */}
+      <section id="community" className="scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.7, ease: EASE }}
+            className="overflow-hidden rounded-[34px] border border-[#D8D4F2] bg-[#3F3D56] shadow-[0_24px_80px_rgba(63,61,86,0.18)]"
+          >
+            <div className="grid lg:grid-cols-2">
+              <motion.div
+                variants={stagger}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, margin: '-60px' }}
+                className="space-y-5 p-6 sm:p-9"
+              >
+                <motion.div variants={rise} className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
                   <Users className="h-3.5 w-3.5" />
                   New — Wayflo Social
-                </div>
-                <h2 className="text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">
+                </motion.div>
+                <motion.h2 variants={rise} className="text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl">
                   Find travelers heading
-                  <span className="block text-[#A89CFF]"> to the same place.</span>
-                </h2>
-                <p className="text-sm leading-7 text-white/70">
-                  See who else is planning a trip to your destination. Wave to connect,
-                  join a trip room, and plan the route together — or just share notes.
-                </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    href="/signup"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.35)] transition hover:bg-[#5a52d5]"
-                  >
+                  <span className="block text-[#A89CFF]">to the same place.</span>
+                </motion.h2>
+                <motion.p variants={rise} className="text-sm leading-7 text-white/70">
+                  See who else is planning a trip to your destination. Wave to connect, join a trip
+                  room, and plan the route together — or just share notes.
+                </motion.p>
+
+                <div className="space-y-3 pt-1">
+                  {socialFeatures.map(item => {
+                    const Icon = item.icon;
+                    return (
+                      <motion.div
+                        key={item.label}
+                        variants={rise}
+                        whileHover={{ x: 6 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 hover:bg-white/10"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#A89CFF]">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{item.label}</p>
+                          <p className="mt-0.5 text-sm leading-6 text-white/60">{item.body}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                <motion.div variants={rise} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-fit">
+                  <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.35)]">
                     Join the community
                     <ArrowRight className="h-4 w-4" />
                   </Link>
-                  <Link
-                    href="/explore"
-                    className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
-                  >
-                    Browse travelers
-                  </Link>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              {/* Right visual — feature cards */}
-              <div className="space-y-3">
-                {[
-                  {
-                    icon: (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
-                        <path d="M18 11V6a2 2 0 0 0-4 0v5" />
-                        <path d="M14 10V4a2 2 0 0 0-4 0v6" />
-                        <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
-                        <path d="M6 14a4 4 0 0 0 4 4h4a6 6 0 0 0 6-6v-1a2 2 0 0 0-4 0" />
-                      </svg>
-                    ),
-                    label: 'Wave to connect',
-                    body: 'Anonymous one-tap interest — only visible if both sides wave back.',
-                  },
-                  {
-                    icon: (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
-                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
-                        <line x1="9" y1="3" x2="9" y2="18" />
-                        <line x1="15" y1="6" x2="15" y2="21" />
-                      </svg>
-                    ),
-                    label: 'Trip rooms',
-                    body: 'Start a shared planning space for up to 6 travelers going the same way.',
-                  },
-                  {
-                    icon: (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[#A89CFF]">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                    ),
-                    label: 'Privacy first',
-                    body: 'Nothing is public until you opt in. Exact dates are never shared.',
-                  },
-                ].map(item => (
-                  <div key={item.label} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
-                      {item.icon}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white">{item.label}</p>
-                      <p className="mt-0.5 text-sm leading-6 text-white/60">{item.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ParallaxImage
+                src={IMG.community}
+                alt="Travelers exploring together"
+                className="min-h-[320px] lg:min-h-full"
+                range={70}
+                float
+                overlay={<div className="absolute inset-0 bg-gradient-to-t from-[#3F3D56]/60 via-transparent to-[#3F3D56]/20 lg:bg-gradient-to-r lg:from-[#3F3D56]/70 lg:to-transparent" />}
+              />
             </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto max-w-6xl">
-          <motion.div {...fadeInUp} className="mb-6 max-w-2xl">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-              Why wayflo
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
-              The route, the timing, and the mood stay connected.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
-              You get a calmer way to plan, with the important details easy to spot and the next step always obvious.
-            </p>
-          </motion.div>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {planningSignals.map((item, index) => {
-              const Icon = item.icon;
-
-              return (
-                <motion.article
-                  key={item.title}
-                  {...fadeInUp}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF] sm:h-12 sm:w-12">
-                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                  <h3 className="mt-4 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:mt-5 sm:text-2xl">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{item.body}</p>
-                </motion.article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <motion.div
-            {...fadeInUp}
-            className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#faf8ff_100%)] p-5 shadow-[0_18px_60px_rgba(63,61,86,0.08)] sm:p-6"
-          >
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-              Feels clear
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-3xl">
-              It stays easy to read when you are planning fast.
-            </h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                ['Fast to scan', '#6C63FF', 'The main action stands out so you do not have to hunt for the next step.'],
-                ['Easy on the eyes', '#3F3D56', 'Trip details stay legible even when there is a lot to review.'],
-                ['Calm background', '#F2F2F2', 'The page feels light, so the planning flow does not feel crowded.'],
-                ['Helpful emphasis', '#FF6584', 'Important moments are highlighted without making the screen feel loud.'],
-              ].map(([label, color, body]) => (
-                <div key={label} className="rounded-2xl border border-[#E4E2F0] bg-white p-4">
-                  <div className="h-10 w-full rounded-xl sm:h-11" style={{ backgroundColor: color }} />
-                  <div className="mt-3 text-sm font-medium text-[#3F3D56] sm:text-base">{label}</div>
-                  <p className="mt-1 text-sm leading-6 text-[#6F6C82]">{body}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            {...fadeInUp}
-            transition={{ duration: 0.45, delay: 0.05 }}
-            className="rounded-[30px] border border-[#4D4970] bg-[#3F3D56] p-5 text-white shadow-[0_20px_70px_rgba(63,61,86,0.18)] sm:p-6"
-          >
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-[11px] sm:tracking-[0.24em]">
-              Journey rhythm
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] sm:text-3xl">
-              From idea to route without breaking momentum
-            </h2>
-            <div className="mt-5 space-y-3 sm:mt-6">
-              {tripFlowSteps.map((step, index) => (
-                <div key={step} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FF6584] sm:text-[11px] sm:tracking-[0.18em]">
-                    Step {index + 1}
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-white/88">{step}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-2">
-          {showcaseCards.map((card, index) => (
-            <motion.article
-              key={card.title}
-              {...fadeInUp}
-              transition={{ duration: 0.4, delay: index * 0.06 }}
-              className="rounded-[30px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px] sm:tracking-[0.22em]" style={{ color: card.accent }}>
-                {card.eyebrow}
-              </div>
-              <h3 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-3xl">{card.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{card.body}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 pb-10 pt-2 sm:px-6 sm:pb-14">
+      {/* ── Final CTA ──────────────────────────────────────── */}
+      <section className="px-4 pb-14 pt-6 sm:px-6">
         <motion.div
-          {...fadeInUp}
-          className="mx-auto max-w-6xl rounded-[34px] border border-[#D8D4F2] bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_52%,#FFE9EF_100%)] p-5 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-8"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.7, ease: EASE }}
+          className="mx-auto max-w-6xl overflow-hidden rounded-[34px] border border-[#D8D4F2] bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_52%,#FFE9EF_100%)] p-7 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-10"
         >
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-                Ready to move
-              </div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7E7A92]">Ready to move</div>
               <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
-                Start planning in the new wayflo system.
+                Start planning in the new Wayflo flow.
               </h2>
-              <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
-                Create an account, save your itinerary, and keep the route flowing from research to the trip itself.
+              <p className="mt-3 text-base leading-7 text-[#6F6C82]">
+                Create an account, save your itinerary, and keep the route flowing from research to
+                the trip itself.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center rounded-xl bg-[#FF6584] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(255,101,132,0.22)]"
-              >
-                Book trip
-              </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/25 bg-white px-5 py-3.5 text-sm font-semibold text-[#6C63FF]"
-              >
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF6584] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(255,101,132,0.28)]">
+                  Plan a trip
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </motion.div>
+              <Link href="/dashboard" className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/25 bg-white px-6 py-3.5 text-sm font-semibold text-[#6C63FF] transition hover:bg-[#EEEDFE]/60">
                 Open dashboard
               </Link>
             </div>
