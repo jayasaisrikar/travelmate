@@ -57,7 +57,7 @@ export function OpenTripsPanel() {
         <button
           type="button"
           onClick={handleCreateClick}
-          className="inline-flex items-center gap-2 rounded-2xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5b53e6]"
+          className="inline-flex items-center gap-2 rounded-2xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5b53e6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
         >
           <Plus className="h-4 w-4" /> Create
         </button>
@@ -65,14 +65,18 @@ export function OpenTripsPanel() {
 
       <div className="mt-5">
         {loading && (
-          <div className="flex h-24 items-center justify-center gap-2 text-sm font-semibold text-[#6F6C82]">
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex h-24 items-center justify-center gap-2 text-sm font-semibold text-[#6F6C82]"
+          >
             <Compass className="h-4 w-4 animate-pulse text-[#6C63FF]" />
             Loading Open Trips...
           </div>
         )}
 
         {!loading && error && (
-          <p className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
+          <p role="alert" className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
             {error}
           </p>
         )}
@@ -89,7 +93,7 @@ export function OpenTripsPanel() {
               <Link
                 key={room.id}
                 href={`/rooms/${room.id}`}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#6C63FF]/40 hover:shadow-md"
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#6C63FF]/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-sm font-semibold text-[#3F3D56]">

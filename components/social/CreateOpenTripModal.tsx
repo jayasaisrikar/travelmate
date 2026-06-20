@@ -74,8 +74,9 @@ export function CreateOpenTripModal({ open, onClose, onCreated, onNeedsVerificat
           <button
             type="button"
             onClick={handleClose}
+            disabled={submitting}
             aria-label="Close"
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X className="h-5 w-5" />
           </button>
@@ -97,9 +98,15 @@ export function CreateOpenTripModal({ open, onClose, onCreated, onNeedsVerificat
           }}
           placeholder="e.g. Mumbai"
           disabled={submitting}
-          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-[#3F3D56] disabled:opacity-60"
+          aria-invalid={destinationError ? true : undefined}
+          aria-describedby={destinationError ? 'open-trip-destination-error' : undefined}
+          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-[#3F3D56] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] disabled:cursor-not-allowed disabled:opacity-60"
         />
-        {destinationError && <p className="mt-1.5 text-xs font-semibold text-[#C14D72]">{destinationError}</p>}
+        {destinationError && (
+          <p id="open-trip-destination-error" role="alert" className="mt-1.5 text-xs font-semibold text-[#C14D72]">
+            {destinationError}
+          </p>
+        )}
 
         <label htmlFor="open-trip-title" className="mt-4 block text-sm font-medium text-[#53506A]">
           Title (optional)
@@ -110,17 +117,21 @@ export function CreateOpenTripModal({ open, onClose, onCreated, onNeedsVerificat
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Weekend in Mumbai"
           disabled={submitting}
-          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-[#3F3D56] disabled:opacity-60"
+          className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-[#3F3D56] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] disabled:cursor-not-allowed disabled:opacity-60"
         />
 
-        {error && <p className="mt-3 text-sm font-semibold text-[#C14D72]">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-3 text-sm font-semibold text-[#C14D72]">
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={handleClose}
             disabled={submitting}
-            className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#6F6C82] disabled:opacity-60"
+            className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-[#6F6C82] transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Cancel
           </button>
@@ -128,7 +139,7 @@ export function CreateOpenTripModal({ open, onClose, onCreated, onNeedsVerificat
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="flex-1 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5b53e6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Creating…' : 'Create Open Trip'}
           </button>

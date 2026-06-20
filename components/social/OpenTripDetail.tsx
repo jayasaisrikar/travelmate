@@ -84,7 +84,10 @@ export function OpenTripDetail() {
       <header className="sticky top-0 z-30 border-b border-[#DDDCE8] bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <Brand href="/dashboard" />
-          <Link href="/explore" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#6F6C82] hover:text-[#3F3D56]">
+          <Link
+            href="/explore"
+            className="inline-flex items-center gap-1.5 rounded-lg text-sm font-semibold text-[#6F6C82] transition hover:text-[#3F3D56] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
+          >
             <ArrowLeft size={15} />
             Back to Explore
           </Link>
@@ -93,12 +96,12 @@ export function OpenTripDetail() {
 
       <div className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
         {loading ? (
-          <div className="flex items-center gap-2 text-sm font-semibold text-[#6F6C82]">
+          <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm font-semibold text-[#6F6C82]">
             <LoaderCircle size={16} className="animate-spin text-[#6C63FF]" />
             Loading room...
           </div>
         ) : !room ? (
-          <div className="rounded-2xl border border-[#C14D72] bg-[#FFF0F4] p-5 text-sm text-[#C14D72]">
+          <div role="alert" className="rounded-2xl border border-[#C14D72] bg-[#FFF0F4] p-5 text-sm text-[#C14D72]">
             {error || 'Room not found'}
           </div>
         ) : (
@@ -125,7 +128,7 @@ export function OpenTripDetail() {
                     type="button"
                     onClick={() => void handleLeave()}
                     disabled={action === 'leave' || isHost}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#DDDCE8] bg-white px-4 py-2.5 text-sm font-semibold text-[#6F6C82] transition hover:bg-[#FFF0F4] hover:text-[#C14D72] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#DDDCE8] bg-white px-4 py-2.5 text-sm font-semibold text-[#6F6C82] transition hover:bg-[#FFF0F4] hover:text-[#C14D72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {action === 'leave' ? (
                       <LoaderCircle size={15} className="animate-spin" />
@@ -139,7 +142,7 @@ export function OpenTripDetail() {
                     type="button"
                     onClick={() => void handleJoin()}
                     disabled={action === 'join' || !room.is_open || room.member_count >= room.max_members}
-                    className="rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5a52d5] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5a52d5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {action === 'join' ? 'Joining...' : 'Join room'}
                   </button>
@@ -151,7 +154,7 @@ export function OpenTripDetail() {
               </p>
 
               {error && (
-                <p className="mt-4 rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm text-[#C14D72]">
+                <p role="alert" className="mt-4 rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm text-[#C14D72]">
                   {error}
                 </p>
               )}
