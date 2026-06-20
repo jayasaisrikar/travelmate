@@ -12,6 +12,21 @@ import type {
   SocialVerificationStatus,
 } from '@/services/social-verification';
 
+// ─── Error handling ──────────────────────────────────────────────────────────
+
+export class SocialApiError extends Error {
+  status: number;
+  code?: string;
+  level?: string;
+  constructor(message: string, status: number, code?: string, level?: string) {
+    super(message);
+    this.name = 'SocialApiError';
+    this.status = status;
+    this.code = code;
+    this.level = level;
+  }
+}
+
 // ─── Shared types ────────────────────────────────────────────────────────────
 
 export interface TravelerProfile {
@@ -30,6 +45,8 @@ export interface TravelerProfile {
   verified_at: string | null;
   last_seen_at: string | null;
   created_at: string;
+  location_consent_at?: string | null;
+  location_consent_revoked_at?: string | null;
 }
 
 export interface TravelerWithSignal extends TravelerProfile {
@@ -125,9 +142,12 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(
-      (body as { error?: string } | null)?.error ??
-        `Social API error ${res.status}`
+    const b = body as { error?: string; level?: string } | null;
+    throw new SocialApiError(
+      b?.error ?? `Social API error ${res.status}`,
+      res.status,
+      b?.error,
+      b?.level
     );
   }
 
@@ -162,6 +182,14 @@ export async function upsertMyProfile(
   return apiFetch<TravelerProfile>('/api/social/profile', {
     method: 'POST',
     body: JSON.stringify(patch),
+  });
+}
+
+/** Grant or revoke consent for the one-shot trip presence location check */
+export async function setLocationConsent(grant: boolean): Promise<{ consent: boolean }> {
+  return apiFetch<{ consent: boolean }>('/api/profile/location-consent', {
+    method: 'POST',
+    body: JSON.stringify({ grant }),
   });
 }
 

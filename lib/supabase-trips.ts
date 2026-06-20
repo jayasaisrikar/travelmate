@@ -23,6 +23,13 @@ export interface Trip {
   cover_image_url?: string | null
   created_at: string
   updated_at: string
+  trip_start_date?: string | null
+  trip_end_date?: string | null
+  dest_lat?: number | null
+  dest_lng?: number | null
+  is_published?: boolean
+  published_at?: string | null
+  destination_slug?: string | null
 }
 
 export interface TripSharePayload {
@@ -89,6 +96,18 @@ export async function updateTripItinerary(
   const data = await fetchTripApi<{ trip: Trip }>(`/api/trips/${encodeURIComponent(tripId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ itinerary }),
+  })
+
+  return data.trip
+}
+
+export async function updateTripDates(
+  tripId: string,
+  dates: { trip_start_date: string; trip_end_date: string }
+): Promise<Trip> {
+  const data = await fetchTripApi<{ trip: Trip }>(`/api/trips/${encodeURIComponent(tripId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dates),
   })
 
   return data.trip

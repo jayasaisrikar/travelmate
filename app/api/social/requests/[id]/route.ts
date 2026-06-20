@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { touchTravelerLastSeen } from '@/services/social-activity';
+import { checkTrustedTraveler, verificationRequiredResponse } from '@/services/social-guard';
 
 const SELECT = 'id, from_user, to_user, reason, message, status, match_score, expires_at, created_at';
 
@@ -21,6 +22,16 @@ export async function PATCH(
 
   if (!action || !['accept', 'decline', 'cancel'].includes(action)) {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  }
+
+  // Only accepting a request grants a new connection (and unlocks messaging),
+  // so only that action is gated behind trusted verification. Decline/cancel
+  // must stay reachable so a user is never trapped in a pending request.
+  if (action === 'accept') {
+    const guard = await checkTrustedTraveler(user.id);
+    if (!guard.ok) {
+      return verificationRequiredResponse(guard.level);
+    }
   }
 
   const { data: existing, error: fetchError } = await supabase

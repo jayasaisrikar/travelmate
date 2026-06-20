@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BadgeCheck, Clock3, Eye, EyeOff, Save, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
+import { BadgeCheck, Clock3, Eye, EyeOff, MapPin, Save, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import {
   getMyProfile,
+  setLocationConsent,
   startDiditVerification,
   upsertMyProfile,
   type TravelerProfile,
@@ -36,6 +37,8 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
   const [startingVerification, setStartingVerification] = useState(false);
   const [saved,     setSaved]     = useState(false);
   const [error,     setError]     = useState('');
+  const [locationConsent, setLocationConsentState] = useState(false);
+  const [savingConsent, setSavingConsent] = useState(false);
 
   // Form state
   const [displayName, setDisplayName] = useState('');
@@ -53,6 +56,10 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
           setBio(p.bio ?? '');
           setStyle((p.travel_style as TravelStyle) ?? '');
           setIsPublic(p.is_public);
+          setLocationConsentState(
+            !!p.location_consent_at &&
+              (!p.location_consent_revoked_at || p.location_consent_revoked_at < p.location_consent_at)
+          );
         }
       })
       .catch(() => {})
@@ -83,6 +90,20 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
       setError(err instanceof Error ? err.message : 'Failed to start verification');
     } finally {
       setStartingVerification(false);
+    }
+  };
+
+  const handleToggleLocationConsent = async () => {
+    const next = !locationConsent;
+    setSavingConsent(true);
+    setError('');
+    try {
+      await setLocationConsent(next);
+      setLocationConsentState(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update location check setting');
+    } finally {
+      setSavingConsent(false);
     }
   };
 
@@ -137,14 +158,52 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
         {/* Toggle switch */}
         <button
           type="button"
+          role="switch"
+          aria-checked={isPublic}
           onClick={() => setIsPublic(prev => !prev)}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 ${
             isPublic ? 'bg-[#6C63FF]' : 'bg-[#DDDCE8]'
           }`}
           aria-label="Toggle traveler profile visibility"
         >
           <motion.span
             animate={{ x: isPublic ? 20 : 2 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm"
+          />
+        </button>
+      </div>
+
+      {/* Location check toggle */}
+      <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#DDDCE8] bg-white p-4">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${locationConsent ? 'bg-[#F4F3FF]' : 'bg-[#F4F3F4]'}`}>
+            <MapPin size={18} className={locationConsent ? 'text-[#6C63FF]' : 'text-[#8A869C]'} />
+          </div>
+          <div>
+            <p className="font-semibold text-[#1A1726]">Location check</p>
+            <p className="text-xs text-[#6F6C82]">
+              {locationConsent
+                ? 'We check your location once during a trip to verify you were there'
+                : 'Off — we will ask before checking your location on a trip'}
+            </p>
+          </div>
+        </div>
+
+        {/* Toggle switch */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={locationConsent}
+          onClick={() => void handleToggleLocationConsent()}
+          disabled={savingConsent}
+          className={`relative flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+            locationConsent ? 'bg-[#6C63FF]' : 'bg-[#DDDCE8]'
+          }`}
+          aria-label="Toggle location check consent"
+        >
+          <motion.span
+            animate={{ x: locationConsent ? 20 : 2 }}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm"
           />

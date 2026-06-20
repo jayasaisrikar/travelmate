@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/services/supabase';
 import { getAuthenticatedUser } from '@/services/supabase-auth';
 import { touchTravelerLastSeen } from '@/services/social-activity';
+import { checkTrustedTraveler, verificationRequiredResponse } from '@/services/social-guard';
 
 const DAILY_MESSAGE_LIMIT = 20;
 const MAX_MESSAGE_LENGTH = 500;
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
   const { user, error } = await getAuthenticatedUser(request);
   if (error || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const guard = await checkTrustedTraveler(user.id);
+  if (!guard.ok) {
+    return verificationRequiredResponse(guard.level);
   }
 
   const body = await request.json().catch(() => ({})) as {
