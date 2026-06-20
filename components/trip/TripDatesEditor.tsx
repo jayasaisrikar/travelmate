@@ -87,7 +87,7 @@ export function TripDatesEditor({ trip, onSaved }: TripDatesEditorProps) {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
+        <div className="mt-4 rounded-xl border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]" role="alert">
           {error}
         </div>
       )}
@@ -97,7 +97,8 @@ export function TripDatesEditor({ trip, onSaved }: TripDatesEditorProps) {
           type="button"
           onClick={save}
           disabled={saving}
-          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
+          aria-disabled={saving}
+          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#302F43] hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:border-[#DDDCE8] disabled:bg-[#DDDCE8] disabled:text-[#8A869C] disabled:shadow-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
         >
           {saving ? 'Saving dates...' : 'Save dates'}
         </button>

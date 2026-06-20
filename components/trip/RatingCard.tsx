@@ -62,12 +62,12 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
           </div>
           <div className="min-w-0">
             <h3 className="text-base font-bold text-[#3F3D56]">{copy.title}</h3>
-            <p className="mt-1 text-sm leading-6 text-[#6F6C82]">{copy.body}</p>
+            <p className="mt-1.5 text-sm leading-6 text-[#6F6C82]">{copy.body}</p>
             {copy.cta && (
               <button
                 type="button"
                 onClick={() => setShowVerify(true)}
-                className="mt-4 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#5b53e6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
+                className="mt-4 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5b53e6] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
               >
                 Verify with Didit
               </button>
@@ -132,7 +132,7 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
         aria-label="Star rating"
         tabIndex={0}
         onKeyDown={handleStarKeyDown}
-        className="mt-5 flex gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]/40 focus-visible:ring-offset-2 rounded-xl w-fit"
+        className="mt-5 flex w-fit gap-1 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]/40 focus-visible:ring-offset-2"
       >
         {[1, 2, 3, 4, 5].map(n => (
           <button
@@ -148,10 +148,10 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
               setStars(n);
               setSaved(false);
             }}
-            className="rounded-lg p-1 transition-transform hover:scale-110 focus-visible:outline-none"
+            className="flex h-11 w-11 items-center justify-center rounded-lg transition-transform hover:scale-110 active:scale-95 focus-visible:outline-none"
           >
             <Star
-              className={`h-9 w-9 transition-colors ${
+              className={`h-9 w-9 transition-colors duration-150 ${
                 (hover || stars) >= n ? 'fill-[#FFB020] text-[#FFB020]' : 'text-[#DDDCE8]'
               }`}
             />
@@ -159,8 +159,8 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
         ))}
       </div>
 
-      <label htmlFor="rating-review" className="sr-only">
-        Review (optional)
+      <label htmlFor="rating-review" className="mt-5 mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+        Review <span className="font-medium text-[#8A869C]">(optional)</span>
       </label>
       <textarea
         id="rating-review"
@@ -171,27 +171,31 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
         }}
         placeholder="Add a short review (optional)"
         rows={3}
-        className="mt-4 w-full rounded-xl border border-[#3F3D56]/20 bg-white px-4 py-3 text-sm text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+        className="w-full rounded-xl border border-[#3F3D56]/20 bg-white px-4 py-3 text-sm text-[#3F3D56] outline-none transition-colors placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
       />
 
       <div className="mt-4 flex flex-col gap-3">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={save}
             disabled={saving || stars < 1}
-            className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-60"
+            aria-disabled={saving || stars < 1}
+            className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#302F43] hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:border-[#DDDCE8] disabled:bg-[#DDDCE8] disabled:text-[#8A869C] disabled:opacity-100 disabled:shadow-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
           >
             {saving ? 'Saving…' : state.mine ? 'Update rating' : 'Submit rating'}
           </button>
           {saved && (
-            <span className="text-sm font-semibold text-[#1B7A5A]" role="status">
+            <span
+              className="inline-flex items-center gap-1 text-sm font-semibold text-[#1B7A5A] motion-safe:transition-opacity motion-safe:duration-200"
+              role="status"
+            >
               Saved ✓
             </span>
           )}
         </div>
         {saveError && (
-          <span className="text-xs font-medium text-[#C14D72]">
+          <span className="text-xs font-medium text-[#C14D72]" role="alert">
             {saveError}
           </span>
         )}

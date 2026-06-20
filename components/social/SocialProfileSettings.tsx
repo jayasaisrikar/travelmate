@@ -158,8 +158,10 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
         {/* Toggle switch */}
         <button
           type="button"
+          role="switch"
+          aria-checked={isPublic}
           onClick={() => setIsPublic(prev => !prev)}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 ${
             isPublic ? 'bg-[#6C63FF]' : 'bg-[#DDDCE8]'
           }`}
           aria-label="Toggle traveler profile visibility"
@@ -191,9 +193,11 @@ export function SocialProfileSettings({ onProfileSaved }: SocialProfileSettingsP
         {/* Toggle switch */}
         <button
           type="button"
+          role="switch"
+          aria-checked={locationConsent}
           onClick={() => void handleToggleLocationConsent()}
           disabled={savingConsent}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 disabled:opacity-60 ${
+          className={`relative flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
             locationConsent ? 'bg-[#6C63FF]' : 'bg-[#DDDCE8]'
           }`}
           aria-label="Toggle location check consent"

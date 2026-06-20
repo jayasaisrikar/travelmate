@@ -587,6 +587,11 @@ export default function DashboardPage() {
 
     return (
       <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-12">
+        <LocationConsentPrompt
+          open={needsConsent && !consentDismissed}
+          onGrant={() => void grantConsent()}
+          onDismiss={() => setConsentDismissed(true)}
+        />
         <ScrollProgressBar />
         {/* Colorful flowing vector blobs to make UI look organic & high-end */}
         <div className="absolute -top-40 right-10 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-[#6C63FF]/5 to-[#FF6584]/5 blur-[120px] pointer-events-none" />
