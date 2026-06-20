@@ -34,6 +34,8 @@ export default async function PublicItineraryPage({ params }: { params: Promise<
   const isPublic = data.profile?.is_public ?? false;
   const ownerName = isPublic ? (data.profile?.display_name ?? null) : null;
   const stars = data.rating?.stars ?? null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally stripped before sending to the public client component
+  const { user_id: _ownerUserId, ...publicTrip } = data.trip;
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#3F3D56]">
@@ -66,7 +68,7 @@ export default async function PublicItineraryPage({ params }: { params: Promise<
         shareTitle={`${data.trip.destination} itinerary`}
         shareDescription={`A ${data.trip.duration}-day plan for ${data.trip.destination}.`}
         suggestionsCount={0}
-        trip={data.trip}
+        trip={publicTrip}
       />
     </main>
   );
