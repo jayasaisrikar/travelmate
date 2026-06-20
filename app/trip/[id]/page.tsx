@@ -22,6 +22,7 @@ import { MapView } from '@/components/trip/MapView';
 import { TripDatesEditor } from '@/components/trip/TripDatesEditor';
 import { BudgetBreakdown } from '@/components/trip/BudgetBreakdown';
 import { TimelineView } from '@/components/trip/TimelineView';
+import { RatingCard } from '@/components/trip/RatingCard';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
@@ -735,6 +736,10 @@ export default function TripDetailsPage() {
           onSelectActivity={setSelectedStopIndex}
           onTripUpdated={updatedTrip => setTrip(updatedTrip)}
         />
+
+        <section className="mt-6">
+          <RatingCard tripId={trip.id} destination={trip.destination} />
+        </section>
 
         <CompanionStrip destination={trip.destination} />
 
