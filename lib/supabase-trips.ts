@@ -23,6 +23,10 @@ export interface Trip {
   cover_image_url?: string | null
   created_at: string
   updated_at: string
+  trip_start_date?: string | null
+  trip_end_date?: string | null
+  dest_lat?: number | null
+  dest_lng?: number | null
 }
 
 export interface TripSharePayload {
