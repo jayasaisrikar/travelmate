@@ -23,6 +23,7 @@ import { TripDatesEditor } from '@/components/trip/TripDatesEditor';
 import { BudgetBreakdown } from '@/components/trip/BudgetBreakdown';
 import { TimelineView } from '@/components/trip/TimelineView';
 import { RatingCard } from '@/components/trip/RatingCard';
+import { PublishToggle } from '@/components/trip/PublishToggle';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
@@ -737,7 +738,8 @@ export default function TripDetailsPage() {
           onTripUpdated={updatedTrip => setTrip(updatedTrip)}
         />
 
-        <section className="mt-6">
+        <section className="mt-6 grid gap-4 lg:grid-cols-2">
+          <PublishToggle trip={trip} />
           <RatingCard tripId={trip.id} destination={trip.destination} />
         </section>
 
