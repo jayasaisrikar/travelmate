@@ -177,9 +177,12 @@ export default function Home() {
 
             <h1 className="mt-6 text-balance text-5xl font-medium leading-[0.95] tracking-[-0.05em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,0.35)] sm:text-6xl lg:text-7xl">
               <RevealWords text="Explore freely." />
-              <span className="mt-1 block bg-gradient-to-r from-[#C8C2FF] to-[#FFB3C4] bg-clip-text text-transparent">
-                <RevealWords text="Plan with more flow." />
-              </span>
+              <motion.span
+                variants={rise}
+                className="mt-1 block bg-gradient-to-r from-[#C8C2FF] to-[#FFB3C4] bg-clip-text text-transparent"
+              >
+                Plan with more flow.
+              </motion.span>
             </h1>
 
             <motion.p
