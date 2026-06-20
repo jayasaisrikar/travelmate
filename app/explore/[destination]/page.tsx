@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Brand } from '@/components/common/Brand';
 import { TravelerCard } from '@/components/social/TravelerCard';
 import { DestinationRoomCard } from '@/components/social/DestinationRoomCard';
+import { PublishedItinerariesSection } from '@/components/explore/PublishedItinerariesSection';
 import {
   listTravelers,
   listTripRooms,
@@ -169,6 +170,9 @@ export default function DestinationExplorePage({
                 </div>
               )}
             </section>
+
+            {/* Published Itineraries */}
+            <PublishedItinerariesSection slug={slug} />
           </div>
         )}
       </main>
