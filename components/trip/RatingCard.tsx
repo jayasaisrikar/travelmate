@@ -12,6 +12,7 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
   const [review, setReview] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [showVerify, setShowVerify] = useState(false);
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
     if (stars < 1 || saving) return;
     setSaving(true);
     setSaved(false);
+    setSaveError('');
     try {
       await submitRating(tripId, stars, review.trim() || undefined);
       setSaved(true);
@@ -92,6 +94,7 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
       );
     } catch {
       setSaved(false);
+      setSaveError("We couldn't save your rating — please try again.");
     } finally {
       setSaving(false);
     }
@@ -171,18 +174,25 @@ export function RatingCard({ tripId, destination }: { tripId: string; destinatio
         className="mt-4 w-full rounded-xl border border-[#3F3D56]/20 bg-white px-4 py-3 text-sm text-[#3F3D56] outline-none placeholder:text-[#8A869C] focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
       />
 
-      <div className="mt-4 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving || stars < 1}
-          className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {saving ? 'Saving…' : state.mine ? 'Update rating' : 'Submit rating'}
-        </button>
-        {saved && (
-          <span className="text-sm font-semibold text-[#1B7A5A]" role="status">
-            Saved ✓
+      <div className="mt-4 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || stars < 1}
+            className="rounded-xl border border-[#3F3D56] bg-[#3F3D56] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? 'Saving…' : state.mine ? 'Update rating' : 'Submit rating'}
+          </button>
+          {saved && (
+            <span className="text-sm font-semibold text-[#1B7A5A]" role="status">
+              Saved ✓
+            </span>
+          )}
+        </div>
+        {saveError && (
+          <span className="text-xs font-medium text-[#C14D72]">
+            {saveError}
           </span>
         )}
       </div>

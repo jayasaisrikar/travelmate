@@ -35,7 +35,7 @@ export type RatingState = {
 
 export const getRating = (tripId: string): Promise<RatingState> => authed(`/api/trips/${tripId}/rating`);
 
-export const submitRating = (tripId: string, stars: number, review?: string): Promise<RatingState> =>
+export const submitRating = (tripId: string, stars: number, review?: string): Promise<{ stars: number; review: string | null }> =>
   authed(`/api/trips/${tripId}/rating`, {
     method: 'POST',
     body: JSON.stringify({ stars, review }),
