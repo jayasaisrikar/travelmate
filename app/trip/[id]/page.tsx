@@ -19,6 +19,7 @@ import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover
 import { StatusCard } from '@/components/common/StatusCard';
 import ItineraryChat from '@/components/ItineraryChat';
 import { MapView } from '@/components/trip/MapView';
+import { TripDatesEditor } from '@/components/trip/TripDatesEditor';
 import { BudgetBreakdown } from '@/components/trip/BudgetBreakdown';
 import { TimelineView } from '@/components/trip/TimelineView';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
@@ -532,6 +533,12 @@ export default function TripDetailsPage() {
             </motion.div>
           </motion.div>
         </motion.section>
+
+        {(!trip.trip_start_date || !trip.trip_end_date) && (
+          <section className="mt-6">
+            <TripDatesEditor trip={trip} onSaved={setTrip} />
+          </section>
+        )}
 
         <section className="mt-6">
           <BudgetBreakdown breakdown={budgetBreakdown} total={totalEstimatedCost} currency={tripCurrency} />

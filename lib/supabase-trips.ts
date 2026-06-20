@@ -98,6 +98,18 @@ export async function updateTripItinerary(
   return data.trip
 }
 
+export async function updateTripDates(
+  tripId: string,
+  dates: { trip_start_date: string; trip_end_date: string }
+): Promise<Trip> {
+  const data = await fetchTripApi<{ trip: Trip }>(`/api/trips/${encodeURIComponent(tripId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(dates),
+  })
+
+  return data.trip
+}
+
 export async function updateTripDetails(
   tripId: string,
   input: Partial<Pick<Trip, 'destination' | 'duration' | 'budget' | 'interests' | 'itinerary'>>
