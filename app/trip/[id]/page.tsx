@@ -6,15 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { Brand } from '@/components/common/Brand';
-import {
-  Counter,
-  ParallaxLayer,
-  RevealWords,
-  ScrollProgressBar,
-  TiltCard,
-  revealOnView,
-  rise,
-} from '@/components/common/motion';
+import { ScrollProgressBar } from '@/components/common/motion';
 import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
 import { StatusCard } from '@/components/common/StatusCard';
 import ItineraryChat from '@/components/ItineraryChat';
@@ -27,6 +19,7 @@ import { PublishToggle } from '@/components/trip/PublishToggle';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { ShareModal } from '@/components/trip/ShareModal';
 import { loadTrip, loadTripSuggestions, retryTripStay, updateTripDetails, Trip } from '@/lib/supabase-trips';
+import { getTripStatus, formatTripDateRange } from '@/lib/trip-display';
 import { formatTripMoney } from '@/lib/utils';
 import type {
   GeneratedItinerary,
@@ -461,80 +454,91 @@ export default function TripDetailsPage() {
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
         >
-          <div className="relative overflow-hidden group rounded-[32px] border border-slate-200 shadow-[0_24px_50px_rgba(108,99,255,0.08)] flex flex-col justify-between min-h-[360px]">
-            <ParallaxLayer range={50} className="absolute inset-0 z-0">
-              <DestinationPhotoCover destination={trip.destination} className="h-full w-full" />
-            </ParallaxLayer>
-            <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/60 to-slate-950/20 pointer-events-none" />
-            <div className="absolute inset-0 z-10 ring-1 ring-inset ring-white/10 pointer-events-none" />
-
-            <div className="relative z-20 p-6 sm:p-8 flex flex-col h-full justify-end text-white">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/60 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#FF6584] border border-white/10 shadow-sm">
-                  Saved trip
+          {/* Image-forward banner */}
+          <div className="relative h-[260px] overflow-hidden rounded-3xl sm:h-[340px]">
+            <DestinationPhotoCover destination={trip.destination} className="absolute inset-0 h-full w-full" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1A1726]/85 via-[#1A1726]/30 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FF6584]" /> {getTripStatus(trip).label}
                 </span>
-                <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
-                  <RevealWords text={trip.destination} />
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                  A trip built from live destination data, your trip window, and the places we can actually map.
-                </p>
+                {formatTripDateRange(trip) && (
+                  <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 ring-1 ring-white/20 backdrop-blur-sm">
+                    {formatTripDateRange(trip)}
+                  </span>
+                )}
               </div>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:text-5xl">
+                {trip.destination}
+              </h1>
+            </div>
+          </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+          {/* Facts + actions bar overlapping the banner */}
+          <div className="relative z-10 mx-3 -mt-7 rounded-2xl border border-[#E7E5F0] bg-white p-4 shadow-[0_12px_30px_rgba(63,61,86,0.08)] sm:mx-6 sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <dl className="flex flex-wrap items-center gap-x-7 gap-y-3">
+                {[
+                  { label: 'Duration', value: `${trip.duration} days`, tone: 'text-[#3F3D56]' },
+                  { label: 'Map stops', value: String(mapActivities.length), tone: 'text-[#6C63FF]' },
+                  {
+                    label: 'Est. cost',
+                    value: Number.isFinite(totalEstimatedCostValue)
+                      ? formatTripMoney(totalEstimatedCostValue, tripCurrency)
+                      : totalEstimatedCost || 'Not set',
+                    tone: 'text-[#FF6584]',
+                  },
+                ].map(fact => (
+                  <div key={fact.label}>
+                    <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8A869C]">{fact.label}</dt>
+                    <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${fact.tone}`}>{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              <div className="flex flex-wrap gap-2.5">
                 <button
                   onClick={() => setIsChatOpen(true)}
-                  className="rounded-2xl bg-[#6C63FF] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#6C63FF]/30 hover:bg-[#5b54e7] transition-all"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(108,99,255,0.24)] transition-colors hover:bg-[#5b54e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
                 >
-                  Open Trip Assistant
+                  Trip assistant
                 </button>
                 <button
                   onClick={openEditTrip}
-                  className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#E7E5F0] bg-white px-4 py-2.5 text-sm font-semibold text-[#53506A] transition-colors hover:bg-[#FBFAFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
                 >
-                  Edit trip
+                  Edit
                 </button>
                 <button
                   onClick={() => setIsShareOpen(true)}
-                  className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/20"
+                  className="inline-flex items-center justify-center rounded-xl border border-[#E7E5F0] bg-white px-4 py-2.5 text-sm font-semibold text-[#53506A] transition-colors hover:bg-[#FBFAFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
                 >
-                  Share trip
+                  Share
                 </button>
               </div>
             </div>
           </div>
-
-          <motion.div {...revealOnView} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <motion.div variants={rise}>
-              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Duration</div>
-                <div className="mt-2 text-2xl font-black text-slate-950">
-                  <Counter to={trip.duration} suffix=" days" />
-                </div>
-              </TiltCard>
-            </motion.div>
-            <motion.div variants={rise}>
-              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Map stops</div>
-                <div className="mt-2 text-2xl font-black text-[#6C63FF]">
-                  <Counter to={mapActivities.length} />
-                </div>
-              </TiltCard>
-            </motion.div>
-            <motion.div variants={rise}>
-              <TiltCard className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-shadow flex flex-col justify-center">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Estimated cost</div>
-                <div className="mt-2 text-2xl font-black text-[#FF6584]">
-                  {Number.isFinite(totalEstimatedCostValue)
-                    ? formatTripMoney(totalEstimatedCostValue, tripCurrency)
-                    : totalEstimatedCost || 'Not set'}
-                </div>
-              </TiltCard>
-            </motion.div>
-          </motion.div>
         </motion.section>
+
+        {/* Sticky section nav */}
+        <nav className="sticky top-[68px] z-20 mt-6 flex gap-1 overflow-x-auto rounded-2xl border border-[#E7E5F0] bg-white/85 p-1.5 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {[
+            { label: 'Itinerary', href: '#trip-itinerary' },
+            { label: 'Stay', href: '#trip-stay' },
+            { label: 'Map', href: '#trip-map' },
+            { label: 'Status', href: '#trip-status' },
+          ].map(item => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-medium text-[#6F6C82] transition-colors hover:bg-[#F4F3FF] hover:text-[#3F3D56] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
 
         {(!trip.trip_start_date || !trip.trip_end_date) && (
           <section className="mt-6">
@@ -552,6 +556,7 @@ export default function TripDetailsPage() {
           </div>
         )}
 
+        <div id="trip-map" className="scroll-mt-28" />
         <MapView
           mapSectionRef={mapSectionRef}
           activities={mapActivities}
@@ -568,14 +573,14 @@ export default function TripDetailsPage() {
           }}
         />
 
-        <section className="mt-8">
+        <section id="trip-stay" className="mt-8 scroll-mt-28">
           <div className="grid gap-4 lg:grid-cols-[1.02fr_0.98fr]">
           <details className="group rounded-[28px] border border-[#DDDCE8] bg-white p-5 shadow-[0_16px_48px_rgba(46,40,51,0.06)] sm:p-6">
               <summary className="cursor-pointer list-none">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Stay</div>
-                    <h2 className="mt-1 text-2xl font-black tracking-tight">Where you’re staying</h2>
+                    <h2 className="mt-1 text-2xl font-semibold tracking-tight">Where you’re staying</h2>
                   </div>
                   <button
                     type="button"
@@ -611,7 +616,7 @@ export default function TripDetailsPage() {
                       <div className="inline-flex rounded-full border border-[#3F3D56] bg-[#FF6584] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
                         Live lodging
                       </div>
-                      <h3 className="mt-4 text-2xl font-black tracking-tight text-[#3F3D56]">{stay.name}</h3>
+                      <h3 className="mt-4 text-2xl font-semibold tracking-tight text-[#3F3D56]">{stay.name}</h3>
                       <p className="mt-2 text-sm leading-6 text-[#6F6C82]">{stay.type}</p>
 
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -677,7 +682,7 @@ export default function TripDetailsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Guest suggestions</div>
-                  <h2 className="mt-1 text-2xl font-black tracking-tight">People can respond to your trip</h2>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">People can respond to your trip</h2>
                 </div>
                 <div className="text-sm font-semibold text-[#6F6C82]">
                   {suggestionsLoading ? 'Loading...' : `${suggestions.length} total`}
@@ -728,6 +733,7 @@ export default function TripDetailsPage() {
           </div>
         </section>
 
+        <div id="trip-itinerary" className="scroll-mt-28" />
         <TimelineView
           tripId={trip.id}
           itinerary={trip.itinerary}
@@ -738,9 +744,13 @@ export default function TripDetailsPage() {
           onTripUpdated={updatedTrip => setTrip(updatedTrip)}
         />
 
-        <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <PublishToggle trip={trip} />
-          <RatingCard tripId={trip.id} destination={trip.destination} />
+        <section id="trip-status" className="mt-10 scroll-mt-28">
+          <h2 className="text-lg font-semibold tracking-tight text-[#3F3D56]">Trip status</h2>
+          <p className="mt-1 text-sm text-[#6F6C82]">Confirm you went, rate it, and share it with other travelers.</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <PublishToggle trip={trip} />
+            <RatingCard tripId={trip.id} destination={trip.destination} />
+          </div>
         </section>
 
         <CompanionStrip destination={trip.destination} />
@@ -758,7 +768,7 @@ export default function TripDetailsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Retry stay</div>
-                  <h3 className="mt-1 text-2xl font-black tracking-tight">Tell us your budget and preferred area</h3>
+                  <h3 className="mt-1 text-2xl font-semibold tracking-tight">Tell us your budget and preferred area</h3>
                 </div>
                 <button
                   type="button"
@@ -832,7 +842,7 @@ export default function TripDetailsPage() {
               <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Edit trip</div>
-                  <h3 className="mt-1 text-2xl font-black tracking-tight">Update the saved trip</h3>
+                  <h3 className="mt-1 text-2xl font-semibold tracking-tight">Update the saved trip</h3>
                 </div>
                 <button
                   type="button"
@@ -935,7 +945,7 @@ export default function TripDetailsPage() {
               <div className="flex items-start justify-between gap-4 border-b border-[#3F3D56] pb-4">
                 <div>
                   <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Guest suggestions</div>
-                  <h3 className="mt-1 text-2xl font-black tracking-tight">What guests are saying</h3>
+                  <h3 className="mt-1 text-2xl font-semibold tracking-tight">What guests are saying</h3>
                 </div>
                 <button
                   type="button"
@@ -965,7 +975,7 @@ export default function TripDetailsPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8A869C]">Latest suggestions</div>
-                      <div className="mt-1 text-lg font-black tracking-tight text-[#3F3D56]">
+                      <div className="mt-1 text-lg font-semibold tracking-tight text-[#3F3D56]">
                         {suggestions.length} total
                       </div>
                     </div>
