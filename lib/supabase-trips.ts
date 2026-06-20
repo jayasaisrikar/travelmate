@@ -27,6 +27,9 @@ export interface Trip {
   trip_end_date?: string | null
   dest_lat?: number | null
   dest_lng?: number | null
+  is_published?: boolean
+  published_at?: string | null
+  destination_slug?: string | null
 }
 
 export interface TripSharePayload {
