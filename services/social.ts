@@ -45,6 +45,8 @@ export interface TravelerProfile {
   verified_at: string | null;
   last_seen_at: string | null;
   created_at: string;
+  location_consent_at?: string | null;
+  location_consent_revoked_at?: string | null;
 }
 
 export interface TravelerWithSignal extends TravelerProfile {
@@ -180,6 +182,14 @@ export async function upsertMyProfile(
   return apiFetch<TravelerProfile>('/api/social/profile', {
     method: 'POST',
     body: JSON.stringify(patch),
+  });
+}
+
+/** Grant or revoke consent for the one-shot trip presence location check */
+export async function setLocationConsent(grant: boolean): Promise<{ consent: boolean }> {
+  return apiFetch<{ consent: boolean }>('/api/profile/location-consent', {
+    method: 'POST',
+    body: JSON.stringify({ grant }),
   });
 }
 

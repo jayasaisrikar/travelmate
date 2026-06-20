@@ -51,6 +51,8 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { BookingConfirmationImportCard } from '@/components/dashboard/BookingConfirmationImportCard';
 import { CompanionStrip } from '@/components/social/CompanionStrip';
 import { SocialProfileSettings } from '@/components/social/SocialProfileSettings';
+import { LocationConsentPrompt } from '@/components/trip/LocationConsentPrompt';
+import { usePresenceCheck } from '@/hooks/usePresenceCheck';
 
 interface AdminShare {
   id: string;
@@ -281,6 +283,8 @@ export default function DashboardPage() {
   const [userQuery, setUserQuery] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [refreshSpin, setRefreshSpin] = useState(false);
+  const [consentDismissed, setConsentDismissed] = useState(false);
+  const { needsConsent, grantConsent } = usePresenceCheck();
 
   const loadOverview = async () => {
     try {
@@ -831,6 +835,11 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-16">
+      <LocationConsentPrompt
+        open={needsConsent && !consentDismissed}
+        onGrant={() => void grantConsent()}
+        onDismiss={() => setConsentDismissed(true)}
+      />
       <ScrollProgressBar />
       {/* Dynamic ambient vector glows */}
       <div className="absolute -top-40 left-1/3 h-[600px] w-[600px] rounded-full bg-[#6C63FF]/3 blur-[140px] pointer-events-none" />
