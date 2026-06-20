@@ -34,10 +34,13 @@ export function PublishedItinerariesSection({ slug }: PublishedItinerariesSectio
           <h2 className="text-xl font-black text-[#1A1726]">Published itineraries</h2>
         </div>
         {data && data.summary.count > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-[#FFF8EC] px-3 py-1 text-sm font-bold text-[#1A1726]">
-            <Star size={14} className="fill-[#FFB020] text-[#FFB020]" />
-            {data.summary.average.toFixed(1)}
-            <span className="font-medium text-[#8A869C]">({data.summary.count})</span>
+          <div
+            className="flex items-center gap-1.5 rounded-full bg-[#FFF8EC] px-3 py-1 text-sm font-bold text-[#1A1726]"
+            aria-label={`Average rating ${data.summary.average.toFixed(1)} out of 5 stars from ${data.summary.count} rated ${data.summary.count === 1 ? 'itinerary' : 'itineraries'}`}
+          >
+            <Star size={14} className="fill-[#FFB020] text-[#FFB020]" aria-hidden="true" />
+            <span aria-hidden="true">{data.summary.average.toFixed(1)}</span>
+            <span className="font-medium text-[#8A869C]" aria-hidden="true">({data.summary.count})</span>
           </div>
         )}
       </div>
@@ -79,19 +82,26 @@ export function PublishedItinerariesSection({ slug }: PublishedItinerariesSectio
             >
               <Link
                 href={`/itinerary/${item.tripId}`}
-                className="flex h-full flex-col rounded-2xl border border-[#DDDCE8] bg-white p-5 shadow-sm transition-shadow hover:shadow-md hover:border-[#6C63FF]/40"
+                aria-label={`View ${item.destination} itinerary by ${item.ownerName ?? 'a Wayflo traveler'}${item.stars != null ? `, rated ${item.stars.toFixed(1)} out of 5` : ', not rated yet'}`}
+                className="group flex h-full flex-col rounded-2xl border border-[#DDDCE8] bg-white p-5 shadow-sm transition-all duration-150 ease-out hover:border-[#6C63FF]/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="truncate font-bold text-[#1A1726]">
                     {item.ownerName ?? 'A Wayflo traveler'}
                   </p>
                   {item.stars != null ? (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#FFF8EC] px-2 py-0.5 text-xs font-bold text-[#1A1726]">
+                    <span
+                      className="flex shrink-0 items-center gap-1 rounded-full bg-[#FFF8EC] px-2 py-0.5 text-xs font-bold text-[#1A1726]"
+                      aria-hidden="true"
+                    >
                       <Star size={12} className="fill-[#FFB020] text-[#FFB020]" />
                       {item.stars.toFixed(1)}
                     </span>
                   ) : (
-                    <span className="shrink-0 rounded-full bg-[#F4F3F4] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[#8A869C]">
+                    <span
+                      className="shrink-0 rounded-full bg-[#F4F3F4] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[#8A869C]"
+                      aria-hidden="true"
+                    >
                       Not rated yet
                     </span>
                   )}
@@ -103,8 +113,8 @@ export function PublishedItinerariesSection({ slug }: PublishedItinerariesSectio
                   <p className="mt-3 text-sm italic text-[#8A869C]">No review written yet.</p>
                 )}
 
-                <span className="mt-auto pt-4 text-sm font-semibold text-[#6C63FF]">
-                  View itinerary &rarr;
+                <span className="mt-auto flex items-center gap-1 pt-4 text-sm font-semibold text-[#6C63FF] transition-transform duration-150 ease-out group-hover:translate-x-0.5">
+                  View itinerary <span aria-hidden="true">&rarr;</span>
                 </span>
               </Link>
             </motion.div>

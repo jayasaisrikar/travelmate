@@ -39,11 +39,17 @@ export default async function PublicItineraryPage({ params }: { params: Promise<
     <main className="min-h-screen bg-[#F8FAFC] text-[#3F3D56]">
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
         {(ownerName || stars != null) && (
-          <div className="mb-4 flex items-center justify-between rounded-2xl border border-[#E4E2F0] bg-white p-4">
-            <div className="text-sm text-[#6F6C82]">{ownerName ? `Planned by ${ownerName}` : 'A Wayflo traveler'}</div>
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-[#E4E2F0] bg-white p-4">
+            <p className="truncate text-sm font-medium text-[#6F6C82]">
+              {ownerName ? `Planned by ${ownerName}` : 'A Wayflo traveler'}
+            </p>
             {stars != null && (
-              <div className="flex items-center gap-1 text-sm font-semibold text-[#3F3D56]" aria-label={`${stars} out of 5 stars`}>
-                <Star className="h-4 w-4 fill-[#FFB020] text-[#FFB020]" /> {stars.toFixed(1)}
+              <div
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#FFF8EC] px-3 py-1 text-sm font-bold text-[#3F3D56]"
+                aria-label={`Rated ${stars.toFixed(1)} out of 5 stars`}
+              >
+                <Star className="h-4 w-4 fill-[#FFB020] text-[#FFB020]" aria-hidden="true" />
+                <span aria-hidden="true">{stars.toFixed(1)}</span>
               </div>
             )}
           </div>

@@ -69,14 +69,15 @@ export function PublishToggle({ trip }: { trip: Trip }) {
           disabled={busy}
           role="switch"
           aria-checked={published}
+          aria-busy={busy}
           aria-label={published ? 'Unpublish trip' : 'Publish trip'}
-          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:opacity-60 ${
-            published ? 'bg-[#6C63FF]' : 'bg-[#DDDCE8]'
+          className={`relative flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+            published ? 'bg-[#6C63FF] hover:bg-[#5b53e6]' : 'bg-[#DDDCE8] hover:bg-[#C9C7DC]'
           }`}
         >
           <span
-            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-all duration-200 ${
-              published ? 'left-[22px]' : 'left-0.5'
+            className={`h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
+              published ? 'translate-x-[20px]' : 'translate-x-0'
             }`}
           />
         </button>
@@ -86,14 +87,15 @@ export function PublishToggle({ trip }: { trip: Trip }) {
         <button
           type="button"
           onClick={copyLink}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-[#3F3D56] bg-[#FBFAFF] px-4 py-2.5 text-sm font-semibold text-[#3F3D56] transition hover:bg-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
+          aria-live="polite"
+          className="mt-4 inline-flex h-11 items-center gap-1.5 rounded-xl border border-[#3F3D56] bg-[#FBFAFF] px-4 text-sm font-semibold text-[#3F3D56] transition-colors duration-150 hover:bg-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
         >
           {copied ? (
             <Check className="h-4 w-4 text-[#1B7A5A]" />
           ) : (
             <Copy className="h-4 w-4 text-[#6C63FF]" />
           )}
-          {copied ? 'Copied' : 'Copy public link'}
+          {copied ? 'Copied!' : 'Copy public link'}
         </button>
       )}
 
