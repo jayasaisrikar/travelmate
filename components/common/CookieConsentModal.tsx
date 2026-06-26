@@ -141,7 +141,7 @@ export function CookieConsentModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-2xl rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-5 shadow-[0_30px_90px_rgba(63,61,86,0.18)] sm:p-7"
+            className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-y-auto rounded-3xl border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-4 shadow-[0_30px_90px_rgba(63,61,86,0.18)] sm:rounded-[30px] sm:p-7"
             role="dialog"
             aria-modal="true"
             aria-labelledby="cookie-consent-title"
@@ -155,7 +155,7 @@ export function CookieConsentModal() {
                   <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
                     Your privacy
                   </div>
-                  <h2 id="cookie-consent-title" className="mt-1 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56]">
+                  <h2 id="cookie-consent-title" className="mt-1 text-xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-2xl">
                     Choose how wayflo uses cookies.
                   </h2>
                 </div>

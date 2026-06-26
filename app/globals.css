@@ -69,6 +69,12 @@
   }
 }
 
+/* Marketing headline class — kept so existing markup stays intact; uses the
+   default sans (Plus Jakarta Sans) rather than a separate display face. */
+.font-display {
+  font-family: inherit;
+}
+
 /* Keyframes + animation utilities defined at top level (not inside @layer) so
    Tailwind does not tree-shake the keyframes away. */
 @keyframes wayflo-fade-in {

@@ -15,11 +15,22 @@ export function Footer({ className = '' }: FooterProps) {
           <p>© 2026 wayflo</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
+          {/* Auth-gated links hidden during pre-launch waitlist phase — restore when launching.
           <Link href="/dashboard" className="transition hover:text-[#3F3D56]">
             Dashboard
           </Link>
           <Link href="/dashboard/onboarding" className="transition hover:text-[#3F3D56]">
             New trip
+          </Link>
+          */}
+          <Link href="/how-it-works" className="transition hover:text-[#3F3D56]">
+            How it works
+          </Link>
+          <Link href="/why-wayflo" className="transition hover:text-[#3F3D56]">
+            Why Wayflo
+          </Link>
+          <Link href="/community" className="transition hover:text-[#3F3D56]">
+            Community
           </Link>
           <Link href="/privacy-policy" className="transition hover:text-[#3F3D56]">
             Privacy
