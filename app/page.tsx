@@ -55,6 +55,36 @@ const explore = [
 export default function Home() {
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
+
+  async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const email = waitlistEmail.trim();
+    if (!email || waitlistSubmitting) return;
+
+    setWaitlistSubmitting(true);
+    setWaitlistError(null);
+
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Something went wrong. Please try again.');
+      }
+
+      setWaitlistSubmitted(true);
+    } catch (error) {
+      setWaitlistError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
+    } finally {
+      setWaitlistSubmitting(false);
+    }
+  }
   const reduceMotion = useReducedMotion();
 
   // Hero parallax
@@ -245,34 +275,35 @@ export default function Home() {
                   You&apos;re on the list — we&apos;ll be in touch soon.
                 </div>
               ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!waitlistEmail.trim()) return;
-                    // TODO: wire to real waitlist endpoint
-                    setWaitlistSubmitted(true);
-                  }}
-                  className="flex flex-col gap-3 sm:flex-row"
-                >
+                <form onSubmit={handleWaitlistSubmit} className="flex flex-col gap-3 sm:flex-row">
                   <input
                     type="email"
                     required
                     value={waitlistEmail}
-                    onChange={(e) => setWaitlistEmail(e.target.value)}
+                    onChange={(e) => {
+                      setWaitlistEmail(e.target.value);
+                      if (waitlistError) setWaitlistError(null);
+                    }}
                     placeholder="you@email.com"
                     aria-label="Email address"
-                    className="w-full rounded-xl border border-[#D8D4F2] bg-white px-4 py-3.5 text-sm text-[#3F3D56] outline-none transition focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20"
+                    disabled={waitlistSubmitting}
+                    className="w-full rounded-xl border border-[#D8D4F2] bg-white px-4 py-3.5 text-sm text-[#3F3D56] outline-none transition focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20 disabled:opacity-60"
                   />
                   <motion.button
                     type="submit"
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF6584] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(255,101,132,0.28)]"
+                    disabled={waitlistSubmitting}
+                    whileHover={{ scale: waitlistSubmitting ? 1 : 1.04 }}
+                    whileTap={{ scale: waitlistSubmitting ? 1 : 0.96 }}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF6584] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(255,101,132,0.28)] disabled:opacity-70"
                   >
-                    Join waiting list
-                    <ArrowRight className="h-4 w-4" />
+                    {waitlistSubmitting ? 'Joining…' : 'Join waiting list'}
+                    {!waitlistSubmitting && <ArrowRight className="h-4 w-4" />}
                   </motion.button>
                 </form>
+              )}
+
+              {waitlistError && !waitlistSubmitted && (
+                <p className="mt-3 text-sm font-medium text-[#FF6584]">{waitlistError}</p>
               )}
 
               {/* Auth CTAs disabled during waitlist phase — restore when launching.
