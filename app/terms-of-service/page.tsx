@@ -3,7 +3,7 @@ import { TriangleAlert } from 'lucide-react';
 import { LegalPageShell } from '@/components/common/LegalPageShell';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | wayflo',
+  title: 'Terms of Service',
   description: 'Review the terms that apply when you use wayflo to create, save, and share travel plans.',
 };
 

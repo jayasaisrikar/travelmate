@@ -3,7 +3,7 @@ import { Mail } from 'lucide-react';
 import { LegalPageShell } from '@/components/common/LegalPageShell';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | wayflo',
+  title: 'Privacy Policy',
   description: 'Learn how wayflo collects, uses, stores, and protects your information when you plan and manage trips.',
 };
 

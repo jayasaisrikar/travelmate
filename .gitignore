@@ -45,3 +45,4 @@ venv/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+screenshots/

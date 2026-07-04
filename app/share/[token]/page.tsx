@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 
   if (!data) {
     return {
-      title: 'Shared trip not found | wayflo',
+      title: 'Shared trip not found',
       description: 'This shared trip link is unavailable or has been removed.',
     };
   }
