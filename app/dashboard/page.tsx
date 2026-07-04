@@ -563,13 +563,13 @@ export default function DashboardPage() {
             />
             <Sparkles className="h-6 w-6 animate-pulse" />
           </div>
-          <h2 className="text-lg font-black text-slate-900 tracking-tight">Syncing Wayflo</h2>
+          <h2 className="text-lg font-black text-slate-900 tracking-tight">Opening your dashboard</h2>
           <p className="mt-2 text-xs text-[#6F6C82] leading-relaxed">
             {dashboardMode === 'admin'
-              ? 'Loading admin overview control systems...'
+              ? 'Loading the admin overview…'
               : dashboardMode === 'user'
-                ? 'Securing your itineraries and bookings...'
-                : 'Resolving account access clearance...'}
+                ? 'Fetching your trips and shares…'
+                : 'Checking your account…'}
           </p>
         </div>
       </div>

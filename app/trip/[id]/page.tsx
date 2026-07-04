@@ -685,7 +685,7 @@ export default function TripDetailsPage() {
                   <h2 className="mt-1 text-2xl font-semibold tracking-tight">People can respond to your trip</h2>
                 </div>
                 <div className="text-sm font-semibold text-[#6F6C82]">
-                  {suggestionsLoading ? 'Loading...' : `${suggestions.length} total`}
+                  {suggestionsLoading ? 'Loading suggestions…' : `${suggestions.length} total`}
                 </div>
               </div>
               <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
@@ -979,7 +979,7 @@ export default function TripDetailsPage() {
                         {suggestions.length} total
                       </div>
                     </div>
-                    {suggestionsLoading && <div className="text-sm font-medium text-[#6F6C82]">Loading...</div>}
+                    {suggestionsLoading && <div className="text-sm font-medium text-[#6F6C82]" role="status">Loading suggestions…</div>}
                   </div>
 
                   {suggestionsError && (

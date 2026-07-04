@@ -19,9 +19,9 @@ async function loadPublished(id: string) {
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const data = await loadPublished(id);
-  if (!data) return { title: 'Itinerary not found | wayflo' };
+  if (!data) return { title: 'Itinerary not found' };
   return {
-    title: `${data.trip.destination} itinerary | wayflo`,
+    title: `${data.trip.destination} itinerary`,
     description: `A published ${data.trip.duration}-day ${data.trip.destination} itinerary on Wayflo.`,
   };
 }
