@@ -11,6 +11,8 @@ export async function createTripForUser(input: {
   budget: string;
   interests: string[];
   itinerary: GeneratedItinerary;
+  tripStartDate?: string | null;
+  tripEndDate?: string | null;
   preferences?: TravelerPreferences | null;
   userEmail?: string | null;
 }): Promise<{ trip: TripRow; share: TripShareRecord | null }> {
@@ -26,6 +28,8 @@ export async function createTripForUser(input: {
       budget: input.budget,
       interests: input.interests,
       itinerary: input.itinerary,
+      trip_start_date: input.tripStartDate ?? null,
+      trip_end_date: input.tripEndDate ?? null,
       created_at: now,
       updated_at: now,
     })

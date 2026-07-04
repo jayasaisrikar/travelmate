@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 import { Brand } from '@/components/common/Brand';
+import type { GeneratedItinerary, PublicTripSharePayload } from '@/lib/travel-types';
 
 type PublicTripShareProps = {
   shareToken: string;
@@ -10,10 +11,11 @@ type PublicTripShareProps = {
   shareTitle: string;
   shareDescription: string;
   suggestionsCount: number;
-  trip: any;
+  trip: PublicTripSharePayload['trip'];
+  variant?: 'share' | 'public';
 };
 
-function getDailyPlans(itinerary: any): any[] {
+function getDailyPlans(itinerary: GeneratedItinerary | null | undefined) {
   if (Array.isArray(itinerary?.dailyPlans)) {
     return itinerary.dailyPlans;
   }
@@ -33,6 +35,7 @@ export function PublicTripShare({
   shareDescription,
   suggestionsCount,
   trip,
+  variant = 'share',
 }: PublicTripShareProps) {
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
@@ -47,7 +50,7 @@ export function PublicTripShare({
     () =>
       dailyPlans
         .slice(0, 3)
-        .map((day: any) => day?.theme || `Day ${day?.day}`)
+        .map(day => day?.theme || `Day ${day?.day}`)
         .filter(Boolean),
     [dailyPlans]
   );
@@ -139,22 +142,24 @@ export function PublicTripShare({
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={handleCopyShareLink}
-              className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43]"
-            >
-              {copyStatus === 'copied' ? 'Copied link' : 'Copy share link'}
-            </button>
-            <button
-              type="button"
-              onClick={handleNativeShare}
-              className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FFEAF0]"
-            >
-              Share on device
-            </button>
-          </div>
+          {variant === 'share' && (
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleCopyShareLink}
+                className="border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#302F43]"
+              >
+                {copyStatus === 'copied' ? 'Copied link' : 'Copy share link'}
+              </button>
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                className="border border-[#3F3D56] bg-white px-4 py-3 text-sm font-semibold text-[#3F3D56] transition hover:bg-[#FFEAF0]"
+              >
+                Share on device
+              </button>
+            </div>
+          )}
 
           {topHighlights.length > 0 && (
             <div className="mt-6 border border-[#DDDCE8] bg-[#FBFAFF] p-4">
@@ -171,74 +176,76 @@ export function PublicTripShare({
         </section>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="border border-[#3F3D56] bg-white p-5 sm:p-6">
-            <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Send a suggestion</div>
-            <h2 className="mt-1 text-2xl font-black tracking-tight">Help improve this trip</h2>
-            <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
-              Leave a practical idea, a better restaurant, a smarter route, or a place to skip.
-            </p>
+          {variant === 'share' && (
+            <div className="border border-[#3F3D56] bg-white p-5 sm:p-6">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#8A869C]">Send a suggestion</div>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">Help improve this trip</h2>
+              <p className="mt-2 text-sm leading-6 text-[#6F6C82]">
+                Leave a practical idea, a better restaurant, a smarter route, or a place to skip.
+              </p>
 
-            {submitted && (
-              <div className="mt-5 border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
-                Thanks, your suggestion was sent to the trip owner.
-              </div>
-            )}
-
-            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
-                  Your name
-                </label>
-                <input
-                  value={guestName}
-                  onChange={event => setGuestName(event.target.value)}
-                  placeholder="Optional"
-                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
-                  Your email
-                </label>
-                <input
-                  value={guestEmail}
-                  onChange={event => setGuestEmail(event.target.value)}
-                  placeholder="Optional"
-                  type="email"
-                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
-                  Your suggestion
-                </label>
-                <textarea
-                  value={suggestion}
-                  onChange={event => setSuggestion(event.target.value)}
-                  required
-                  rows={5}
-                  placeholder="Tell the traveler what you would change or add..."
-                  className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
-                />
-              </div>
-
-              {error && (
-                <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
-                  {error}
+              {submitted && (
+                <div className="mt-5 border border-[#6C63FF] bg-[#EEEDFE] px-4 py-3 text-sm font-medium text-[#3F3D56]">
+                  Thanks, your suggestion was sent to the trip owner.
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {loading ? 'Submitting...' : 'Submit suggestion'}
-              </button>
-            </form>
-          </div>
+              <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+                    Your name
+                  </label>
+                  <input
+                    value={guestName}
+                    onChange={event => setGuestName(event.target.value)}
+                    placeholder="Optional"
+                    className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+                    Your email
+                  </label>
+                  <input
+                    value={guestEmail}
+                    onChange={event => setGuestEmail(event.target.value)}
+                    placeholder="Optional"
+                    type="email"
+                    className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#6F6C82]">
+                    Your suggestion
+                  </label>
+                  <textarea
+                    value={suggestion}
+                    onChange={event => setSuggestion(event.target.value)}
+                    required
+                    rows={5}
+                    placeholder="Tell the traveler what you would change or add..."
+                    className="w-full border border-[#3F3D56] bg-[#FBFAFF] px-4 py-3 text-base text-[#3F3D56] outline-none placeholder:text-[#8A869C]"
+                  />
+                </div>
+
+                {error && (
+                  <div className="border border-[#C14D72] bg-[#FFF0F4] px-4 py-3 text-sm font-medium text-[#C14D72]">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full border border-[#3F3D56] bg-[#3F3D56] px-4 py-3 font-semibold text-white transition hover:bg-[#302F43] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {loading ? 'Submitting...' : 'Submit suggestion'}
+                </button>
+              </form>
+            </div>
+          )}
 
           <div className="border border-[#3F3D56] bg-[#FBFAFF] p-5 sm:p-6">
             <Brand asLink={false} compact className="mb-4" />

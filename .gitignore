@@ -42,3 +42,7 @@ __pycache__/
 venv/
 .vercel
 .next/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+screenshots/

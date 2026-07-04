@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import { 
   Compass, 
   Calendar, 
@@ -30,15 +31,29 @@ import {
   Undo2,
   Lock,
   Unlock,
-  AlertCircle
+  AlertCircle,
+  Globe2,
+  CalendarRange,
+  ArrowRight
 } from 'lucide-react';
 
 import { Brand } from '@/components/common/Brand';
+import {
+  Counter,
+  ScrollProgressBar,
+  TiltCard,
+} from '@/components/common/motion';
 import { deleteTrip, listTrips, type Trip } from '@/lib/supabase-trips';
 import { getSupabaseBrowser } from '@/services/supabase-browser';
 import { DestinationPhotoCover } from '@/components/common/DestinationPhotoCover';
+import { TripCard } from '@/components/dashboard/TripCard';
+import { getTripStatus, daysUntilStart } from '@/lib/trip-display';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { BookingConfirmationImportCard } from '@/components/dashboard/BookingConfirmationImportCard';
+import { CompanionStrip } from '@/components/social/CompanionStrip';
+import { SocialProfileSettings } from '@/components/social/SocialProfileSettings';
+import { LocationConsentPrompt } from '@/components/trip/LocationConsentPrompt';
+import { usePresenceCheck } from '@/hooks/usePresenceCheck';
 
 interface AdminShare {
   id: string;
@@ -128,27 +143,21 @@ interface AdminOverview {
   profiles: AdminProfile[];
 }
 
-type DashboardTab = 'overview' | 'trips' | 'shares' | 'suggestions' | 'users';
+type DashboardTab = 'overview' | 'trips' | 'shares' | 'suggestions' | 'users' | 'social';
 
-const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string; icon: any }> = [
-  { id: 'overview', label: 'Overview', description: 'Summary', icon: Activity },
-  { id: 'trips', label: 'Trips', description: 'Manage', icon: Compass },
-  { id: 'shares', label: 'Shares', description: 'Revoke', icon: Share2 },
-  { id: 'suggestions', label: 'Suggestions', description: 'Moderate', icon: MailCheck },
-  { id: 'users', label: 'Users', description: 'Activity', icon: Users },
+const DASHBOARD_TABS: Array<{ id: DashboardTab; label: string; description: string; icon: LucideIcon }> = [
+  { id: 'overview',     label: 'Overview',    description: 'Summary',   icon: Activity  },
+  { id: 'trips',        label: 'Trips',       description: 'Manage',    icon: Compass   },
+  { id: 'shares',       label: 'Shares',      description: 'Revoke',    icon: Share2    },
+  { id: 'suggestions',  label: 'Suggestions', description: 'Moderate',  icon: MailCheck },
+  { id: 'users',        label: 'Users',       description: 'Activity',  icon: Users     },
+  { id: 'social',       label: 'Social',      description: 'Profile',   icon: Heart     },
 ];
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(new Date(value));
-}
-
-function formatDateCompact(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
   }).format(new Date(value));
 }
 
@@ -268,6 +277,8 @@ export default function DashboardPage() {
   const [userQuery, setUserQuery] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [refreshSpin, setRefreshSpin] = useState(false);
+  const [consentDismissed, setConsentDismissed] = useState(false);
+  const { needsConsent, grantConsent } = usePresenceCheck();
 
   const loadOverview = async () => {
     try {
@@ -552,13 +563,13 @@ export default function DashboardPage() {
             />
             <Sparkles className="h-6 w-6 animate-pulse" />
           </div>
-          <h2 className="text-lg font-black text-slate-900 tracking-tight">Syncing Wayflo</h2>
+          <h2 className="text-lg font-black text-slate-900 tracking-tight">Opening your dashboard</h2>
           <p className="mt-2 text-xs text-[#6F6C82] leading-relaxed">
             {dashboardMode === 'admin'
-              ? 'Loading admin overview control systems...'
+              ? 'Loading the admin overview…'
               : dashboardMode === 'user'
-                ? 'Securing your itineraries and bookings...'
-                : 'Resolving account access clearance...'}
+                ? 'Fetching your trips and shares…'
+                : 'Checking your account…'}
           </p>
         </div>
       </div>
@@ -566,217 +577,194 @@ export default function DashboardPage() {
   }
 
   if (!isAdminUser) {
-    const latestTrip = userTrips[0] ?? null;
+    const destinationCount = new Set(
+      userTrips.map(t => t.destination.trim().toLowerCase()).filter(Boolean)
+    ).size;
+    const publishedCount = userTrips.filter(t => t.is_published).length;
+    const upcomingTrips = userTrips
+      .map(t => ({ trip: t, days: daysUntilStart(t) }))
+      .filter((x): x is { trip: Trip; days: number } => x.days != null)
+      .sort((a, b) => a.days - b.days);
+    const nextTrip = upcomingTrips[0] ?? null;
+    const liveTrip = userTrips.find(t => getTripStatus(t).tone === 'live') ?? null;
 
     return (
       <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-12">
-        {/* Colorful flowing vector blobs to make UI look organic & high-end */}
-        <div className="absolute -top-40 right-10 h-[500px] w-[#500px] rounded-full bg-gradient-to-tr from-[#6C63FF]/5 to-[#FF6584]/5 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-10 -left-20 h-[400px] w-[#400px] rounded-full bg-[#6C63FF]/3 blur-[100px] pointer-events-none" />
+        <LocationConsentPrompt
+          open={needsConsent && !consentDismissed}
+          onGrant={() => void grantConsent()}
+          onDismiss={() => setConsentDismissed(true)}
+        />
+        <ScrollProgressBar />
+        {/* One soft ambient wash — calm, not busy */}
+        <div className="pointer-events-none absolute -top-40 right-0 h-[420px] w-[420px] rounded-full bg-[#6C63FF]/[0.04] blur-[130px]" />
 
-        {/* Global Nav-Bar */}
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/70 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-            <div className="flex items-center gap-4">
-              <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
-              <div className="hidden h-6 w-[1px] bg-slate-200 sm:block" />
-              <div className="hidden sm:block">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Dashboard</div>
-                <div className="text-sm font-black tracking-tight text-slate-800">Your Wayflo Trips</div>
-              </div>
-            </div>
-
+        {/* Header */}
+        <header className="sticky top-0 z-30 border-b border-[#ECEAF4] bg-[#F8FAFC]/80 backdrop-blur-md">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+            <Brand href="/" compact className="shrink-0" />
             <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => router.push('/dashboard/onboarding')}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#6C63FF] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-[#6C63FF]/20 hover:bg-[#5b54e7] transition-all"
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/community')}
+                aria-label="Community"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#E7E5F0] bg-white px-3 text-xs font-semibold text-[#53506A] transition-colors hover:bg-[#FBFAFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]"
               >
-                <Plus className="h-4 w-4" />
-                <span>New trip</span>
-              </motion.button>
+                <Heart className="h-4 w-4 text-[#FF6584]" />
+                <span className="hidden md:inline">Community</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/explore')}
+                aria-label="Explore travelers"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#E7E5F0] bg-white px-3 text-xs font-semibold text-[#6C63FF] transition-colors hover:bg-[#F4F3FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Explore</span>
+              </button>
               <button
                 onClick={handleSignOut}
-                className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-sm"
+                aria-label="Sign out"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#E7E5F0] bg-white px-3 text-xs font-semibold text-[#53506A] transition-colors hover:bg-[#FBFAFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]"
               >
-                <LogOut className="h-4 w-4 text-slate-400" />
+                <LogOut className="h-4 w-4 text-[#8A869C]" />
                 <span className="hidden sm:inline">Sign out</span>
               </button>
             </div>
           </div>
         </header>
 
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            {/* Elegant Welcome Hero Card */}
-            <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 sm:p-8 shadow-[0_24px_50px_rgba(108,99,255,0.03)] backdrop-blur-md flex flex-col justify-between">
-              <div className="absolute top-0 right-0 p-8 opacity-[0.04] pointer-events-none">
-                <Compass className="h-48 w-44" />
-              </div>
-              <div className="relative z-10">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-pink-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#FF6584]">
-                  <Sparkles className="h-3 w-3" />
-                  Welcome back
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+          {/* Greeting + primary CTA */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#FF6584]">
+                <Sparkles className="h-3.5 w-3.5" /> Welcome back
+              </span>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3F3D56] sm:text-4xl">
+                Your trips
+              </h1>
+              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-[#6F6C82]">
+                Pick up a saved journey, or start a new AI-guided plan whenever you’re ready.
+              </p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push('/dashboard/onboarding')}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(108,99,255,0.22)] transition-colors hover:bg-[#5b54e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" /> Plan a new trip
+            </motion.button>
+          </div>
+
+          {/* Spotlight: live or next upcoming trip */}
+          {(liveTrip || nextTrip) && (() => {
+            const focus = liveTrip ?? nextTrip!.trip;
+            const days = liveTrip ? null : nextTrip!.days;
+            return (
+              <button
+                type="button"
+                onClick={() => router.push(`/trip/${focus.id}`)}
+                className="group mt-6 flex w-full items-center justify-between gap-4 overflow-hidden rounded-3xl border border-[#E7E5F0] bg-gradient-to-r from-[#F4F3FF] to-white p-5 text-left transition-shadow hover:shadow-[0_18px_40px_rgba(108,99,255,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2 sm:p-6"
+              >
+                <div className="min-w-0">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#6C63FF] ring-1 ring-[#E0DDF6]">
+                    {liveTrip ? <><span className="h-1.5 w-1.5 rounded-full bg-[#FF6584]" /> On your trip now</> : <><Clock className="h-3 w-3" /> Coming up</>}
+                  </span>
+                  <div className="mt-2 truncate text-xl font-semibold text-[#3F3D56]">{focus.destination}</div>
+                  <div className="mt-0.5 text-sm text-[#6F6C82]">
+                    {liveTrip ? 'Open the app during your trip to confirm you’re here and unlock rating.' : days != null ? `Starts in ${days} ${days === 1 ? 'day' : 'days'}.` : 'Ready when you are.'}
+                  </div>
+                </div>
+                <span className="hidden shrink-0 items-center gap-1.5 rounded-xl bg-[#6C63FF] px-4 py-2.5 text-sm font-semibold text-white transition-transform group-hover:translate-x-0.5 sm:inline-flex">
+                  Open <ArrowRight className="h-4 w-4" />
                 </span>
-                <h1 className="mt-4 text-3xl font-black text-slate-900 tracking-tight sm:text-5xl leading-[1.12]">
-                  Plan, reopen, and edit your trips from one place.
-                </h1>
-                <p className="mt-4 max-w-xl text-sm leading-relaxed text-[#6F6C82] sm:text-base">
-                  Start a new AI-guided itinerary when you are ready, or jump back into a saved journey to customize destinations, budgets, and schedules.
-                </p>
-              </div>
+              </button>
+            );
+          })()}
 
-              <div className="mt-8 flex flex-wrap gap-3 relative z-10">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => router.push('/dashboard/onboarding')}
-                  className="rounded-2xl bg-neutral-900 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-neutral-900/10 hover:bg-neutral-800 transition-all"
-                >
-                  {latestTrip ? 'Create another trip' : 'Plan your first trip'}
-                </motion.button>
-                {latestTrip && (
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => router.push(`/trip/${latestTrip.id}`)}
-                    className="rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-800 hover:border-slate-300 shadow-sm"
-                  >
-                    Open latest trip
-                  </motion.button>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Metrics Grid */}
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-center">
-                <div className="absolute right-4 bottom-2 text-slate-100 font-extrabold text-7xl select-none opacity-40">
-                  {userTrips.length}
+          {/* Stats row */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            {[
+              { label: 'Trips planned', value: String(userTrips.length), icon: Compass },
+              { label: 'Destinations', value: String(destinationCount), icon: MapPin },
+              { label: 'Next trip', value: nextTrip ? `${nextTrip.days}d` : '—', icon: CalendarRange },
+              { label: 'Published', value: String(publishedCount), icon: Globe2 },
+            ].map(stat => {
+              const Icon = stat.icon;
+              return (
+                <div key={stat.label} className="rounded-2xl border border-[#E7E5F0] bg-white p-4 sm:p-5">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8A869C]">
+                    <Icon className="h-3.5 w-3.5 text-[#6C63FF]" /> {stat.label}
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold tabular-nums text-[#3F3D56] sm:text-3xl">{stat.value}</div>
                 </div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Trips planned</div>
-                <div className="relative mt-2 text-3xl font-black text-slate-950">{userTrips.length}</div>
-              </div>
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Latest target</div>
-                <div className="mt-2 flex items-center gap-1.5 font-bold text-[#3F3D56] truncate">
-                  <MapPin className="h-4 w-4 shrink-0 text-[#6C63FF]" />
-                  <span className="truncate text-slate-900">{latestTrip ? latestTrip.destination : 'No active trips'}</span>
-                </div>
-              </div>
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Next Action</div>
-                <div className="mt-2 text-xs font-semibold text-slate-600">
-                  {latestTrip ? 'Review recommendations or export' : 'Run the AI generation onboarding'}
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
 
           {error && (
-            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm font-semibold text-rose-600 shadow-sm">
+            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-[#F5B8C8] bg-[#FFF1F5] p-4 text-sm font-medium text-[#C14D72]">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Trips Directory Grid Section */}
+          {/* Trips grid */}
           <section className="mt-10">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-5">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A869C]">Saved plans</span>
-                <h2 className="mt-0.5 text-2xl font-black text-slate-950 tracking-tight sm:text-3xl">Your travel logs</h2>
-              </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold tracking-tight text-[#3F3D56]">All trips</h2>
               <button
                 onClick={loadUserTrips}
-                className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
+                aria-label="Refresh trips"
+                className="group inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E7E5F0] bg-white text-[#8A869C] transition-colors hover:bg-[#FBFAFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF]"
               >
-                <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                <RefreshCw className={`h-4 w-4 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
               </button>
             </div>
 
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
-              {userTrips.length > 0 ? (
-                userTrips.map(trip => (
-                  <motion.article
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35 }}
+            {userTrips.length > 0 ? (
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
+                className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {userTrips.map(trip => (
+                  <TripCard
                     key={trip.id}
-                    className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(108,99,255,0.08)] flex flex-col h-full"
-                  >
-                    <TripCardCover
-                      destination={trip.destination}
-                      meta={trip.duration ? `${trip.duration} Days` : 'Trip'}
-                      rightLabel={`Saved ${formatDateCompact(trip.updated_at)}`}
-                    />
-
-                    <div className="flex flex-col flex-1 p-5 sm:p-6 bg-white/60 backdrop-blur-3xl">
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-[#6F6C82] mb-6">
-                        <span className="font-semibold text-[#6C63FF] bg-[#6C63FF]/10 text-[11px] rounded-full px-3 py-1 font-mono ring-1 ring-[#6C63FF]/20">
-                          {trip.budget || 'Custom budget'}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="inline-flex items-center gap-1.5 font-medium text-slate-500">
-                          <Clock className="h-3.5 w-3.5 text-slate-400" />
-                          Updated {formatDateCompact(trip.updated_at)}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2.5 mt-auto">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => router.push(`/trip/${trip.id}`)}
-                          className="flex-1 min-w-[120px] rounded-xl bg-[#6C63FF] px-4 py-3 text-xs font-black text-white shadow-lg shadow-[#6C63FF]/25 hover:bg-[#5b54e7] transition-all flex items-center justify-center gap-1.5"
-                        >
-                          <Compass className="h-4 w-4" />
-                          Open
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => router.push('/dashboard/onboarding')}
-                          className="flex-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition-all text-center"
-                        >
-                          New
-                        </motion.button>
-                        <button
-                          onClick={() => handleDeleteUserTrip(trip.id, trip.destination)}
-                          disabled={actionId === `user-trip-${trip.id}`}
-                          className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
-                        >
-                          {actionId === `user-trip-${trip.id}` ? '...' : 'Del'}
-                        </button>
-                      </div>
-                    </div>
-                  </motion.article>
-                ))
-              ) : (
-                <div className="rounded-[28px] border-2 border-dashed border-slate-200 bg-white p-8 text-center md:col-span-2 py-12">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6C63FF]/10 text-[#6C63FF] mb-4">
-                    <Compass className="h-6 w-6 animate-pulse" />
-                  </div>
-                  <h3 className="text-base font-black text-slate-800 tracking-tight">No itineraries created yet</h3>
-                  <p className="mt-2 text-xs text-[#6F6C82] max-w-sm mx-auto leading-relaxed">
-                    Ready to build your dream schedule? Press the button below to feed the AI generator.
-                  </p>
-                  <button
-                    onClick={() => router.push('/dashboard/onboarding')}
-                    className="mt-5 rounded-2xl bg-[#6C63FF] px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-[#5b54e7]"
-                  >
-                    Build first trip
-                  </button>
+                    trip={trip}
+                    onOpen={() => router.push(`/trip/${trip.id}`)}
+                    onDelete={() => handleDeleteUserTrip(trip.id, trip.destination)}
+                    deleting={actionId === `user-trip-${trip.id}`}
+                  />
+                ))}
+              </motion.div>
+            ) : (
+              <div className="mt-5 rounded-3xl border border-dashed border-[#DDDCE8] bg-white px-6 py-14 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F4F3FF] text-[#6C63FF]">
+                  <Compass className="h-6 w-6" />
                 </div>
-              )}
-            </div>
+                <h3 className="mt-4 text-base font-semibold text-[#3F3D56]">No trips yet</h3>
+                <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-[#6F6C82]">
+                  Tell us where you’re headed and Wayflo will draft a calm, ready-to-use itinerary.
+                </p>
+                <button
+                  onClick={() => router.push('/dashboard/onboarding')}
+                  className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#5b54e7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6C63FF] focus-visible:ring-offset-2"
+                >
+                  <Plus className="h-4 w-4" /> Plan your first trip
+                </button>
+              </div>
+            )}
           </section>
 
-          {/* Booking Conf. Wrapper */}
           <section className="mt-12">
             <BookingConfirmationImportCard />
           </section>
+
+          <CompanionStrip />
         </div>
       </main>
     );
@@ -784,6 +772,12 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen bg-[#F8FAFC] text-[#3F3D56] overflow-hidden pb-16">
+      <LocationConsentPrompt
+        open={needsConsent && !consentDismissed}
+        onGrant={() => void grantConsent()}
+        onDismiss={() => setConsentDismissed(true)}
+      />
+      <ScrollProgressBar />
       {/* Dynamic ambient vector glows */}
       <div className="absolute -top-40 left-1/3 h-[600px] w-[600px] rounded-full bg-[#6C63FF]/3 blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-0 h-[500px] w-[500px] rounded-full bg-[#FF6584]/3 blur-[120px] pointer-events-none" />
@@ -792,7 +786,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/70 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-4">
-            <Brand href="/" compact className="shrink-0 transition-transform hover:scale-102" />
+            <Brand href="/" compact className="shrink-0 transition-transform hover:scale-105" />
             <div className="hidden h-6 w-[1px] bg-slate-200 sm:block" />
             <div className="hidden sm:block">
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6584]">Wayflo HQ</div>
@@ -801,6 +795,24 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/community')}
+              aria-label="Community settings"
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <Heart className="h-4 w-4 text-[#FF6584]" />
+              <span className="hidden md:inline">Community</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/explore')}
+              aria-label="Find travelers"
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-[#6C63FF] shadow-sm transition hover:bg-[#F4F3FF]"
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Find travelers</span>
+            </button>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -853,12 +865,12 @@ export default function DashboardPage() {
                 { label: 'Confirmed emails', value: overview.stats.confirmedUsers.toString(), color: '#10B981', bg: 'bg-emerald-50', border: 'border-emerald-100' },
                 { label: 'User profiles', value: overview.profiles.length.toString(), color: '#A855F7', bg: 'bg-purple-50', border: 'border-purple-100' },
               ].map(card => (
-                <div key={card.label} className={`flex flex-col justify-center rounded-[24px] border ${card.border} ${card.bg} p-4 shadow-sm hover:shadow-md transition-all`}>
+                <TiltCard key={card.label} className={`flex flex-col justify-center rounded-[24px] border ${card.border} ${card.bg} p-4 shadow-sm transition-all`}>
                   <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#8A869C]">{card.label}</div>
                   <div className="mt-2 text-2xl font-black tracking-tight" style={{ color: card.color }}>
-                    {card.value}
+                    <Counter to={Number(card.value) || 0} />
                   </div>
-                </div>
+                </TiltCard>
               ))}
             </div>
           )}
@@ -923,7 +935,7 @@ export default function DashboardPage() {
                       onClick={loadOverview}
                       className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
                     >
-                      <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                      <RefreshCw className={`h-4 w-4 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
                     </button>
                   </div>
 
@@ -1004,7 +1016,7 @@ export default function DashboardPage() {
                     onClick={loadOverview}
                     className="group flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-slate-50 hover:text-slate-800"
                   >
-                    <RefreshCw className={`h-4.5 w-4.5 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
+                    <RefreshCw className={`h-4 w-4 text-slate-500 transition-transform ${refreshSpin ? 'animate-spin text-[#6C63FF]' : 'group-hover:rotate-45'}`} />
                   </button>
                 </div>
 
@@ -1059,9 +1071,15 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleDeleteTrip(trip.id)}
                               disabled={actionId === `trip-${trip.id}`}
-                              className="flex-none rounded-xl bg-rose-50 border border-rose-100 px-4 py-3 text-xs font-black text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 text-center"
+                              aria-label={`Delete ${trip.destination}`}
+                              title="Delete trip"
+                              className="flex-none rounded-xl bg-rose-50 border border-rose-100 p-3 text-rose-600 hover:bg-rose-100 transition-colors disabled:opacity-50 flex items-center justify-center"
                             >
-                              {actionId === `trip-${trip.id}` ? '...' : 'Del'}
+                              {actionId === `trip-${trip.id}` ? (
+                                <span className="block h-4 w-4 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
                             </button>
                           </div>
 
@@ -1188,7 +1206,7 @@ export default function DashboardPage() {
                           <div className="text-[10px] font-mono text-[#8A869C]">{formatDate(suggestion.created_at)}</div>
                         </div>
                         <p className="mt-3 text-xs leading-relaxed text-[#3F3D56] bg-white border border-slate-100 rounded-xl p-3.5 italic">
-                          "{shorten(suggestion.message, 180)}"
+                          &quot;{shorten(suggestion.message, 180)}&quot;
                         </p>
                         <div className="mt-3.5 text-right">
                           <button
@@ -1303,7 +1321,7 @@ export default function DashboardPage() {
                                 checked={isSelected}
                                 disabled={isCurrentUser}
                                 onChange={() => toggleUserSelection(user.id)}
-                                className="mt-1 h-4.5 w-4.5 rounded-md border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF]"
+                                className="mt-1 h-5 w-5 rounded-md border-slate-300 text-[#6C63FF] focus:ring-[#6C63FF] accent-[#6C63FF]"
                               />
                               <div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -1313,7 +1331,7 @@ export default function DashboardPage() {
                                   </span>
                                 </div>
                                 <div className="text-xs text-[#6F6C82] mt-0.5">
-                                  {user.full_name || 'No custom display name set'} · <span className="font-mono bg-slate-100 px-1.5 py-0.2 rounded text-slate-700">{user.role || 'authenticated'}</span>
+                                  {user.full_name || 'No custom display name set'} · <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{user.role || 'authenticated'}</span>
                                 </div>
                                 <div className="mt-2 text-[10px] font-mono text-[#8A869C]">
                                   Since {formatDate(user.created_at)}
@@ -1363,10 +1381,29 @@ export default function DashboardPage() {
                 </div>
               </motion.div>
             )}
+
+            {activeTab === 'social' && (
+              <motion.div
+                key="social"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="mt-6"
+              >
+                <div className="mb-6">
+                  <h2 className="text-2xl font-black tracking-tight text-[#1A1726]">Traveler profile</h2>
+                  <p className="mt-1 text-sm text-[#6F6C82]">
+                    Control how other wayflo travelers see you on the explore page.
+                  </p>
+                </div>
+                <div className="max-w-lg">
+                  <SocialProfileSettings />
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
     </main>
   );
 }
-

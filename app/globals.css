@@ -68,3 +68,46 @@
     color: hsl(var(--foreground));
   }
 }
+
+/* Marketing headline class — kept so existing markup stays intact; uses the
+   default sans (Plus Jakarta Sans) rather than a separate display face. */
+.font-display {
+  font-family: inherit;
+}
+
+/* Keyframes + animation utilities defined at top level (not inside @layer) so
+   Tailwind does not tree-shake the keyframes away. */
+@keyframes wayflo-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: wayflo-fade-in 280ms ease-out both;
+}
+
+@keyframes wayflo-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-shake {
+  animation: wayflo-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+

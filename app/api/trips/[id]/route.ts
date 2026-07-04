@@ -38,6 +38,13 @@ function normalizeString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeIsoDate(value: unknown) {
+  const trimmed = normalizeString(value);
+  return ISO_DATE_PATTERN.test(trimmed) ? trimmed : '';
+}
+
 function normalizeInterests(value: unknown) {
   if (!Array.isArray(value)) {
     return null;
@@ -133,6 +140,12 @@ export async function PATCH(
     const itinerary = body?.itinerary;
     const interests = normalizeInterests(body?.interests);
     const duration = typeof body?.duration === 'number' ? body.duration : Number(body?.duration);
+    const tripStartDate = normalizeIsoDate(body?.trip_start_date);
+    const tripEndDate = normalizeIsoDate(body?.trip_end_date);
+
+    if (tripStartDate && tripEndDate && tripEndDate < tripStartDate) {
+      return NextResponse.json({ error: 'end date must be on or after start date' }, { status: 400 });
+    }
 
     if (destination) {
       updates.destination = destination;
@@ -153,6 +166,14 @@ export async function PATCH(
 
     if (itinerary && typeof itinerary === 'object') {
       updates.itinerary = itinerary;
+    }
+
+    if (tripStartDate) {
+      updates.trip_start_date = tripStartDate;
+    }
+
+    if (tripEndDate) {
+      updates.trip_end_date = tripEndDate;
     }
 
     if (Object.keys(updates).length === 0) {

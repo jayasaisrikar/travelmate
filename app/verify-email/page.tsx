@@ -1,5 +1,10 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Verify your email',
+};
 
 import { Brand } from '@/components/common/Brand';
 import { confirmSignupVerificationToken } from '@/services/signup-verification';

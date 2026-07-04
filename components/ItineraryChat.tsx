@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, Sparkles, X } from 'lucide-react';
+import type { GeneratedItinerary } from '@/lib/travel-types';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -10,7 +11,7 @@ interface ChatMessage {
 }
 
 interface ItineraryChatProps {
-  itinerary: any;
+  itinerary: GeneratedItinerary | null;
   isOpen: boolean;
   onClose: () => void;
 }

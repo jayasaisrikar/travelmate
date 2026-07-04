@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { generateText } from '@/services/gemini';
+import type { GeneratedItinerary, ItineraryDayPlan } from '@/lib/travel-types';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -14,9 +15,16 @@ interface ItineraryModification {
   details?: Record<string, unknown>;
 }
 
+type ChatItinerary = Partial<
+  Pick<GeneratedItinerary, 'destination' | 'duration' | 'tips'>
+> & {
+  dailyPlans?: ItineraryDayPlan[];
+  daily_plans?: ItineraryDayPlan[];
+};
+
 function buildConversationPrompt(input: {
   message: string;
-  itinerary: Record<string, any>;
+  itinerary: ChatItinerary;
   conversationHistory: ChatMessage[];
 }): string {
   const dailyPlans = input.itinerary.dailyPlans ?? input.itinerary.daily_plans ?? [];

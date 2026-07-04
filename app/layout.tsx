@@ -22,7 +22,10 @@ function getMetadataBase() {
 
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
-  title: 'wayflo',
+  title: {
+    default: 'wayflo',
+    template: '%s | wayflo',
+  },
   description: 'Smart travel planning that keeps your routes, timing, and ideas in flow.',
   icons: {
     icon: '/favicon.svg',

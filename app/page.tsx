@@ -1,366 +1,315 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import { ArrowRight, Compass, MapPinned, Sparkles, Waves } from 'lucide-react';
-import { Brand } from '@/components/common/Brand';
+import Image from 'next/image';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Counter,
+  EASE,
+  RevealWords,
+  ScrollProgressBar,
+  TiltCard,
+  rise,
+  stagger,
+} from '@/components/common/motion';
+import { ArrowRight, ArrowUpRight, Compass, Map, Route, Sparkles, Users } from 'lucide-react';
+import { MarketingNav } from '@/components/marketing/MarketingNav';
+import { HeroMockup } from '@/components/marketing/HeroMockup';
 import { Footer } from '@/components/common/Footer';
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 18 },
-  whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.45 },
-  viewport: { once: true, margin: '-40px' },
+const IMG = {
+  hero: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=1920',
 };
 
-const planningSignals = [
-  {
-    title: 'Real route inputs',
-    body: 'Search a live destination, then anchor the trip around the dates and rhythm that actually matter.',
-    icon: MapPinned,
-  },
-  {
-    title: 'Smarter timing',
-    body: 'Wayflo keeps arrival windows, departures, stay context, and daily flow visible from the start.',
-    icon: Waves,
-  },
-  {
-    title: 'Saved momentum',
-    body: 'Keep the itinerary, map view, and trip notes together so a plan stays usable after you close the tab.',
-    icon: Sparkles,
-  },
+const stats = [
+  { to: 120, suffix: '+', label: 'destinations searchable live' },
+  { to: 6, suffix: '', label: 'travelers per shared trip room' },
+  { to: 100, suffix: '%', label: 'plans saved for offline reuse' },
 ];
 
-const productMoments = [
-  'Search real places instead of seeded demos',
-  'Build around when the trip starts and ends',
-  'Save a trip page that still works well on your phone',
-  'Share a route and collect practical suggestions',
-];
-
-const showcaseCards = [
+const explore = [
   {
-    eyebrow: 'Explore freely',
-    title: 'A planner that feels lighter on first use.',
-    body: 'Minimal inputs, calm copy, and rounded surfaces keep the experience moving instead of making travel planning feel like paperwork.',
-    accent: '#6C63FF',
+    index: '01',
+    title: 'How it works',
+    body: 'From a real destination to a route you can reuse — without breaking momentum.',
+    href: '/how-it-works',
+    icon: Route,
   },
   {
-    eyebrow: 'Flow better',
-    title: 'Plans stay connected to time, place, and stay details.',
-    body: 'Each itinerary is grounded in a route, not a vague destination idea. That makes the output easier to trust and easier to reuse.',
-    accent: '#FF6584',
+    index: '02',
+    title: 'Why Wayflo',
+    body: 'The route, the timing, and the mood stay connected from the first input.',
+    href: '/why-wayflo',
+    icon: Compass,
   },
-];
-
-const tripFlowSteps = [
-  'Pick the destination you really want, not a template city.',
-  'Set the arrival and departure window so the trip reflects your schedule.',
-  'Let the itinerary form around your pace, budget, and interests.',
+  {
+    index: '03',
+    title: 'Community',
+    body: 'Find travelers heading to the same place. Wave to connect, plan together.',
+    href: '/community',
+    icon: Users,
+  },
 ];
 
 export default function Home() {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 8);
-    window.addEventListener('scroll', onScroll);
-    onScroll();
+  async function handleWaitlistSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const email = waitlistEmail.trim();
+    if (!email || waitlistSubmitting) return;
 
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    setWaitlistSubmitting(true);
+    setWaitlistError(null);
+
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.error || 'Something went wrong. Please try again.');
+      }
+
+      setWaitlistSubmitted(true);
+    } catch (error) {
+      setWaitlistError(error instanceof Error ? error.message : 'Something went wrong. Please try again.');
+    } finally {
+      setWaitlistSubmitting(false);
+    }
+  }
+  const reduceMotion = useReducedMotion();
+
+  // Hero parallax
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroP } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroBgY = useTransform(heroP, [0, 1], reduceMotion ? ['0%', '0%'] : ['0%', '32%']);
+  const heroBgScale = useTransform(heroP, [0, 1], reduceMotion ? [1, 1] : [1.05, 1.18]);
+  const heroContentY = useTransform(heroP, [0, 1], reduceMotion ? [0, 0] : [0, 110]);
+  const heroContentOpacity = useTransform(heroP, [0, 0.85], [1, 0]);
 
   return (
-    <main className="min-h-screen overflow-x-hidden text-[#3F3D56]">
-      <nav
-        className={`fixed top-0 z-50 w-full transition-all duration-200 ${
-          isScrolled
-            ? 'border-b border-[#DDDCE8] bg-[rgba(242,242,242,0.9)] py-3 backdrop-blur-xl'
-            : 'bg-transparent py-5'
-        }`}
-      >
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 sm:flex-nowrap sm:px-6">
-          <div className="sm:hidden">
-            <Brand href="/" compact showWordmark={false} className="shrink-0" />
-          </div>
-          <div className="hidden sm:block">
-            <Brand href="/" className="shrink-0" />
-          </div>
+    <main className="min-h-dvh overflow-x-hidden text-[#3F3D56]">
+      <ScrollProgressBar />
+      <MarketingNav />
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/login"
-              className="rounded-xl border border-[#6C63FF]/30 bg-white/80 px-3 py-2 text-[13px] font-semibold text-[#6C63FF] shadow-[0_10px_24px_rgba(108,99,255,0.08)] sm:px-4 sm:text-sm"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-xl bg-[#6C63FF] px-3 py-2 text-[13px] font-semibold text-white shadow-[0_14px_30px_rgba(108,99,255,0.28)] sm:px-4 sm:text-sm"
-            >
-              Explore now
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* ── Hero (parallax + word reveal) ──────────────────── */}
+      <section ref={heroRef} className="relative min-h-[94vh] overflow-hidden">
+        <motion.div style={{ y: heroBgY, scale: heroBgScale }} className="absolute inset-0">
+          <Image src={IMG.hero} alt="" fill priority sizes="100vw" className="object-cover" />
+        </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1A1726]/55 via-[#1A1726]/35 to-[#F2F2F2]" />
+        <motion.div
+          aria-hidden
+          animate={reduceMotion ? undefined : { opacity: [0.55, 0.85, 0.55] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(108,99,255,0.34),transparent_55%)]"
+        />
 
-      <section className="mx-auto max-w-6xl px-4 pb-10 pt-24 sm:px-6 sm:pb-12 sm:pt-32 lg:pt-36">
-        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <motion.div {...fadeInUp} className="space-y-6">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#6C63FF]/15 bg-[#EEEDFE] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6C63FF] sm:px-4 sm:text-[11px] sm:tracking-[0.24em]">
+        <motion.div
+          style={{ y: heroContentY, opacity: heroContentOpacity }}
+          className="relative mx-auto grid min-h-[88vh] max-w-6xl grid-cols-1 items-center gap-10 px-4 pb-16 pt-28 sm:min-h-[94vh] sm:px-6 sm:pb-24 sm:pt-32 lg:grid-cols-[1.05fr_0.95fr]"
+        >
+          <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
+            <motion.div
+              variants={rise}
+              className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90"
+            >
               <Compass className="h-3.5 w-3.5" />
               travel. flow. freedom.
-            </div>
+            </motion.div>
 
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-medium leading-[0.98] tracking-[-0.05em] text-[#3F3D56] sm:text-5xl lg:text-7xl">
-                Explore freely.
-                <span className="block text-[#6C63FF]">Plan with more flow.</span>
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-[#6F6C82] sm:text-base sm:leading-8 sm:text-lg">
-                Wayflo turns real destinations, trip windows, budgets, and preferences into saved itineraries that
-                feel calm, clear, and ready to use when travel gets real.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_34px_rgba(108,99,255,0.28)] sm:py-3.5"
+            <h1 className="mt-5 text-balance font-display text-[2.7rem] font-light leading-[1.02] tracking-[-0.02em] text-white drop-shadow-[0_8px_30px_rgba(0,0,0,0.35)] sm:mt-6 sm:text-7xl sm:leading-[0.98] lg:text-[5.5rem]">
+              <RevealWords text="Explore freely." />
+              <motion.span
+                variants={rise}
+                className="mt-1 block bg-gradient-to-r from-[#C8C2FF] to-[#FFB3C4] bg-clip-text text-transparent"
               >
-                Explore now
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/dashboard/onboarding"
-                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/30 bg-white px-5 py-3 text-sm font-semibold text-[#6C63FF] sm:py-3.5"
-              >
-                Learn more
-              </Link>
-            </div>
+                Plan with flow.
+              </motion.span>
+            </h1>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {productMoments.map((point) => (
-                <div
-                  key={point}
-                  className="rounded-2xl border border-white/70 bg-white/85 px-4 py-4 text-sm font-medium text-[#53506A] shadow-[0_18px_48px_rgba(63,61,86,0.08)] backdrop-blur"
+            <motion.p
+              variants={rise}
+              className="mt-6 max-w-xl text-pretty text-base leading-8 text-white/85 sm:text-lg"
+            >
+              Wayflo turns real destinations, trip windows, budgets, and preferences into saved
+              itineraries that feel calm, clear, and ready when travel gets real.
+            </motion.p>
+
+            <motion.div variants={rise} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="w-full sm:w-auto">
+                <Link
+                  href="#waitlist"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#6C63FF] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(108,99,255,0.45)] transition hover:bg-[#5a52d5]"
                 >
-                  {point}
-                </div>
-              ))}
+                  {/* Signup disabled during waitlist phase — was "Start planning free" → /signup */}
+                  Join the waiting list
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </motion.div>
+              <Link
+                href="/how-it-works"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:w-auto"
+              >
+                See how it works
+              </Link>
+            </motion.div>
+          </motion.div>
+
+          {/* Animated itinerary mockup — desktop only so the mobile hero stays light. */}
+          <div className="hidden lg:block">
+            <HeroMockup />
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Stats band ─────────────────────────────────────── */}
+      <section className="px-4 sm:px-6">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-80px' }}
+          className="mx-auto -mt-12 grid max-w-5xl gap-4 rounded-[28px] border border-white/80 bg-white/90 p-6 shadow-[0_24px_70px_rgba(63,61,86,0.12)] backdrop-blur sm:grid-cols-3 sm:p-8"
+        >
+          {stats.map(s => (
+            <motion.div key={s.label} variants={rise} className="text-center sm:text-left">
+              <div className="font-display text-4xl font-light tracking-[-0.02em] text-[#6C63FF] sm:text-5xl">
+                <Counter to={s.to} suffix={s.suffix} />
+              </div>
+              <p className="mt-1.5 text-sm leading-6 text-[#6F6C82]">{s.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* ── Explore: editorial index of the sub-pages ──────── */}
+      <section className="px-4 py-16 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-80px' }}
+            className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+          >
+            <div className="max-w-xl">
+              <motion.div variants={rise} className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#FF6584]">
+                The index
+              </motion.div>
+              <motion.h2 variants={rise} className="mt-3 font-display text-3xl font-light tracking-[-0.02em] text-[#3F3D56] sm:text-5xl">
+                Three reads on how Wayflo works.
+              </motion.h2>
             </div>
           </motion.div>
 
           <motion.div
-            {...fadeInUp}
-            transition={{ duration: 0.45, delay: 0.05 }}
-            className="relative overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8f7ff_100%)] p-4 shadow-[0_30px_90px_rgba(63,61,86,0.12)] sm:p-6"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-60px' }}
+            className="grid gap-4 lg:grid-cols-3"
           >
-            <div className="absolute inset-x-4 top-0 h-20 rounded-b-[28px] bg-[radial-gradient(circle,rgba(108,99,255,0.18),transparent_72%)] sm:inset-x-6 sm:h-24" />
-
-            <div className="relative flex items-start justify-between gap-3">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-                  Trip flow
-                </div>
-                <h2 className="mt-2 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:text-2xl">
-                  What wayflo keeps in sync
-                </h2>
-              </div>
-              <div className="flex gap-1.5 pt-1 sm:gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#6C63FF] sm:h-3 sm:w-3" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#FF6584] sm:h-3 sm:w-3" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#3F3D56] sm:h-3 sm:w-3" />
-              </div>
-            </div>
-
-            <div className="relative mt-4 space-y-3 sm:mt-6">
-              {[
-                ['Destination', 'Search a live place'],
-                ['Trip window', 'Set arrival and departure time'],
-                ['Budget', 'Shape the plan around real spend'],
-                ['Pace', 'Keep the route balanced, not overloaded'],
-              ].map(([label, value], index) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-[#E4E2F0] bg-white px-4 py-3.5 shadow-[0_12px_28px_rgba(63,61,86,0.05)] sm:py-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="mt-0.5 h-10 w-10 shrink-0 rounded-2xl sm:h-11 sm:w-11"
-                      style={{
-                        background:
-                          index % 2 === 0
-                            ? 'linear-gradient(180deg, #6C63FF 0%, #847DFF 100%)'
-                            : 'linear-gradient(180deg, #FF6584 0%, #FF8AA2 100%)',
-                      }}
-                    />
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7E7A92] sm:text-sm sm:tracking-[0.16em]">
-                        {label}
-                      </div>
-                      <div className="mt-1 text-sm font-medium text-[#3F3D56] sm:text-base">{value}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="relative mt-4 rounded-2xl bg-[#3F3D56] px-4 py-4 text-white sm:mt-5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 sm:text-[11px] sm:tracking-[0.22em]">
-                Why it works
-              </div>
-              <p className="mt-2 text-sm leading-6 text-white/90">
-                The itinerary stays tied to your actual timing so the whole route feels usable, not over-promised.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto max-w-6xl">
-          <motion.div {...fadeInUp} className="mb-6 max-w-2xl">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-              Why wayflo
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
-              The route, the timing, and the mood stay connected.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
-              You get a calmer way to plan, with the important details easy to spot and the next step always obvious.
-            </p>
-          </motion.div>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {planningSignals.map((item, index) => {
+            {explore.map(item => {
               const Icon = item.icon;
-
               return (
-                <motion.article
-                  key={item.title}
-                  {...fadeInUp}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  className="rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF] sm:h-12 sm:w-12">
-                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                  <h3 className="mt-4 text-xl font-medium tracking-[-0.03em] text-[#3F3D56] sm:mt-5 sm:text-2xl">
-                    {item.title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{item.body}</p>
-                </motion.article>
+                <motion.div key={item.index} variants={rise}>
+                  <Link href={item.href} className="group block h-full">
+                    <TiltCard className="flex h-full flex-col rounded-[28px] border border-white/80 bg-white p-7 shadow-[0_16px_48px_rgba(63,61,86,0.07)] transition group-hover:shadow-[0_24px_60px_rgba(63,61,86,0.12)]">
+                      <div className="flex items-start justify-between">
+                        <span className="font-display text-3xl font-light text-[#6C63FF]/30">{item.index}</span>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EEEDFE] text-[#6C63FF] transition group-hover:bg-[#6C63FF] group-hover:text-white">
+                          <Icon className="h-5 w-5" />
+                        </span>
+                      </div>
+                      <h3 className="mt-8 text-xl font-medium tracking-[-0.02em] text-[#3F3D56]">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-7 text-[#6F6C82]">{item.body}</p>
+                      <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[#6C63FF]">
+                        Read more
+                        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </span>
+                    </TiltCard>
+                  </Link>
+                </motion.div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <motion.div
-            {...fadeInUp}
-            className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#faf8ff_100%)] p-5 shadow-[0_18px_60px_rgba(63,61,86,0.08)] sm:p-6"
-          >
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-              Feels clear
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-3xl">
-              It stays easy to read when you are planning fast.
-            </h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                ['Fast to scan', '#6C63FF', 'The main action stands out so you do not have to hunt for the next step.'],
-                ['Easy on the eyes', '#3F3D56', 'Trip details stay legible even when there is a lot to review.'],
-                ['Calm background', '#F2F2F2', 'The page feels light, so the planning flow does not feel crowded.'],
-                ['Helpful emphasis', '#FF6584', 'Important moments are highlighted without making the screen feel loud.'],
-              ].map(([label, color, body]) => (
-                <div key={label} className="rounded-2xl border border-[#E4E2F0] bg-white p-4">
-                  <div className="h-10 w-full rounded-xl sm:h-11" style={{ backgroundColor: color }} />
-                  <div className="mt-3 text-sm font-medium text-[#3F3D56] sm:text-base">{label}</div>
-                  <p className="mt-1 text-sm leading-6 text-[#6F6C82]">{body}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            {...fadeInUp}
-            transition={{ duration: 0.45, delay: 0.05 }}
-            className="rounded-[30px] border border-[#4D4970] bg-[#3F3D56] p-5 text-white shadow-[0_20px_70px_rgba(63,61,86,0.18)] sm:p-6"
-          >
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-[11px] sm:tracking-[0.24em]">
-              Journey rhythm
-            </div>
-            <h2 className="mt-2 text-2xl font-medium tracking-[-0.04em] sm:text-3xl">
-              From idea to route without breaking momentum
-            </h2>
-            <div className="mt-5 space-y-3 sm:mt-6">
-              {tripFlowSteps.map((step, index) => (
-                <div key={step} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#FF6584] sm:text-[11px] sm:tracking-[0.18em]">
-                    Step {index + 1}
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-white/88">{step}</p>
-                </div>
-              ))}
-            </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-2">
-          {showcaseCards.map((card, index) => (
-            <motion.article
-              key={card.title}
-              {...fadeInUp}
-              transition={{ duration: 0.4, delay: index * 0.06 }}
-              className="rounded-[30px] border border-white/80 bg-white p-5 shadow-[0_18px_54px_rgba(63,61,86,0.08)] sm:p-6"
-            >
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] sm:text-[11px] sm:tracking-[0.22em]" style={{ color: card.accent }}>
-                {card.eyebrow}
-              </div>
-              <h3 className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-3xl">{card.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#6F6C82]">{card.body}</p>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 pb-10 pt-2 sm:px-6 sm:pb-14">
+      {/* ── Waitlist ───────────────────────────────────────── */}
+      <section id="waitlist" className="scroll-mt-24 px-4 pb-16 pt-2 sm:px-6 sm:pb-24">
         <motion.div
-          {...fadeInUp}
-          className="mx-auto max-w-6xl rounded-[34px] border border-[#D8D4F2] bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_52%,#FFE9EF_100%)] p-5 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-8"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.7, ease: EASE }}
+          className="mx-auto max-w-6xl overflow-hidden rounded-[34px] border border-[#D8D4F2] bg-[linear-gradient(135deg,#EEEDFE_0%,#FFFFFF_52%,#FFE9EF_100%)] p-7 shadow-[0_24px_80px_rgba(108,99,255,0.12)] sm:p-12"
         >
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7E7A92] sm:text-[11px] sm:tracking-[0.24em]">
-                Ready to move
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#FF6584]">
+                Coming soon
               </div>
-              <h2 className="mt-2 text-3xl font-medium tracking-[-0.04em] text-[#3F3D56] sm:text-4xl">
-                Start planning in the new wayflo system.
+              <h2 className="mt-3 font-display text-3xl font-light tracking-[-0.02em] text-[#3F3D56] sm:text-5xl">
+                Join the Wayflo waiting list.
               </h2>
-              <p className="mt-3 text-sm leading-7 text-[#6F6C82] sm:text-base">
-                Create an account, save your itinerary, and keep the route flowing from research to the trip itself.
+              <p className="mt-3 max-w-xl text-base leading-8 text-[#6F6C82]">
+                We&apos;re putting the finishing touches on the new flow. Drop your email and we&apos;ll
+                let you know the moment you can start planning.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center rounded-xl bg-[#FF6584] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(255,101,132,0.22)]"
-              >
-                Book trip
-              </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center justify-center rounded-xl border border-[#6C63FF]/25 bg-white px-5 py-3.5 text-sm font-semibold text-[#6C63FF]"
-              >
-                Open dashboard
-              </Link>
+            <div className="w-full max-w-md">
+              {waitlistSubmitted ? (
+                <div className="flex items-center gap-3 rounded-xl border border-[#6C63FF]/25 bg-white px-5 py-4 text-sm font-semibold text-[#3F3D56]">
+                  <Sparkles className="h-5 w-5 shrink-0 text-[#6C63FF]" />
+                  You&apos;re on the list — we&apos;ll be in touch soon.
+                </div>
+              ) : (
+                <form onSubmit={handleWaitlistSubmit} className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="email"
+                    required
+                    value={waitlistEmail}
+                    onChange={(e) => {
+                      setWaitlistEmail(e.target.value);
+                      if (waitlistError) setWaitlistError(null);
+                    }}
+                    placeholder="you@email.com"
+                    aria-label="Email address"
+                    disabled={waitlistSubmitting}
+                    className="w-full rounded-xl border border-[#D8D4F2] bg-white px-4 py-3.5 text-sm text-[#3F3D56] outline-none transition focus:border-[#6C63FF] focus:ring-2 focus:ring-[#6C63FF]/20 disabled:opacity-60"
+                  />
+                  <motion.button
+                    type="submit"
+                    disabled={waitlistSubmitting}
+                    whileHover={{ scale: waitlistSubmitting ? 1 : 1.04 }}
+                    whileTap={{ scale: waitlistSubmitting ? 1 : 0.96 }}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF6584] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(255,101,132,0.28)] disabled:opacity-70"
+                  >
+                    {waitlistSubmitting ? 'Joining…' : 'Join waiting list'}
+                    {!waitlistSubmitting && <ArrowRight className="h-4 w-4" />}
+                  </motion.button>
+                </form>
+              )}
+
+              {waitlistError && !waitlistSubmitted && (
+                <p className="mt-3 text-sm font-medium text-[#FF6584]">{waitlistError}</p>
+              )}
+
+              {/* Auth CTAs disabled during waitlist phase — restore when launching.
+              <Link href="/signup">Plan a trip</Link>
+              <Link href="/dashboard">Open dashboard</Link>
+              */}
             </div>
           </div>
         </motion.div>
